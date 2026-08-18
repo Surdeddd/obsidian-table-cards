@@ -2,192 +2,116 @@
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<link rel="icon" href="data:,">
-	<title>Table Cards v2 editor</title>
+	<title>Table Cards — editor fixtures</title>
 	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="preview.css">
 	<style>
-		:root {
-			--background-primary: #0d0d0e;
-			--background-primary-alt: #111113;
-			--background-secondary: #171719;
-			--background-modifier-border: #303034;
-			--background-modifier-border-hover: #4a4a50;
-			--background-modifier-hover: #242427;
-			--background-modifier-cover: #000;
-			--interactive-accent: #f2f2f2;
-			--text-accent: #fff;
-			--text-normal: #f3f3f3;
-			--text-muted: #b3b3b7;
-			--text-faint: #7c7c82;
-			--text-on-accent: #101011;
-			--text-warning: #e1ad55;
-			color-scheme: dark;
-			font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-		}
-		* { box-sizing: border-box; }
-		body { margin: 0; min-height: 100dvh; display: grid; place-items: center; background: #080809; color: var(--text-normal); }
-		button, input { font: inherit; }
-		.modal.table-cards-editor { position: relative; inset: auto; }
+		.tc-editor-preview { --tc-window-bg:#0d0d0e; --tc-card-bg:#151516; --tc-text:#f3f3f3; --tc-text-muted:#a7a7ac; --tc-label:#77777e; --tc-accent:#fff; --tc-border:#303034; --tc-border-w:1px; --tc-radius:20px; --tc-pad:22px; --tc-gap:14px; --tc-word:1; --tc-max-w:920px; }
 		.tc-editor-icon-button { font-size: 18px; }
-		.tc-editor-preview { --tc-window-bg:#0d0d0e; --tc-card-bg:#151516; --tc-text:#f3f3f3; --tc-text-muted:#b3b3b7; --tc-label:#85858b; --tc-accent:#fff; --tc-border:#303034; --tc-border-w:1px; --tc-radius:20px; --tc-pad:22px; --tc-gap:14px; --tc-word:1; --tc-max-w:920px; }
-		.tc-sheet-layer[hidden] { display: none; }
-		@media (max-width: 700px) { body { display: block; } }
+		.preview-table-route[hidden], .preview-fields-list[hidden] { display: none; }
+		.preview-table-route .tc-table-selection-list { max-height: 470px; overflow: auto; }
+		.preview-opened-state { padding: 9px 10px; border: 1px solid var(--background-modifier-border); border-radius: 9px; color: var(--text-muted); font-size: 12px; }
+		@media (max-width: 700px) { body { display: block; } .preview-table-route .tc-table-selection-list { max-height: none; } }
 	</style>
 </head>
 <body>
-	<section class="modal table-cards-editor" role="dialog" aria-modal="true" aria-label="Редактор карточки">
-		<div class="modal-content table-cards-editor-body">
-			<div class="tc-editor-shell">
-				<header class="tc-editor-header">
-					<button class="tc-editor-icon-button" type="button" aria-label="Назад">←</button>
-					<div class="tc-editor-title">
-						<input class="tc-editor-title-input" type="text" value="English · Dictionary" aria-label="Название">
-						<div class="tc-editor-dirty">Есть изменения</div>
-					</div>
-					<div class="tc-editor-history">
-						<button class="tc-editor-icon-button" type="button" aria-label="Отменить">↶</button>
-						<button class="tc-editor-icon-button" type="button" aria-label="Повторить">↷</button>
-					</div>
-					<div class="tc-editor-device">
-						<button class="tc-editor-icon-button" type="button" aria-label="Компьютер" aria-pressed="true">▣</button>
-						<button class="tc-editor-icon-button" type="button" aria-label="Телефон" aria-pressed="false">▯</button>
-					</div>
-					<button class="tc-editor-save" type="button">Сохранить</button>
-				</header>
+	<nav class="preview-toolbar" aria-label="Editor fixtures">
+		<button type="button" data-open-preview="fields" aria-pressed="false">Sources</button>
+		<button type="button" data-open-preview="tables" aria-pressed="false">Choose tables</button>
+		<button type="button" data-phone aria-pressed="false">Phone canvas</button>
+		<button type="button" data-expanded aria-pressed="false">Expanded copy</button>
+		<a href="setup.html">Setup</a>
+		<a href="v2.html">Study</a>
+	</nav>
 
-				<div class="tc-editor-canvas-bar">
-					<button class="tc-editor-button with-label" type="button" data-open="fields">▦ <span data-copy-normal="Поля · 7 · 2" data-copy-expanded="Поля и источники данных · 7 · 2">Поля · 7 · 2</span></button>
-					<div class="tc-editor-row-nav">
-						<button class="tc-editor-icon-button" type="button" aria-label="Назад">‹</button>
-						<details class="tc-editor-row-picker"><summary aria-label="Выбрать строку">18 / 583</summary><div class="tc-editor-row-menu"><button>Первая строка</button><button>Случайная строка</button><button>Самый длинный текст</button><button>Больше всего пустых полей</button></div></details>
-						<button class="tc-editor-icon-button" type="button" aria-label="Дальше">›</button>
+	<main class="preview-root">
+		<section class="modal table-cards-editor" role="dialog" aria-modal="true" aria-label="Редактор карточки">
+			<div class="modal-content table-cards-editor-body"><div class="tc-editor-shell">
+				<header class="tc-editor-header"><button class="tc-editor-icon-button" type="button" aria-label="Назад">←</button><div class="tc-editor-title"><input class="tc-editor-title-input" type="text" value="English · Dictionary" aria-label="Название" dir="auto"><div class="tc-editor-dirty">Есть изменения</div></div><div class="tc-editor-history"><button class="tc-editor-icon-button" type="button" aria-label="Отменить">↶</button><button class="tc-editor-icon-button" type="button" aria-label="Повторить">↷</button></div><div class="tc-editor-device"><button class="tc-editor-icon-button" type="button" aria-label="Компьютер" aria-pressed="true" data-device="desktop">▣</button><button class="tc-editor-icon-button" type="button" aria-label="Телефон" aria-pressed="false" data-device="phone">▯</button></div><button class="tc-editor-save" type="button">Сохранить</button></header>
+
+				<div class="tc-editor-canvas-bar"><button class="tc-editor-button with-label" type="button" data-open="fields">▦ <span data-copy-normal="Поля · 7 · 2" data-copy-expanded="Поля и источники данных · 7 столбцов · 2 предупреждения">Поля · 7 · 2</span></button><div class="tc-editor-row-nav"><button class="tc-editor-icon-button" type="button" aria-label="Предыдущая строка">‹</button><details class="tc-editor-row-picker"><summary aria-label="Выбрать строку">18 / 583</summary><div class="tc-editor-row-menu"><button type="button">Первая строка</button><button type="button">Случайная строка</button><button type="button">Самый длинный текст</button><button type="button">Больше всего пустых полей</button></div></details><button class="tc-editor-icon-button" type="button" aria-label="Следующая строка">›</button></div><button class="tc-editor-button with-label" type="button" data-open="card">◐ <span data-copy-normal="Стиль карточки" data-copy-expanded="Параметры отображения карточки для компьютера и телефона">Стиль карточки</span></button></div>
+
+				<div class="tc-editor-canvas-wrap"><div class="tc-editor-preview is-desktop border-thin has-shadow" data-preset="monochrome"><div class="table-cards-stage"><article class="table-cards-box is-selected" role="button" tabindex="0" aria-pressed="true" data-kind="title" data-width="full" data-mobile="stack" data-overflow="shrink" data-height="auto"><div class="table-cards-word">remain</div><div class="tc-card-drag-handle" aria-hidden="true"></div><div class="tc-resize-handle" aria-hidden="true"></div><div class="tc-resize-handle is-height" aria-hidden="true"></div></article><article class="table-cards-box" role="button" tabindex="0" aria-pressed="false" data-kind="chips" data-width="half" data-mobile="compact"><div class="table-cards-label">транскрипция</div><div class="table-cards-pron"><span class="table-cards-chip">/rɪˈmeɪn/</span><span class="table-cards-chip">римэ́йн</span></div></article><article class="table-cards-box" role="button" tabindex="0" aria-pressed="false" data-kind="text" data-width="half" data-mobile="stack"><div class="table-cards-label">перевод</div><div class="table-cards-translation">оставаться, сохраняться</div></article><article class="table-cards-box" role="button" tabindex="0" aria-pressed="false" data-kind="quote" data-width="full" data-mobile="stack"><div class="table-cards-label">пример</div><div class="table-cards-example">Please remain calm while we check the details.</div></article><article class="table-cards-box" role="button" tabindex="0" aria-pressed="false" data-kind="note" data-width="full" data-mobile="compact"><div class="table-cards-tip"><span class="table-cards-tip-mark" aria-hidden="true">✦</span><div class="table-cards-tip-text">РЕ-МЕЙН — ремень остаётся на месте.</div></div></article></div></div></div>
+
+				<div class="tc-editor-block-toolbar"><button class="tc-editor-button with-label is-block-type" type="button" data-open="block">Заголовок</button><button class="tc-editor-button with-label is-block-width" type="button">Вся ширина</button><button class="tc-editor-button with-label is-block-move" type="button" data-open="reorder">↕ Переместить</button><button class="tc-editor-button with-label is-block-more" type="button" data-open="block">⋯ Ещё</button></div>
+
+				<div class="tc-sheet-layer" data-panel="fields" hidden><button class="tc-sheet-scrim" type="button" aria-label="Закрыть панель" data-close></button><section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="fields-title"><div class="tc-sheet-handle" aria-hidden="true"></div><header class="tc-sheet-header"><h2 id="fields-title">Поля и данные</h2><button class="tc-sheet-close" type="button" aria-label="Закрыть" data-close>×</button></header><div class="tc-sheet-body">
+					<div class="preview-fields-list">
+						<div class="tc-fields-summary"><div class="tc-fields-metric"><div class="tc-fields-metric-value">7</div><div class="tc-fields-metric-label">столбцов</div></div><div class="tc-fields-metric"><div class="tc-fields-metric-value">583</div><div class="tc-fields-metric-label">строк</div></div><div class="tc-fields-metric"><div class="tc-fields-metric-value">2</div><div class="tc-fields-metric-label">предупреждения</div></div></div>
+						<div class="tc-field-section-header"><h3>Источники данных</h3><div class="tc-field-actions"><button type="button">Добавить файл</button><button type="button">Добавить папку</button></div></div>
+						<div class="tc-source-list"><div class="tc-source-card"><div class="tc-source-card-header"><div class="tc-source-identity"><div class="tc-source-kind">Файл</div><div class="tc-source-path" dir="auto">30_Areas/English/Dictionary/Dictionary.md</div><div class="tc-source-summary">Выбрано 2 из 3 таблиц</div></div><button class="tc-field-icon-button" type="button" aria-label="Удалить источник">⌫</button></div><div class="tc-source-inline-warning">Одна сохранённая таблица не найдена</div><div class="tc-source-card-actions"><button type="button" data-choose-tables>Выбрать таблицы</button></div></div><div class="tc-source-card"><div class="tc-source-card-header"><div class="tc-source-identity"><div class="tc-source-kind">Папка</div><div class="tc-source-path" dir="auto">30_Areas/English/Phrases</div><div class="tc-source-summary">Все 2 таблицы</div></div><button class="tc-field-icon-button" type="button" aria-label="Удалить источник">⌫</button></div><div class="tc-source-card-actions"><button type="button">Выбрать таблицы</button></div></div></div>
+						<div class="tc-field-section-header"><h3>Столбцы таблицы</h3></div><div class="tc-profile-list"><details class="tc-profile"><summary class="tc-profile-summary"><label class="tc-profile-use"><input type="checkbox" checked aria-label="Показывать Words"></label><div class="tc-profile-identity"><div class="tc-profile-name" dir="auto">Words</div><div class="tc-profile-fill">583 / 583</div></div><span class="tc-profile-type">Текст</span></summary></details><details class="tc-profile" open><summary class="tc-profile-summary"><label class="tc-profile-use"><input type="checkbox" checked aria-label="Показывать Picture"></label><div class="tc-profile-identity"><div class="tc-profile-name" dir="auto">Picture</div><div class="tc-profile-fill">348 / 583</div></div><span class="tc-profile-type">Изображение</span><span class="tc-profile-warning-dot" role="img" aria-label="Большинство ячеек пустые"></span></summary><div class="tc-profile-body"><div class="tc-listbox"><label id="type-label">Тип данных</label><button class="tc-listbox-trigger" type="button" aria-labelledby="type-label"><span>Изображение</span><span aria-hidden="true">⌄</span></button></div><div class="tc-profile-stats"><span>Уверенность 100%</span><span>Уникальных 337</span></div><div class="tc-profile-warnings"><span>Большинство ячеек пустые</span></div><div class="tc-profile-subtitle">Примеры</div><ul class="tc-profile-samples" dir="auto"><li>assets/lighthouse.jpg</li></ul></div></details></div><div class="tc-auto-layout"><button class="mod-cta" type="button">Собрать раскладку автоматически</button></div>
 					</div>
-					<button class="tc-editor-button with-label" type="button" data-open="card">◐ <span data-copy-normal="Стиль карточки" data-copy-expanded="Параметры отображения карточки">Стиль карточки</span></button>
-				</div>
+					<div class="preview-table-route" hidden><div class="tc-table-selection"><div class="tc-table-selection-header"><button class="tc-table-selection-back" type="button" data-back-sources>Назад</button><div class="tc-table-selection-identity"><div class="tc-source-kind">Файл</div><div class="tc-source-path" dir="auto">30_Areas/English/Dictionary/Dictionary.md</div></div></div><div class="tc-table-selection-controls"><button type="button" aria-pressed="false">Все таблицы</button><button type="button" aria-pressed="false">Очистить</button></div><input class="tc-table-selection-search" type="search" aria-label="Поиск таблиц" placeholder="Заголовок, путь или столбец"><div class="tc-table-selection-list">
+						<section class="tc-table-selection-group"><div class="tc-table-selection-row"><label class="tc-table-selection-check"><input type="checkbox" checked aria-label="Vocabulary · Core"></label><details class="tc-table-selection-details" open><summary><div class="tc-table-selection-title" dir="auto">Vocabulary · Core</div><div class="tc-table-selection-meta"><span>412 строк</span><span>7 столбцов</span><span>Предпросмотр</span></div></summary><div class="tc-table-selection-preview" dir="auto"><div class="tc-table-selection-preview-item"><div class="tc-table-selection-preview-label">Word</div><div class="tc-table-selection-preview-value">remain</div></div><div class="tc-table-selection-preview-item"><div class="tc-table-selection-preview-label">Translation</div><div class="tc-table-selection-preview-value">оставаться</div></div><div class="tc-table-selection-preview-item"><div class="tc-table-selection-preview-label">Example</div><div class="tc-table-selection-preview-value">Please remain calm.</div></div><div class="tc-table-selection-preview-item"><div class="tc-table-selection-preview-label">Image</div><div class="tc-table-selection-preview-value">assets/remain.jpg</div></div><button type="button" data-open-exact>Открыть эту таблицу</button></div></details></div><div class="tc-table-selection-row"><label class="tc-table-selection-check"><input type="checkbox" checked aria-label="Phrases for travel"></label><details class="tc-table-selection-details"><summary><div class="tc-table-selection-title" dir="auto">Phrases for travel</div><div class="tc-table-selection-meta"><span>96 строк</span><span>4 столбца</span><span>Предпросмотр</span></div></summary><div class="tc-table-selection-preview" dir="auto"><div class="tc-table-selection-preview-item"><div class="tc-table-selection-preview-label">Phrase</div><div class="tc-table-selection-preview-value">Could you help me?</div></div><button type="button">Открыть эту таблицу</button></div></details></div><div class="tc-table-selection-row"><label class="tc-table-selection-check"><input type="checkbox" aria-label="Archived terms"></label><details class="tc-table-selection-details"><summary><div class="tc-table-selection-title" dir="auto">Archived terms</div><div class="tc-table-selection-meta"><span>21 строк</span><span>3 столбца</span><span>Предпросмотр</span></div></summary></details></div></section>
+					</div><div class="preview-opened-state" aria-live="polite" hidden>Черновик откроется в обязательном лаунчере с этой таблицей. Настройки и прогресс не сохраняются.</div></div></div>
+				</div><footer class="tc-sheet-footer"></footer></section></div>
 
-				<div class="tc-editor-canvas-wrap">
-					<div class="tc-editor-preview is-desktop border-thin has-shadow" data-preset="monochrome">
-						<div class="table-cards-stage">
-							<article class="table-cards-box is-selected" role="button" tabindex="0" aria-pressed="true" data-block-id="word" data-kind="title" data-width="full" data-mobile="stack" data-overflow="shrink" data-height="auto"><div class="table-cards-word">remain</div><div class="tc-card-drag-handle" aria-hidden="true"></div><div class="tc-resize-handle is-width" aria-hidden="true"></div><div class="tc-resize-handle is-height" aria-hidden="true"></div></article>
-							<article class="table-cards-box" role="button" tabindex="0" aria-pressed="false" data-block-id="ipa" data-kind="chips" data-width="half" data-mobile="compact" data-overflow="wrap" data-height="auto"><div class="table-cards-label">транскрипция</div><div class="table-cards-pron"><span class="table-cards-chip">/rɪˈmeɪn/</span><span class="table-cards-chip">римэ́йн</span></div></article>
-							<article class="table-cards-box" role="button" tabindex="0" aria-pressed="false" data-block-id="translation" data-kind="text" data-width="half" data-mobile="stack" data-overflow="wrap" data-height="auto"><div class="table-cards-label">перевод</div><div class="table-cards-translation">оставаться, сохраняться</div></article>
-							<article class="table-cards-box" role="button" tabindex="0" aria-pressed="false" data-block-id="example" data-kind="quote" data-width="full" data-mobile="stack" data-overflow="wrap" data-height="auto"><div class="table-cards-label">пример</div><div class="table-cards-example">Please remain calm while we check the details.</div></article>
-							<article class="table-cards-box" role="button" tabindex="0" aria-pressed="false" data-block-id="tip" data-kind="note" data-width="full" data-mobile="compact" data-overflow="wrap" data-height="auto"><div class="table-cards-tip"><span class="table-cards-tip-mark" aria-hidden="true">✦</span><div class="table-cards-tip-text">РЕ-МЕЙН — ремень остаётся на месте.</div></div></article>
-						</div>
-					</div>
-				</div>
+				<div class="tc-sheet-layer" data-panel="block" hidden><button class="tc-sheet-scrim" type="button" aria-label="Закрыть панель" data-close></button><section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="block-title"><div class="tc-sheet-handle" aria-hidden="true"></div><header class="tc-sheet-header"><h2 id="block-title">Блок</h2><button class="tc-sheet-close" type="button" aria-label="Закрыть" data-close>×</button></header><div class="tc-sheet-body"><div class="tc-inspector-common"><div class="tc-listbox"><label id="kind-label">Тип блока</label><button class="tc-listbox-trigger" type="button" aria-labelledby="kind-label" aria-haspopup="listbox" aria-expanded="false" data-demo-listbox><span>Заголовок</span><span aria-hidden="true">⌄</span></button><div class="tc-listbox-popover" data-demo-options hidden><div class="tc-listbox-options" role="listbox" aria-labelledby="kind-label"><button class="tc-listbox-option" type="button" role="option" aria-selected="true">Заголовок</button><button class="tc-listbox-option" type="button" role="option" aria-selected="false">Текст</button><button class="tc-listbox-option" type="button" role="option" aria-selected="false">Изображение</button></div></div></div><label class="tc-column-option"><input type="checkbox" checked>Words</label><label class="tc-column-option"><input type="checkbox">Translation</label></div><details class="tc-inspector-group"><summary>Содержимое</summary></details><details class="tc-inspector-group"><summary>Размер и переполнение</summary></details><details class="tc-inspector-group"><summary>Пустые значения</summary></details></div><footer class="tc-sheet-footer"><button type="button">Сбросить блок</button><button class="mod-warning" type="button">Удалить блок</button></footer></section></div>
 
-				<div class="tc-editor-block-toolbar">
-					<button class="tc-editor-button with-label is-block-type" type="button" data-open="block">Заголовок</button>
-					<button class="tc-editor-button with-label is-block-width" type="button">Вся ширина</button>
-					<button class="tc-editor-button with-label is-block-move" type="button" data-open="reorder">↕ Переместить</button>
-					<button class="tc-editor-button with-label is-block-more" type="button" data-open="block">⋯ Ещё</button>
-				</div>
+				<div class="tc-sheet-layer" data-panel="reorder" hidden><button class="tc-sheet-scrim" type="button" aria-label="Закрыть панель" data-close></button><section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="reorder-title"><div class="tc-sheet-handle" aria-hidden="true"></div><header class="tc-sheet-header"><h2 id="reorder-title">Порядок блоков</h2><button class="tc-sheet-close" type="button" aria-label="Закрыть" data-close>×</button></header><div class="tc-sheet-body"><button class="tc-reorder-add mod-cta" type="button">Добавить блок</button><ol class="tc-reorder-list"><li class="tc-reorder-row"><div class="tc-reorder-handle" aria-hidden="true">⠿</div><div class="tc-reorder-identity"><div class="tc-reorder-label">Слово</div><div class="tc-reorder-type">Заголовок</div></div><div class="tc-reorder-actions"><button type="button" aria-label="Вверх: Слово" disabled>↑</button><button type="button" aria-label="Вниз: Слово">↓</button><button type="button" aria-label="Удалить блок: Слово">⌫</button></div></li><li class="tc-reorder-row"><div class="tc-reorder-handle" aria-hidden="true">⠿</div><div class="tc-reorder-identity"><div class="tc-reorder-label">Перевод</div><div class="tc-reorder-type">Текст</div></div><div class="tc-reorder-actions"><button type="button" aria-label="Вверх: Перевод">↑</button><button type="button" aria-label="Вниз: Перевод">↓</button><button type="button" aria-label="Удалить блок: Перевод">⌫</button></div></li></ol></div></section></div>
 
-				<div class="tc-sheet-layer" data-panel="fields" hidden>
-					<button class="tc-sheet-scrim" type="button" aria-label="Закрыть панель" data-close></button>
-					<section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="fields-title">
-						<div class="tc-sheet-handle" aria-hidden="true"></div>
-						<header class="tc-sheet-header"><h2 id="fields-title">Поля и данные</h2><button class="tc-sheet-close" type="button" aria-label="Закрыть" data-close>×</button></header>
-						<div class="tc-sheet-body">
-							<div class="tc-fields-summary"><div class="tc-fields-metric"><div class="tc-fields-metric-value">7</div><div class="tc-fields-metric-label">столбцов</div></div><div class="tc-fields-metric"><div class="tc-fields-metric-value">583</div><div class="tc-fields-metric-label">строк</div></div><div class="tc-fields-metric"><div class="tc-fields-metric-value">2</div><div class="tc-fields-metric-label">предупреждения</div></div></div>
-							<div class="tc-field-section-header"><h3>Источники данных</h3><div class="tc-field-actions"><button>Добавить файл</button><button>Папка</button></div></div>
-							<div class="tc-source-card"><div class="tc-source-card-header"><div class="tc-source-identity"><div class="tc-source-kind">Файл</div><div class="tc-source-path">30_Areas/English/Dictionary/Dictionary.md</div></div><button class="tc-field-icon-button" aria-label="Удалить">⌫</button></div><div class="tc-table-choices"><button class="tc-table-choice" aria-pressed="false"><span>Все таблицы</span></button><button class="tc-table-choice" aria-pressed="true"><span>Таблица 1</span><span class="tc-table-choice-detail">Words · Translation · Example · Image</span><span class="tc-table-choice-count">583 строк</span></button></div></div>
-							<div class="tc-field-section-header"><h3>Столбцы таблицы</h3></div>
-							<div class="tc-profile-list">
-								<details class="tc-profile"><summary class="tc-profile-summary"><label class="tc-profile-use"><input type="checkbox" checked aria-label="Показывать Words"></label><div class="tc-profile-identity"><div class="tc-profile-name">Words</div><div class="tc-profile-fill">583 / 583</div></div><span class="tc-profile-type">Текст</span></summary></details>
-								<details class="tc-profile" open><summary class="tc-profile-summary"><label class="tc-profile-use"><input type="checkbox" checked aria-label="Показывать Picture"></label><div class="tc-profile-identity"><div class="tc-profile-name">Picture</div><div class="tc-profile-fill">348 / 583</div></div><span class="tc-profile-type">Изображение</span><span class="tc-profile-warning-dot" role="img" aria-label="Большинство пустые"></span></summary><div class="tc-profile-body"><div class="tc-listbox"><label id="type-label">Тип данных</label><button class="tc-listbox-trigger" aria-labelledby="type-label"><span>Изображение</span><span class="tc-listbox-chevron">⌄</span></button></div><div class="tc-profile-stats"><span>Уверенность 100%</span><span>Уникальных 337</span></div><div class="tc-profile-warnings"><span>Большинство ячеек пустые</span></div><div class="tc-profile-subtitle">Примеры</div><ul class="tc-profile-samples"><li>assets/lighthouse.jpg</li></ul></div></details>
-							</div>
-							<div class="tc-auto-layout"><button class="mod-cta">Собрать раскладку автоматически</button></div>
-						</div>
-						<footer class="tc-sheet-footer"></footer>
-					</section>
-				</div>
+				<div class="tc-sheet-layer" data-panel="card" hidden><button class="tc-sheet-scrim" type="button" aria-label="Закрыть панель" data-close></button><section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="card-title"><div class="tc-sheet-handle" aria-hidden="true"></div><header class="tc-sheet-header"><h2 id="card-title">Стиль карточки</h2><button class="tc-sheet-close" type="button" aria-label="Закрыть" data-close>×</button></header><div class="tc-sheet-body"><div class="tc-preset-grid"><button type="button" aria-pressed="false">Obsidian</button><button type="button" aria-pressed="true">Ч/б</button><button type="button" aria-pressed="false">Своя</button></div><div class="tc-inspector-field"><div class="tc-inspector-field-label">Отступы</div><div class="tc-range-line"><input type="range" value="22" aria-label="Отступы"><output>22</output></div></div><label class="tc-toggle-row">Два столбца<input type="checkbox" checked></label><label class="tc-toggle-row">Тень<input type="checkbox" checked></label></div><footer class="tc-sheet-footer"><button type="button">Сбросить стиль</button></footer></section></div>
+			</div></div>
+		</section>
+	</main>
+	<div class="preview-note">Source list and table picker are one sheet route. Back restores the exact Choose tables opener; all edits stay draft-only until Save.</div>
 
-					<div class="tc-sheet-layer" data-panel="block" hidden>
-						<button class="tc-sheet-scrim" type="button" aria-label="Закрыть панель" data-close></button>
-						<section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="block-title">
-							<div class="tc-sheet-handle" aria-hidden="true"></div>
-							<header class="tc-sheet-header"><h2 id="block-title">Блок</h2><button class="tc-sheet-close" type="button" aria-label="Закрыть" data-close>×</button></header>
-							<div class="tc-sheet-body">
-								<div class="tc-inspector-common">
-									<div class="tc-listbox"><label id="demo-kind-label">Тип блока</label><button class="tc-listbox-trigger" aria-labelledby="demo-kind-label" aria-haspopup="listbox" aria-expanded="false" aria-controls="demo-kind-options" data-demo-listbox><span>Заголовок</span><span aria-hidden="true">⌄</span></button><div class="tc-listbox-popover" data-demo-options hidden><div class="tc-listbox-options" id="demo-kind-options" role="listbox" aria-labelledby="demo-kind-label"><button class="tc-listbox-option" role="option" aria-selected="true">Заголовок</button><button class="tc-listbox-option" role="option" aria-selected="false">Текст</button><button class="tc-listbox-option" role="option" aria-selected="false">Чипы</button><button class="tc-listbox-option" role="option" aria-selected="false">Цитата</button><button class="tc-listbox-option" role="option" aria-selected="false">Заметка</button><button class="tc-listbox-option" role="option" aria-selected="false">Изображение</button></div></div></div>
-									<div class="tc-inspector-field"><div class="tc-inspector-field-label">Столбцы</div><label class="tc-column-option"><input type="checkbox" checked>Words</label><label class="tc-column-option"><input type="checkbox">Translation</label><label class="tc-column-option"><input type="checkbox">Picture</label></div>
-									<button class="tc-inspector-move" type="button" data-open="reorder">Переместить блоки</button>
-								</div>
-								<details class="tc-inspector-group"><summary>Содержимое</summary></details>
-								<details class="tc-inspector-group"><summary>Размер и переполнение</summary></details>
-								<details class="tc-inspector-group"><summary>Текст</summary></details>
-								<details class="tc-inspector-group"><summary>Цвета и рамка</summary></details>
-								<details class="tc-inspector-group"><summary>Пустые значения</summary></details>
-							</div>
-							<footer class="tc-sheet-footer"><button type="button">Сбросить блок</button><button type="button" class="mod-warning">Удалить блок</button></footer>
-						</section>
-					</div>
+	<script type="module">
+		import { installNoOverflowSignal, layerController, setPressed } from './preview.js';
 
-					<div class="tc-sheet-layer" data-panel="reorder" hidden>
-						<button class="tc-sheet-scrim" type="button" aria-label="Закрыть панель" data-close></button>
-						<section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="reorder-title">
-							<div class="tc-sheet-handle" aria-hidden="true"></div>
-							<header class="tc-sheet-header"><h2 id="reorder-title">Порядок блоков</h2><button class="tc-sheet-close" type="button" aria-label="Закрыть" data-close>×</button></header>
-							<div class="tc-sheet-body"><button class="tc-reorder-add mod-cta" type="button">Добавить блок</button><ol class="tc-reorder-list"><li class="tc-reorder-row"><div class="tc-reorder-handle" aria-hidden="true">⠿</div><div class="tc-reorder-identity"><div class="tc-reorder-label">Слово</div><div class="tc-reorder-type">Заголовок</div></div><div class="tc-reorder-actions"><button aria-label="Вверх: Слово" disabled>↑</button><button aria-label="Вниз: Слово">↓</button><button aria-label="Удалить блок: Слово">⌫</button></div></li><li class="tc-reorder-row"><div class="tc-reorder-handle" aria-hidden="true">⠿</div><div class="tc-reorder-identity"><div class="tc-reorder-label">Перевод</div><div class="tc-reorder-type">Текст</div></div><div class="tc-reorder-actions"><button aria-label="Вверх: Перевод">↑</button><button aria-label="Вниз: Перевод">↓</button><button aria-label="Удалить блок: Перевод">⌫</button></div></li></ol></div>
-						</section>
-					</div>
-
-					<div class="tc-sheet-layer" data-panel="card" hidden>
-						<button class="tc-sheet-scrim" type="button" aria-label="Закрыть панель" data-close></button>
-						<section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="card-title">
-							<div class="tc-sheet-handle" aria-hidden="true"></div>
-							<header class="tc-sheet-header"><h2 id="card-title">Стиль карточки</h2><button class="tc-sheet-close" type="button" aria-label="Закрыть" data-close>×</button></header>
-							<div class="tc-sheet-body"><div class="tc-preset-grid"><button aria-pressed="false">Obsidian</button><button aria-pressed="true">Ч/б</button><button aria-pressed="false">Своя</button></div><div class="tc-listbox"><label>Размер</label><button class="tc-listbox-trigger"><span>Удобный</span><span aria-hidden="true">⌄</span></button></div><div class="tc-inspector-field"><div class="tc-inspector-field-label">Отступы</div><div class="tc-range-line"><input type="range" value="22" aria-label="Отступы"><output>22</output></div></div><label class="tc-toggle-row">Два столбца<input type="checkbox" checked></label><label class="tc-toggle-row">Тень<input type="checkbox" checked></label></div>
-							<footer class="tc-sheet-footer"><button type="button">Сбросить стиль</button></footer>
-						</section>
-					</div>
-			</div>
-		</div>
-	</section>
-	<script>
+		const params = new URLSearchParams(location.search);
 		const panels = Array.from(document.querySelectorAll('[data-panel]'));
+		const layers = layerController();
 		let panelOpener = null;
-		function showPanel(name, opener = null) {
+		const showPanel = (name, opener = null) => {
 			if (opener) panelOpener = opener;
 			for (const panel of panels) panel.hidden = panel.dataset.panel !== name;
-			const active = panels.find(panel => !panel.hidden);
+			const active = panels.find((panel) => !panel.hidden);
 			if (active) requestAnimationFrame(() => active.querySelector('.tc-sheet-close')?.focus());
 			else if (panelOpener) requestAnimationFrame(() => panelOpener.focus());
-		}
+		};
 		for (const button of document.querySelectorAll('[data-open]')) button.addEventListener('click', () => showPanel(button.dataset.open, button));
 		for (const button of document.querySelectorAll('[data-close]')) button.addEventListener('click', () => showPanel(''));
-		const demoListbox = document.querySelector('[data-demo-listbox]');
-		const demoOptions = document.querySelector('[data-demo-options]');
-		demoListbox?.addEventListener('click', () => {
-			demoOptions.hidden = !demoOptions.hidden;
-			demoListbox.setAttribute('aria-expanded', String(!demoOptions.hidden));
-			if (!demoOptions.hidden) requestAnimationFrame(() => demoOptions.querySelector('[aria-selected="true"]')?.focus());
+		const fieldsList = document.querySelector('.preview-fields-list');
+		const tableRoute = document.querySelector('.preview-table-route');
+		let tableOpener = null;
+		const showTables = (open, opener = null) => {
+			if (opener) tableOpener = opener;
+			fieldsList.hidden = open; tableRoute.hidden = !open;
+			requestAnimationFrame(() => (open ? tableRoute.querySelector('.tc-table-selection-back') : tableOpener)?.focus());
+		};
+		document.querySelector('[data-choose-tables]').addEventListener('click', (event) => showTables(true, event.currentTarget));
+		document.querySelector('[data-back-sources]').addEventListener('click', () => showTables(false));
+		document.querySelector('[data-open-exact]').addEventListener('click', () => { const status = document.querySelector('.preview-opened-state'); status.hidden = false; status.focus?.(); });
+		const listboxTrigger = document.querySelector('[data-demo-listbox]');
+		const listbox = document.querySelector('[data-demo-options]');
+		listboxTrigger.addEventListener('click', () => listbox.hidden ? layers.open(listbox, listboxTrigger, '[aria-selected="true"]') : layers.close(listbox));
+		for (const option of listbox.querySelectorAll('[role="option"]')) option.addEventListener('click', () => { for (const candidate of listbox.querySelectorAll('[role="option"]')) candidate.setAttribute('aria-selected', String(candidate === option)); listboxTrigger.querySelector('span').textContent = option.textContent; layers.close(listbox); });
+		const preview = document.querySelector('.tc-editor-preview');
+		const deviceButtons = Array.from(document.querySelectorAll('[data-device]'));
+		const setPhone = (phone) => { preview.classList.toggle('is-phone', phone); preview.classList.toggle('is-desktop', !phone); setPressed(deviceButtons, deviceButtons.find((button) => button.dataset.device === (phone ? 'phone' : 'desktop'))); document.querySelector('[data-phone]').setAttribute('aria-pressed', String(phone)); };
+		for (const button of deviceButtons) button.addEventListener('click', () => setPhone(button.dataset.device === 'phone'));
+		document.querySelector('[data-phone]').addEventListener('click', (event) => setPhone(event.currentTarget.getAttribute('aria-pressed') !== 'true'));
+		const expandedButton = document.querySelector('[data-expanded]');
+		const setExpanded = (expanded) => { expandedButton.setAttribute('aria-pressed', String(expanded)); for (const node of document.querySelectorAll('[data-copy-expanded]')) node.textContent = expanded ? node.dataset.copyExpanded : node.dataset.copyNormal; };
+		expandedButton.addEventListener('click', () => setExpanded(expandedButton.getAttribute('aria-pressed') !== 'true'));
+		for (const button of document.querySelectorAll('[data-open-preview]')) button.addEventListener('click', () => { showPanel('fields', button); showTables(button.dataset.openPreview === 'tables', button); });
+		document.addEventListener('keydown', (event) => {
+			if (event.key !== 'Escape' || layers.stack.length > 0) return;
+			const active = panels.find((panel) => !panel.hidden);
+			if (!active) return;
+			event.preventDefault();
+			if (!tableRoute.hidden) showTables(false);
+			else showPanel('');
 		});
-			document.addEventListener('keydown', event => {
-				const active = panels.find(panel => !panel.hidden);
-				if (!active) return;
-				if (event.key === 'Escape' && demoOptions && !demoOptions.hidden) {
-					event.preventDefault();
-					event.stopPropagation();
-					demoOptions.hidden = true;
-					demoListbox.setAttribute('aria-expanded', 'false');
-					demoListbox.focus();
-					return;
-				}
-				if (event.key === 'Escape') { event.preventDefault(); showPanel(''); return; }
-				if (event.key !== 'Tab') return;
-				const dialog = active.querySelector('.tc-sheet');
-				const items = Array.from(dialog.querySelectorAll('button:not([disabled]), input:not([disabled]), summary, [tabindex]:not([tabindex="-1"])')).filter(item => !item.hidden && item.getClientRects().length > 0);
-			const first = items[0]; const last = items.at(-1);
-			if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-			else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-		});
-		const params = new URLSearchParams(location.search);
+		setPhone(params.get('device') === 'phone');
+		setExpanded(params.get('expanded') === '1');
 		showPanel(params.get('panel') || '');
-		if (params.get('expanded') === '1') for (const item of document.querySelectorAll('[data-copy-expanded]')) item.textContent = item.dataset.copyExpanded;
+		if (params.get('route') === 'tables') { showPanel('fields'); showTables(true, document.querySelector('[data-choose-tables]')); }
+		installNoOverflowSignal();
 	</script>
 </body>
 </html>

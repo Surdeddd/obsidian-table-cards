@@ -1,0 +1,28 @@
+- main:
+  - dialog "Table Cards":
+    - text: Table Cards English · Dictionary
+    - button "3 tables"
+    - button "Search cards" [expanded]: ⌕
+    - text: 18 / 583
+    - button "Close": ×
+    - progressbar "Progress"
+    - article: remain
+    - article: pronunciation /rɪˈmeɪn/ римэ́йн
+    - article: translation оставаться, сохраняться
+    - article: example Please remain calm while we check the details.
+    - article: РЕ-МЕЙН — ремень остаётся на месте.
+    - text: Vocabulary · Core Dictionary.md
+    - button "Previous"
+    - button "Shuffle": ↝
+    - button "Next"
+    - button "Close browser"
+    - dialog "Browse cards":
+      - heading "Browse cards" [level=2]
+      - button "Close": ×
+      - button "3 tables"
+      - searchbox "Search cards": remain
+      - text: 3 results Vocabulary · Core Dictionary
+      - button "remain to continue to exist or stay in the same place Vocabulary · Core ·Dictionary ·Row 18"
+      - button "remainder the part that remains Vocabulary · Core ·Dictionary ·Row 204"
+      - text: Phrases for travel Dictionary
+      - button "Please remain seated Phrases for travel ·Dictionary ·Row 41"

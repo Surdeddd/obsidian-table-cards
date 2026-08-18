@@ -1530,9 +1530,7 @@
 	padding: clamp(16px, 3vw, 36px);
 	display: grid;
 	place-items: center;
-	background:
-		radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--text-normal) 3%, transparent), transparent 45%),
-		var(--background-secondary);
+	background: var(--background-secondary);
 	overscroll-behavior: contain;
 }
 
@@ -2720,9 +2718,7 @@
 	display: grid;
 	grid-template-rows: auto auto minmax(0, 1fr) auto;
 	color: var(--text-normal);
-	background:
-		radial-gradient(circle at 80% -20%, color-mix(in srgb, var(--text-normal) 5%, transparent), transparent 40%),
-		var(--background-primary);
+	background: var(--background-primary);
 }
 
 .tc-setup-header {

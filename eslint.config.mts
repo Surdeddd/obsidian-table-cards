@@ -45,8 +45,11 @@ export default tseslint.config(
 		"version-bump.mjs",
 		"versions.json",
 		"main.js",
+		"playwright.config.mts",
+		"preview/preview.js",
 		"scripts",
 		"tests",
+		"tests-ui",
 		"vitest.config.mts",
 	]),
 );

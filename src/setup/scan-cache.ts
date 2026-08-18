@@ -1,46 +1,30 @@
 import type { DeckLoadResult, DeckSource } from "../model";
 import type { DeckScanResult } from "../deck/catalog";
+import {
+	sourceTopologyKey,
+	TopologyCache,
+	type TopologyCacheLoad,
+} from "../deck/topology-cache";
 
-export type SetupScanLoad =
-	| { status: "current"; result: DeckLoadResult; scan: DeckScanResult }
-	| { status: "stale" };
+export { sourceTopologyKey } from "../deck/topology-cache";
 
-export function sourceTopologyKey(sources: DeckSource[]): string {
-	return JSON.stringify(sources.map(({ id, kind, path }) => [id, kind, path.trim()]));
-}
+export type SetupScanLoad = TopologyCacheLoad<DeckScanResult, DeckLoadResult>;
 
 export class SetupScanCache {
-	private version = 0;
-	private topology = "";
-	private scan: DeckScanResult | null = null;
-	private pending: Promise<DeckScanResult> | null = null;
+	private readonly cache: TopologyCache<DeckSource[], DeckScanResult, DeckLoadResult>;
 
 	constructor(
-		private readonly scanSources: (sources: DeckSource[]) => Promise<DeckScanResult>,
-		private readonly buildResult: (sources: DeckSource[], scan: DeckScanResult) => DeckLoadResult,
-	) {}
+		scanSources: (sources: DeckSource[]) => Promise<DeckScanResult>,
+		buildResult: (sources: DeckSource[], scan: DeckScanResult) => DeckLoadResult,
+	) {
+		this.cache = new TopologyCache(sourceTopologyKey, scanSources, buildResult);
+	}
 
-	async load(sources: DeckSource[]): Promise<SetupScanLoad> {
-		const requestVersion = ++this.version;
-		const topology = sourceTopologyKey(sources);
-		if (topology !== this.topology) {
-			this.topology = topology;
-			this.scan = null;
-			this.pending = this.scanSources(sources);
-		}
-		const scan = this.scan ?? await this.pending;
-		if (requestVersion !== this.version || topology !== this.topology || !scan) {
-			return { status: "stale" };
-		}
-		this.scan = scan;
-		this.pending = null;
-		return { status: "current", scan, result: this.buildResult(sources, scan) };
+	load(sources: DeckSource[]): Promise<SetupScanLoad> {
+		return this.cache.load(sources);
 	}
 
 	invalidate(): void {
-		this.version += 1;
-		this.topology = "";
-		this.scan = null;
-		this.pending = null;
+		this.cache.invalidate();
 	}
 }

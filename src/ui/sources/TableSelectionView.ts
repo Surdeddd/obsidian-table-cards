@@ -1,7 +1,12 @@
 import { cloneJson, UI_LOCALES, type DeckSource, type ParsedTable, type TableCatalogItem, type UiLocale } from "../../model";
 import { formatUiNumber, type Translator } from "../../i18n";
 import { normalizeSearchText } from "../../deck/filter";
-import { selectorMatchesTable, tableSelectedBySource, toggleSourceTable } from "../../deck/selectors";
+import {
+	normalizeVaultPath,
+	selectorMatchesTable,
+	tableSelectedBySource,
+	toggleSourceTable,
+} from "../../deck/selectors";
 import { disambiguateTableLabels } from "../ScopePicker";
 import {
 	reconcileTableSelectionInteraction,
@@ -29,9 +34,12 @@ function localeAt(element: HTMLElement): UiLocale {
 }
 
 function tablesForSource(source: DeckSource, tables: ParsedTable[]): ParsedTable[] {
-	if (source.kind === "file") return tables.filter((table) => table.sourcePath === source.path);
-	const prefix = source.path.endsWith("/") ? source.path : `${source.path}/`;
-	return tables.filter((table) => table.sourcePath.startsWith(prefix));
+	const sourcePath = normalizeVaultPath(source.path);
+	if (source.kind === "file") {
+		return tables.filter((table) => normalizeVaultPath(table.sourcePath) === sourcePath);
+	}
+	const prefix = sourcePath.endsWith("/") ? sourcePath : `${sourcePath}/`;
+	return tables.filter((table) => normalizeVaultPath(table.sourcePath).startsWith(prefix));
 }
 
 function tableSearchText(table: ParsedTable): string {
@@ -81,6 +89,10 @@ export class TableSelectionView {
 	destroy(): void {
 		if (this.focusTimer !== null) window.clearTimeout(this.focusTimer);
 		this.root.remove();
+	}
+
+	mount(parent: HTMLElement): void {
+		parent.appendChild(this.root);
 	}
 
 	update(source: DeckSource, tables: ParsedTable[]): void {

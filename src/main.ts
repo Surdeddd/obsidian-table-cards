@@ -2,7 +2,7 @@ import { Plugin, getLanguage } from "obsidian";
 import { createTranslator, resolveUiLocale, type Translator } from "./i18n";
 import { DEFAULT_SETTINGS, mergeSettings } from "./settings/defaults";
 import { TableCardsSettingTab } from "./settings/settings-tab";
-import type { PluginSettings, UiLocale } from "./model";
+import type { Deck, ParsedTable, PluginSettings, UiLocale } from "./model";
 import { CardsModal } from "./ui/CardsModal";
 import { DeckEditorModal } from "./ui/DeckEditorModal";
 import { SetupWizard } from "./ui/SetupWizard";
@@ -10,6 +10,7 @@ import { RibbonDecks } from "./ui/RibbonDecks";
 import { shouldAutoOpenSetup, shouldOpenSetupForCards } from "./setup/state";
 import { SetupSavedCallbacks } from "./setup/session";
 import type { DeckOpenRequest } from "./session/launcher-state";
+import { exactTableOpenRequest } from "./editor/draft-session";
 
 export default class TableCardsPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
@@ -65,6 +66,10 @@ export default class TableCardsPlugin extends Plugin {
 			return;
 		}
 		new CardsModal(this.app, this, request).open();
+	}
+
+	openDraftSession(deck: Deck, table: ParsedTable): void {
+		new CardsModal(this.app, this, exactTableOpenRequest(deck, table)).open();
 	}
 
 	openSetup(onSaved?: () => void): void {

@@ -1,9 +1,11 @@
 import { setIcon } from "obsidian";
 import type { EditorAction, EditorState } from "../../editor/state";
-import type { Translator } from "../../i18n";
+import { formatUiNumber, type Translator } from "../../i18n";
+import type { UiLocale } from "../../model";
 
 export interface ReorderSheetContext {
 	state: EditorState;
+	locale: UiLocale;
 	t: Translator;
 	dispatch: (action: EditorAction) => void;
 }
@@ -65,7 +67,7 @@ export function renderReorderSheet(parent: HTMLElement, context: ReorderSheetCon
 				focusAction(
 					block.id,
 					direction,
-					`${context.t("editor.reorder.moved")} ${target + 1}`,
+					`${context.t("editor.reorder.moved")} ${formatUiNumber(target + 1, context.locale)}`,
 				);
 			});
 		}

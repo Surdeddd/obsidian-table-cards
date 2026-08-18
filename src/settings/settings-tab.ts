@@ -7,6 +7,7 @@ import {
 	UI_LOCALES,
 	type Deck,
 	type LocaleMode,
+	type ParsedTable,
 	type PluginSettings,
 	type RibbonIcon,
 	type UiLocale,
@@ -49,7 +50,9 @@ export interface SettingsHost {
 	settings: PluginSettings;
 	saveSettings: (settings?: PluginSettings) => Promise<void>;
 	getTranslator: () => Translator;
+	getLocale: () => UiLocale;
 	openSetup: (onSaved?: () => void) => void;
+	openDraftSession: (deck: Deck, table: ParsedTable) => void;
 }
 
 export function moveDeck(decks: Deck[], deckId: string, offset: -1 | 1): boolean {
@@ -225,7 +228,9 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			settings: this.plugin.settings,
 			saveSettings: () => this.plugin.saveSettings(),
 			getTranslator: () => this.plugin.getTranslator(),
+			getLocale: () => this.plugin.getLocale(),
 			onDeckSaved: () => this.display(),
+			onOpenDraftSession: (draft, table) => this.plugin.openDraftSession(draft, table),
 		}, deck).open();
 	}
 
@@ -324,7 +329,11 @@ export class TableCardsSettingTab extends PluginSettingTab {
 		});
 		iconSetting.controlEl.querySelector<HTMLElement>(".tc-listbox > label")?.addClass("tc-visually-hidden");
 		applyUserDataDirection(setting.nameEl);
-		void loadDeckData(this.app, deck)
+		void loadDeckData(this.app, deck, {
+			untitledTableLabel: (number) => t("table.untitled", {
+				number: formatUiNumber(number, locale),
+			}),
+		})
 			.then((result) => {
 				if (!wrap.isConnected) return;
 				const warnings =

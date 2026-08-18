@@ -11,9 +11,12 @@ import type { DeckScanResult } from "../../deck/catalog";
 import {
 	normalizeVaultPath,
 	selectorMatchesTable,
-	tableSelectedBySource,
 } from "../../deck/selectors";
 import type { EditorAction, EditorState } from "../../editor/state";
+import {
+	canonicalTablesForSource,
+	sourceTableSummary,
+} from "../../editor/source-tables";
 import { FolderPicker, MarkdownFilePicker } from "../sources/SourcePickers";
 import { TableSelectionView } from "../sources/TableSelectionView";
 
@@ -167,12 +170,13 @@ export class SourcesSection {
 	private renderTableRoute(parent: HTMLElement, source: DeckSource): void {
 		const context = this.context;
 		if (!context) return;
+		const tables = this.sourceTables(source);
 		if (!this.tableSelection || this.tableSelectionSourceId !== source.id) {
 			this.destroyTableSelection();
 			this.tableSelectionSourceId = source.id;
 			this.tableSelection = new TableSelectionView(parent, {
 				source,
-				tables: this.availableTables(),
+				tables,
 				t: context.t,
 				onChange: (next) => this.replaceSource(next),
 				onOpenTable: (table) => this.context?.onOpenTable(table),
@@ -180,7 +184,7 @@ export class SourcesSection {
 			});
 		} else {
 			this.tableSelection.mount(parent);
-			this.tableSelection.update(source, this.availableTables());
+			this.tableSelection.update(source, tables);
 		}
 		this.tableSelection.setLoading(context.loading);
 	}
@@ -244,32 +248,13 @@ export class SourcesSection {
 	}
 
 	private sourceTables(source: DeckSource): ParsedTable[] {
-		return this.context?.scan?.tables
-			.filter((item) => item.sourceIds.includes(source.id))
-			.map((item) => item.table) ?? [];
-	}
-
-	private availableTables(): ParsedTable[] {
-		return this.context?.scan?.tables.map((item) => item.table) ?? [];
+		return canonicalTablesForSource(this.context?.scan ?? null, source.id);
 	}
 
 	private sourceSummary(source: DeckSource): string {
 		const context = this.context;
 		if (!context) return "";
-		const tables = this.sourceTables(source);
-		const selected = source.tables.mode === "all"
-			? tables.length
-			: tables.filter((table) => tableSelectedBySource(source, table)).length;
-		if (source.tables.mode === "all") {
-			return context.t("editor.source.summaryAll", {
-				count: formatUiNumber(tables.length, context.locale),
-			});
-		}
-		if (selected === 0) return context.t("editor.source.summaryNone");
-		return context.t("editor.source.summarySome", {
-			selected: formatUiNumber(selected, context.locale),
-			total: formatUiNumber(tables.length, context.locale),
-		});
+		return sourceTableSummary(source, this.sourceTables(source), context.t, context.locale);
 	}
 
 	private missingSelectorCount(source: DeckSource): number {

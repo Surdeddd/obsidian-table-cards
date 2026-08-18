@@ -6,6 +6,12 @@ import { createDeck } from "../src/settings/defaults";
 import { EditorScanCache, editorSourceTopologyKey } from "../src/editor/scan-cache";
 import { exactTableOpenRequest } from "../src/editor/draft-session";
 import { buildDeckDataFromScan, scanDeckSources } from "../src/deck/load";
+import { canonicalizeTables, type DeckScanResult } from "../src/deck/catalog";
+import { createTranslator } from "../src/i18n";
+import {
+	canonicalTablesForSource,
+	sourceTableSummary,
+} from "../src/editor/source-tables";
 
 function source(path: string, tables: DeckSource["tables"] = { mode: "all" }): DeckSource {
 	return { id: `source-${path}`, kind: "file", path, tables };
@@ -112,6 +118,46 @@ describe("editor scan cache", () => {
 		expect(await current).toMatchObject({ status: "current", scan: fresh });
 		resolveOld({ tables: [], diagnostics: [] });
 		expect(await stale).toEqual({ status: "stale" });
+	});
+});
+
+describe("editor canonical source tables", () => {
+	const app = {
+		metadataCache: { getFirstLinkpathDest: () => null },
+		vault: { getAbstractFileByPath: () => null },
+	} as unknown as App;
+
+	function scanFor(sourceId: string, parsed: ParsedTable): DeckScanResult {
+		return { tables: canonicalizeTables([{ sourceId, table: parsed }]), diagnostics: [] };
+	}
+
+	it("does not expose a same-path table to a file source absent from canonical membership", () => {
+		const shared = { ...table, sourcePath: "English/shared.md" };
+		const scan = scanFor("folder", shared);
+		const missingFile = source("English/shared.md");
+		const folder: DeckSource = { id: "folder", kind: "folder", path: "English", tables: { mode: "all" } };
+
+		expect(canonicalTablesForSource(scan, missingFile.id)).toEqual([]);
+		expect(canonicalTablesForSource(scan, folder.id)).toEqual([shared]);
+		expect(buildDeckDataFromScan(app, createDeck({ sources: [missingFile] }), scan).tables).toEqual([]);
+		expect(buildDeckDataFromScan(app, createDeck({ sources: [folder] }), scan).tables).toEqual([shared]);
+	});
+
+	it("does not expose another source's nested table through a non-recursive folder prefix", () => {
+		const nested = { ...table, sourcePath: "English/Nested/deep.md" };
+		const scan = scanFor("nested-file", nested);
+		const folder: DeckSource = { id: "folder", kind: "folder", path: "English", tables: { mode: "all" } };
+		const nestedFile: DeckSource = { id: "nested-file", kind: "file", path: nested.sourcePath, tables: { mode: "all" } };
+
+		expect(canonicalTablesForSource(scan, folder.id)).toEqual([]);
+		expect(canonicalTablesForSource(scan, nestedFile.id)).toEqual([nested]);
+		expect(buildDeckDataFromScan(app, createDeck({ sources: [folder] }), scan).tables).toEqual([]);
+		expect(buildDeckDataFromScan(app, createDeck({ sources: [nestedFile] }), scan).tables).toEqual([nested]);
+	});
+
+	it("uses the localized no-tables summary for an all source with zero canonical tables", () => {
+		expect(sourceTableSummary(source("empty.md"), [], createTranslator("en"), "en"))
+			.toBe("No Markdown tables found.");
 	});
 });
 

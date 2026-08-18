@@ -239,7 +239,23 @@ export type TranslationKey =
 	| "editor.slot.side"
 	| "editor.slot.full"
 	| "notice.noCards"
-	| "deck.new";
+	| "deck.new"
+	| "preset.vocabulary"
+	| "preset.vocabulary.desc"
+	| "preset.phrases"
+	| "preset.phrases.desc"
+	| "preset.qa"
+	| "preset.qa.desc"
+	| "preset.gallery"
+	| "preset.gallery.desc"
+	| "preset.reference"
+	| "preset.reference.desc"
+	| "preset.universal"
+	| "preset.universal.desc"
+	| "preset.reason.header"
+	| "preset.reason.type"
+	| "preset.reason.image"
+	| "preset.reason.coverage";
 
 export const EN: Record<TranslationKey, string> = {
 	"command.open": "Open cards",
@@ -481,6 +497,22 @@ export const EN: Record<TranslationKey, string> = {
 	"editor.slot.full": "Full",
 	"notice.noCards": "No cards found.",
 	"deck.new": "New deck",
+	"preset.vocabulary": "Vocabulary",
+	"preset.vocabulary.desc": "Terms, translations, examples, notes, and images.",
+	"preset.phrases": "Phrases",
+	"preset.phrases.desc": "Phrases, translations, context, and notes.",
+	"preset.qa": "Question and answer",
+	"preset.qa.desc": "Questions, answers, explanations, and images.",
+	"preset.gallery": "Gallery",
+	"preset.gallery.desc": "Large images with titles, tags, and descriptions.",
+	"preset.reference": "Reference",
+	"preset.reference.desc": "A title with compact labeled properties.",
+	"preset.universal": "Universal",
+	"preset.universal.desc": "Every column in source order.",
+	"preset.reason.header": "Column names match this layout",
+	"preset.reason.type": "Detected data types fit this layout",
+	"preset.reason.image": "Image content was detected",
+	"preset.reason.coverage": "Most selected rows contain these fields",
 };
 
 export const RU: Record<TranslationKey, string> = {
@@ -723,6 +755,22 @@ export const RU: Record<TranslationKey, string> = {
 	"editor.slot.full": "Во всю",
 	"notice.noCards": "Карточек нет.",
 	"deck.new": "Новая колода",
+	"preset.vocabulary": "Словарь",
+	"preset.vocabulary.desc": "Слова, переводы, примеры, заметки и изображения.",
+	"preset.phrases": "Фразы",
+	"preset.phrases.desc": "Фразы, переводы, контекст и заметки.",
+	"preset.qa": "Вопрос и ответ",
+	"preset.qa.desc": "Вопросы, ответы, пояснения и изображения.",
+	"preset.gallery": "Галерея",
+	"preset.gallery.desc": "Большие изображения с названиями, тегами и описаниями.",
+	"preset.reference": "Справочник",
+	"preset.reference.desc": "Название и компактные поля с подписями.",
+	"preset.universal": "Универсальный",
+	"preset.universal.desc": "Все столбцы в исходном порядке.",
+	"preset.reason.header": "Названия столбцов подходят для этой раскладки",
+	"preset.reason.type": "Определённые типы данных подходят для этой раскладки",
+	"preset.reason.image": "Найдены изображения",
+	"preset.reason.coverage": "Большинство выбранных строк заполнено",
 };
 
 const CATALOGS: Partial<Record<UiLocale, Record<TranslationKey, string>>> = { en: EN, ru: RU };

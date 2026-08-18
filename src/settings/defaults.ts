@@ -19,6 +19,7 @@ import {
 	type TableSelector,
 } from "../model";
 import { defaultAppearance, mergeAppearance } from "./appearance";
+import { normalizeVaultPath } from "../deck/selectors";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -57,13 +58,17 @@ function normalizeSelector(value: unknown): TableSelector | null {
 	if (!input || typeof input.headerSignature !== "string") {
 		return null;
 	}
-	return {
+	const selector: TableSelector = {
 		headerSignature: input.headerSignature,
 		occurrence:
 			typeof input.occurrence === "number" && Number.isInteger(input.occurrence) && input.occurrence >= 0
 				? input.occurrence
 				: 0,
 	};
+	if (typeof input.sourcePath === "string" && normalizeVaultPath(input.sourcePath)) {
+		selector.sourcePath = normalizeVaultPath(input.sourcePath);
+	}
+	return selector;
 }
 
 function normalizeSelectors(value: unknown): TableSelector[] {
@@ -77,7 +82,7 @@ function normalizeSelectors(value: unknown): TableSelector[] {
 		if (!selector) {
 			continue;
 		}
-		const key = `${selector.headerSignature}\u0000${selector.occurrence}`;
+		const key = `${selector.sourcePath ?? ""}\u0000${selector.headerSignature}\u0000${selector.occurrence}`;
 		if (!seen.has(key)) {
 			seen.add(key);
 			selectors.push(selector);

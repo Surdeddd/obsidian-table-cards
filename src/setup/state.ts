@@ -28,6 +28,8 @@ export interface SetupState {
 
 export type SetupAction =
 	| { type: "replaceSources"; sources: DeckSource[] }
+	| { type: "loadStarted"; preserveScan: boolean }
+	| { type: "loadFailed" }
 	| { type: "replaceResult"; result: DeckLoadResult | null; scan: DeckScanResult | null }
 	| { type: "selectPreset"; presetId: PresetId }
 	| { type: "setDeckName"; name: string }
@@ -41,7 +43,7 @@ export interface SetupIdentifiers {
 	seed: number;
 }
 
-export function createSetupState(): SetupState {
+export function createSetupState(existingDeckCount = 0): SetupState {
 	return {
 		step: "data",
 		sources: [],
@@ -49,7 +51,7 @@ export function createSetupState(): SetupState {
 		result: null,
 		presetId: null,
 		deckName: "",
-		ribbonVisible: true,
+		ribbonVisible: existingDeckCount === 0,
 		ribbonIcon: "layers-3",
 		dirty: false,
 	};
@@ -64,9 +66,19 @@ function hasUsableData(state: SetupState): boolean {
 }
 
 export function canFinishSetup(state: SetupState): boolean {
-	if (!hasUsableData(state) || !state.result || !state.presetId || !state.deckName.trim()) return false;
+	return Boolean(state.deckName.trim()) && hasValidSetupRepresentative(state);
+}
+
+export function hasValidSetupRepresentative(state: SetupState): boolean {
+	if (!hasUsableData(state) || !state.result || !state.presetId) return false;
 	const blocks = blocksForPreset(state.presetId, state.result.profiles, state.result.cards[0]);
 	return state.result.cards.some((card) => resolveCard(card, blocks).skipReason === null);
+}
+
+export function canAdvanceSetup(state: SetupState): boolean {
+	if (state.step === "data") return hasUsableData(state);
+	if (state.step === "preset") return hasValidSetupRepresentative(state);
+	return canFinishSetup(state);
 }
 
 export function shouldAutoOpenSetup(settings: PluginSettings): boolean {
@@ -80,7 +92,11 @@ export function shouldOpenSetupForCards(settings: PluginSettings): boolean {
 export function reduceSetupState(state: SetupState, action: SetupAction): SetupState {
 	switch (action.type) {
 		case "replaceSources":
-			return { ...state, sources: action.sources.map(cloneJson), dirty: true };
+			return { ...state, sources: action.sources.map(cloneJson), result: null, dirty: true };
+		case "loadStarted":
+			return { ...state, result: null, scan: action.preserveScan ? state.scan : null };
+		case "loadFailed":
+			return { ...state, result: null, scan: null };
 		case "replaceResult":
 			return { ...state, result: action.result, scan: action.scan };
 		case "selectPreset":
@@ -92,8 +108,8 @@ export function reduceSetupState(state: SetupState, action: SetupAction): SetupS
 		case "setRibbonIcon":
 			return { ...state, ribbonIcon: action.icon, dirty: true };
 		case "next":
-			if (state.step === "data" && hasUsableData(state)) return { ...state, step: "preset" };
-			if (state.step === "preset" && state.presetId) return { ...state, step: "finish" };
+			if (state.step === "data" && canAdvanceSetup(state)) return { ...state, step: "preset" };
+			if (state.step === "preset" && canAdvanceSetup(state)) return { ...state, step: "finish" };
 			return state;
 		case "back":
 			if (state.step === "finish") return { ...state, step: "preset" };

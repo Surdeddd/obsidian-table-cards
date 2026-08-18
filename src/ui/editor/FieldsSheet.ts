@@ -12,6 +12,7 @@ import type { Translator } from "../../i18n";
 import type { EditorAction, EditorState } from "../../editor/state";
 import { Listbox } from "./controls/Listbox";
 import { FolderPicker, MarkdownFilePicker } from "../sources/SourcePickers";
+import { selectorMatchesTable, tableSelectedBySource, toggleSourceTable } from "../../deck/selectors";
 
 const DATA_TYPES: ColumnDataType[] = [
 	"text",
@@ -41,34 +42,6 @@ function sourceTables(source: DeckSource, tables: ParsedTable[]): ParsedTable[] 
 	if (source.kind === "file") return tables.filter((table) => table.sourcePath === source.path);
 	const prefix = source.path.endsWith("/") ? source.path : `${source.path}/`;
 	return tables.filter((table) => table.sourcePath.startsWith(prefix));
-}
-
-function selectedTable(source: DeckSource, table: ParsedTable): boolean {
-	return source.tables.mode === "all" || source.tables.selectors.some(
-		(selector) =>
-			selector.headerSignature === table.selector.headerSignature &&
-			selector.occurrence === table.selector.occurrence,
-	);
-}
-
-function sameSelector(left: ParsedTable["selector"], right: ParsedTable["selector"]): boolean {
-	return left.headerSignature === right.headerSignature && left.occurrence === right.occurrence;
-}
-
-function toggleTable(source: DeckSource, table: ParsedTable): DeckSource {
-	if (source.tables.mode === "all") {
-		return { ...source, tables: { mode: "include", selectors: [{ ...table.selector }] } };
-	}
-	const selected = source.tables.selectors.some((selector) => sameSelector(selector, table.selector));
-	return {
-		...source,
-		tables: {
-			mode: "include",
-			selectors: selected
-				? source.tables.selectors.filter((selector) => !sameSelector(selector, table.selector))
-				: [...source.tables.selectors, { ...table.selector }],
-		},
-	};
 }
 
 function columnEnabled(state: EditorState, header: string): boolean {
@@ -150,7 +123,7 @@ function renderSource(parent: HTMLElement, source: DeckSource, context: FieldsSh
 			cls: "tc-table-choice",
 			attr: {
 				type: "button",
-				"aria-pressed": String(selectedTable(source, table)),
+				"aria-pressed": String(tableSelectedBySource(source, table)),
 			},
 		});
 		choice.createSpan({ text: `${context.t("editor.table.label")} ${table.index + 1}` });
@@ -160,7 +133,7 @@ function renderSource(parent: HTMLElement, source: DeckSource, context: FieldsSh
 			text: `${table.rows.length} ${context.t("editor.summary.rows")}`,
 		});
 		choice.addEventListener("click", () =>
-			replaceSource(context, source.id, (item) => toggleTable(item, table)),
+			replaceSource(context, source.id, (item) => toggleSourceTable(item, tables, table)),
 		);
 	}
 
@@ -169,7 +142,7 @@ function renderSource(parent: HTMLElement, source: DeckSource, context: FieldsSh
 	}
 	if (
 		source.tables.mode === "include" &&
-		source.tables.selectors.some((selector) => !tables.some((table) => sameSelector(selector, table.selector)))
+		source.tables.selectors.some((selector) => !tables.some((table) => selectorMatchesTable(selector, table)))
 	) {
 		const repair = card.createDiv({ cls: "tc-field-warning" });
 		repair.createSpan({ text: context.t("editor.table.missing") });

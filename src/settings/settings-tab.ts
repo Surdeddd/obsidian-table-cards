@@ -35,9 +35,9 @@ const LANGUAGE_KEYS: Record<UiLocale, TranslationKey> = {
 
 export interface SettingsHost {
 	settings: PluginSettings;
-	saveSettings: () => Promise<void>;
+	saveSettings: (settings?: PluginSettings) => Promise<void>;
 	getTranslator: () => Translator;
-	openSetup: () => void;
+	openSetup: (onSaved?: () => void) => void;
 }
 
 class DeleteDeckModal extends Modal {
@@ -117,7 +117,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			.setHeading()
 			.addButton((button) => {
 				button.setButtonText(t("command.createWithSetup")).setCta().onClick(() => {
-					this.plugin.openSetup();
+					this.plugin.openSetup(() => this.display());
 				});
 			})
 			.addButton((button) => {

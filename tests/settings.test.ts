@@ -135,6 +135,36 @@ describe("settings merge", () => {
 		expect(mergeSettings(once)).toEqual(once);
 	});
 
+	it("normalizes and idempotently preserves an optional selector source path", () => {
+		const once = mergeSettings({
+			schemaVersion: 3,
+			setupVersion: 1,
+			decks: [{
+				id: "folder-deck",
+				name: "Folder deck",
+				sources: [{
+					id: "folder",
+					kind: "folder",
+					path: "Folder",
+					tables: {
+						mode: "include",
+						selectors: [{
+							headerSignature: "term",
+							occurrence: 0,
+							sourcePath: " /Folder//a.md ",
+						}],
+					},
+				}],
+				blocks: [],
+			}],
+		});
+		expect(once.decks[0]?.sources[0]?.tables).toEqual({
+			mode: "include",
+			selectors: [{ headerSignature: "term", occurrence: 0, sourcePath: "Folder/a.md" }],
+		});
+		expect(mergeSettings(once)).toEqual(once);
+	});
+
 	it("migrates v1 faces and slots into ordered v3 blocks", () => {
 		const settings = mergeSettings({
 			locale: "ru",

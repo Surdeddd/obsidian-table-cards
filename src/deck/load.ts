@@ -21,6 +21,7 @@ import {
 	type SourceTableEntry,
 } from "./catalog";
 import { shuffleItems, wrapIndex } from "./shuffle";
+import { selectorDiagnosticDetail, selectorMatchesTable } from "./selectors";
 
 function sourceFiles(app: App, source: DeckSource, diagnostics: DeckDiagnostic[]): TFile[] {
 	const path = source.path.trim();
@@ -152,11 +153,7 @@ export async function scanDeckSources(
 
 function sourceSelects(source: DeckSource, table: ParsedTable): boolean {
 	if (source.tables.mode === "all") return true;
-	return source.tables.selectors.some(
-		(selector) =>
-			selector.headerSignature === table.selector.headerSignature &&
-			selector.occurrence === table.selector.occurrence,
-	);
+	return source.tables.selectors.some((selector) => selectorMatchesTable(selector, table));
 }
 
 function catalogItem(table: CanonicalTable): TableCatalogItem {
@@ -175,14 +172,11 @@ export function buildDeckDataFromScan(
 		if (source.tables.mode !== "include") continue;
 		const liveTables = scan.tables.filter((table) => table.sourceIds.includes(source.id));
 		for (const selector of source.tables.selectors) {
-			if (liveTables.some((table) =>
-				table.selector.headerSignature === selector.headerSignature &&
-				table.selector.occurrence === selector.occurrence,
-			)) continue;
+			if (liveTables.some((table) => selectorMatchesTable(selector, table.table))) continue;
 			diagnostics.push({
 				code: "tableMissing",
 				sourcePath: source.path.trim(),
-				detail: `${selector.headerSignature}:${selector.occurrence}`,
+				detail: selectorDiagnosticDetail(selector),
 			});
 		}
 	}

@@ -1,7 +1,6 @@
 import { Component, Modal, Platform, setIcon, type App } from "obsidian";
 import { buildDeckDataFromScan, scanDeckSources } from "../deck/load";
 import {
-	applyUiChromeDirection,
 	formatUiNumber,
 	type Translator,
 } from "../i18n";
@@ -16,10 +15,13 @@ import {
 import { createDeck } from "../settings/defaults";
 import { resolveDeckAppearance } from "../settings/appearance";
 import { SetupScanCache } from "../setup/scan-cache";
+import { commitSetupSettings, SetupSaveLifecycle } from "../setup/save-lifecycle";
 import {
+	canAdvanceSetup,
 	canFinishSetup,
 	createSetupState,
 	finishSetup,
+	hasValidSetupRepresentative,
 	reduceSetupState,
 	type SetupState,
 } from "../setup/state";
@@ -29,10 +31,12 @@ import { TableSelectionView } from "./sources/TableSelectionView";
 import { renderFinishForm } from "./setup/FinishForm";
 import { renderPresetChooser } from "./setup/PresetChooser";
 import { SetupCloseConfirm } from "./setup/SetupCloseConfirm";
+import { applySetupDirection } from "./setup/setup-a11y";
+import { tableSelectedBySource } from "../deck/selectors";
 
 export interface SetupWizardHost {
 	settings: PluginSettings;
-	saveSettings: () => Promise<void>;
+	saveSettings: (settings?: PluginSettings) => Promise<void>;
 	getTranslator: () => Translator;
 	getLocale: () => UiLocale;
 	onSetupSaved?: () => void;
@@ -44,23 +48,15 @@ function sourceName(path: string): string {
 	return name.replace(/\.md$/i, "");
 }
 
-function selectorSelected(source: DeckSource, table: ParsedTable): boolean {
-	return source.tables.mode === "all" || source.tables.selectors.some(
-		(selector) =>
-			selector.headerSignature === table.selector.headerSignature &&
-			selector.occurrence === table.selector.occurrence,
-	);
-}
-
 export class SetupWizard extends Modal {
 	private readonly host: SetupWizardHost;
-	private state: SetupState = createSetupState();
+	private state: SetupState;
 	private readonly scanCache: SetupScanCache;
+	private readonly saveLifecycle = new SetupSaveLifecycle();
 	private component: Component | null = null;
 	private tableSelection: TableSelectionView | null = null;
 	private activeSourceId: string | null = null;
 	private loading = false;
-	private saving = false;
 	private error: string | null = null;
 	private forceClose = false;
 	private confirmOpen = false;
@@ -72,6 +68,7 @@ export class SetupWizard extends Modal {
 	constructor(app: App, host: SetupWizardHost) {
 		super(app);
 		this.host = host;
+		this.state = createSetupState(host.settings.decks.length);
 		this.scanCache = new SetupScanCache(
 			(sources) => scanDeckSources(this.app, sources, {
 				untitledTableLabel: (number) => this.host.getTranslator()("table.untitled", {
@@ -93,7 +90,7 @@ export class SetupWizard extends Modal {
 		this.component.load();
 		this.modalEl.addClass("table-cards-setup");
 		if (Platform.isMobile) this.modalEl.addClass("is-mobile");
-		applyUiChromeDirection(this.modalEl, this.locale);
+		applySetupDirection(this.modalEl, this.locale);
 		this.modalEl.setAttr("aria-label", this.t("setup.title"));
 		this.titleEl.setText("");
 		this.contentEl.empty();
@@ -102,6 +99,10 @@ export class SetupWizard extends Modal {
 	}
 
 	close(): void {
+		this.saveLifecycle.tryClose(() => this.closeWhenIdle());
+	}
+
+	private closeWhenIdle(): void {
 		if (this.forceClose || !this.state.dirty) {
 			super.close();
 			return;
@@ -111,9 +112,10 @@ export class SetupWizard extends Modal {
 		new SetupCloseConfirm(
 			this.app,
 			this.t,
+			this.locale,
 			() => { this.confirmOpen = false; },
 			() => {
-				this.state = createSetupState();
+				this.state = createSetupState(this.host.settings.decks.length);
 				this.closeImmediately();
 			},
 		).open();
@@ -149,7 +151,7 @@ export class SetupWizard extends Modal {
 		this.contentEl.empty();
 
 		const root = this.contentEl.createDiv({ cls: "tc-setup" });
-		applyUiChromeDirection(root, this.locale);
+		applySetupDirection(root, this.locale);
 		this.renderHeader(root);
 		const body = root.createDiv({ cls: "tc-setup-body" });
 		if (this.state.step === "data") this.renderDataStep(body);
@@ -168,6 +170,7 @@ export class SetupWizard extends Modal {
 			attr: { type: "button", "aria-label": this.t("modal.close") },
 		});
 		setIcon(close, "x");
+		close.disabled = this.saveLifecycle.saving;
 		close.addEventListener("click", () => this.close());
 
 		const stepNumber = this.state.step === "data" ? 1 : this.state.step === "preset" ? 2 : 3;
@@ -202,13 +205,14 @@ export class SetupWizard extends Modal {
 					t: this.t,
 					onChange: (next) => {
 						this.replaceSource(next);
-						void this.refreshData();
+						void this.refreshData("selector");
 					},
 					onBack: () => {
 						this.activeSourceId = null;
 						this.render();
 					},
 				});
+				this.renderDataStatus(parent);
 				return;
 			}
 			this.activeSourceId = null;
@@ -263,13 +267,17 @@ export class SetupWizard extends Modal {
 			this.dispatch({
 				type: "replaceSources",
 				sources: this.state.sources.filter((item) => item.id !== source.id),
-			});
+			}, false);
 			void this.refreshData();
 		});
 	}
 
 	private renderDataStatus(parent: HTMLElement): void {
 		const status = parent.createDiv({ cls: "tc-setup-status", attr: { "aria-live": "polite" } });
+		this.renderDataStatusContent(status);
+	}
+
+	private renderDataStatusContent(status: HTMLElement): void {
 		if (this.loading) {
 			status.addClass("is-loading");
 			status.setText(this.t("editor.loading"));
@@ -310,6 +318,20 @@ export class SetupWizard extends Modal {
 		}
 	}
 
+	private updateDataStatus(): void {
+		const status = this.contentEl.querySelector<HTMLElement>(".tc-setup-status");
+		if (!status) return;
+		status.empty();
+		status.className = "tc-setup-status";
+		this.renderDataStatusContent(status);
+	}
+
+	private updateFooterEligibility(): void {
+		const primary = this.contentEl.querySelector<HTMLButtonElement>(".tc-setup-footer .mod-cta");
+		if (!primary) return;
+		primary.disabled = this.loading || !canAdvanceSetup(this.state);
+	}
+
 	private renderPresetStep(parent: HTMLElement, version: number): void {
 		this.stepIntro(parent, this.t("setup.presetTitle"), this.t("setup.presetDescription"));
 		const result = this.state.result;
@@ -327,6 +349,9 @@ export class SetupWizard extends Modal {
 				this.dispatch({ type: "setRibbonIcon", icon });
 			},
 		});
+		if (this.state.presetId && !hasValidSetupRepresentative(this.state)) {
+			parent.createDiv({ cls: "tc-setup-status is-error", text: this.t("setup.noCards"), attr: { role: "status" } });
+		}
 	}
 
 	private renderFinishStep(parent: HTMLElement): void {
@@ -341,7 +366,7 @@ export class SetupWizard extends Modal {
 			onName: (name) => {
 				this.dispatch({ type: "setDeckName", name }, false);
 			const finish = this.contentEl.querySelector<HTMLButtonElement>(".tc-setup-footer .mod-cta");
-			if (finish) finish.disabled = this.saving || !canFinishSetup(this.state);
+			if (finish) finish.disabled = this.saveLifecycle.saving || !canFinishSetup(this.state);
 			},
 			onIcon: (icon) => this.dispatch({ type: "setRibbonIcon", icon }),
 			onRibbon: (visible) => this.dispatch({ type: "setRibbonVisible", visible }),
@@ -355,23 +380,24 @@ export class SetupWizard extends Modal {
 				text: this.t("editor.backAction"),
 				attr: { type: "button" },
 			});
+			back.disabled = this.saveLifecycle.saving;
 			back.addEventListener("click", () => this.dispatch({ type: "back" }));
 		}
 		const primary = footer.createEl("button", {
 			cls: "mod-cta",
 			text: this.state.step === "finish"
-				? (this.saving ? this.t("setup.finishing") : this.t("setup.finish"))
+				? (this.saveLifecycle.saving ? this.t("setup.finishing") : this.t("setup.finish"))
 				: this.t("setup.next"),
 			attr: { type: "button" },
 		});
 		if (this.state.step === "data") {
-			primary.disabled = this.loading || !this.state.result?.cards.length || !this.state.result.catalog.length;
+			primary.disabled = this.loading || !canAdvanceSetup(this.state);
 			primary.addEventListener("click", () => this.goToPreset());
 		} else if (this.state.step === "preset") {
-			primary.disabled = this.state.presetId === null;
+			primary.disabled = !canAdvanceSetup(this.state);
 			primary.addEventListener("click", () => this.goToFinish());
 		} else {
-			primary.disabled = this.saving || !canFinishSetup(this.state);
+			primary.disabled = this.saveLifecycle.saving || !canFinishSetup(this.state);
 			primary.addEventListener("click", () => void this.finish());
 		}
 	}
@@ -401,7 +427,7 @@ export class SetupWizard extends Modal {
 			this.dispatch({
 				type: "replaceSources",
 				sources: [...this.state.sources, { id: newId("source"), kind: "file", path: file.path, tables: { mode: "all" } }],
-			});
+			}, false);
 			void this.refreshData();
 		}).open();
 	}
@@ -412,7 +438,7 @@ export class SetupWizard extends Modal {
 			this.dispatch({
 				type: "replaceSources",
 				sources: [...this.state.sources, { id: newId("source"), kind: "folder", path: folder.path, tables: { mode: "all" } }],
-			});
+			}, false);
 			void this.refreshData();
 		}).open();
 	}
@@ -438,7 +464,7 @@ export class SetupWizard extends Modal {
 		const tables = this.sourceTables(source);
 		const selected = source.tables.mode === "all"
 			? tables.length
-			: tables.filter((table) => selectorSelected(source, table)).length;
+			: tables.filter((table) => tableSelectedBySource(source, table)).length;
 		if (source.tables.mode === "all") {
 			return this.t("editor.source.summaryAll", { count: formatUiNumber(tables.length, this.locale) });
 		}
@@ -457,17 +483,25 @@ export class SetupWizard extends Modal {
 		});
 	}
 
-	private async refreshData(): Promise<void> {
+	private async refreshData(mode: "topology" | "selector" = "topology"): Promise<void> {
 		const version = ++this.dataVersion;
 		this.error = null;
 		if (this.state.sources.length === 0) {
 			this.scanCache.invalidate();
 			this.loading = false;
-			this.dispatch({ type: "replaceResult", result: null, scan: null });
+			this.dispatch({ type: "loadStarted", preserveScan: false });
 			return;
 		}
+		const preserveView = mode === "selector" && this.tableSelection !== null && this.activeSourceId !== null;
+		this.state = reduceSetupState(this.state, { type: "loadStarted", preserveScan: mode === "selector" });
 		this.loading = true;
-		this.render();
+		if (preserveView) {
+			this.tableSelection?.setLoading(true);
+			this.updateDataStatus();
+			this.updateFooterEligibility();
+		} else {
+			this.render();
+		}
 		try {
 			const loaded = await this.scanCache.load(this.state.sources);
 			if (loaded.status === "stale" || version !== this.dataVersion) return;
@@ -479,34 +513,42 @@ export class SetupWizard extends Modal {
 		} catch {
 			if (version !== this.dataVersion) return;
 			this.scanCache.invalidate();
+			this.state = reduceSetupState(this.state, { type: "loadFailed" });
 			this.error = this.t("editor.loadError");
 		} finally {
 			if (version === this.dataVersion) {
 				this.loading = false;
-				this.render();
+				const source = this.state.sources.find((item) => item.id === this.activeSourceId);
+				if (preserveView && !this.error && this.tableSelection && source) {
+					this.tableSelection.update(source, this.availableTables());
+					this.tableSelection.setLoading(false);
+					this.updateDataStatus();
+					this.updateFooterEligibility();
+				} else {
+					this.render();
+				}
 			}
 		}
 	}
 
 	private async finish(): Promise<void> {
-		if (this.saving || !canFinishSetup(this.state)) return;
-		this.saving = true;
+		if (this.saveLifecycle.saving || this.confirmOpen || !canFinishSetup(this.state)) return;
 		this.error = null;
-		this.render();
 		const previous = this.host.settings;
+		const next = finishSetup(previous, this.state, this.state.result?.profiles ?? [], {
+			deckId: newId("deck"),
+			seed: Date.now(),
+		});
+		const saving = commitSetupSettings(this.host, next, this.saveLifecycle);
+		this.render();
 		try {
-			this.host.settings = finishSetup(previous, this.state, this.state.result?.profiles ?? [], {
-				deckId: newId("deck"),
-				seed: Date.now(),
-			});
-			await this.host.saveSettings();
+			await saving;
 			this.host.onSetupSaved?.();
-			this.state = createSetupState();
+			this.state = createSetupState(this.host.settings.decks.length);
 			this.closeImmediately();
 		} catch {
 			this.host.settings = previous;
 			this.error = this.t("setup.saveError");
-			this.saving = false;
 			this.render();
 		}
 	}

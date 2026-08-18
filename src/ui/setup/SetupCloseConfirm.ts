@@ -1,5 +1,7 @@
 import { Modal, type App } from "obsidian";
 import type { Translator } from "../../i18n";
+import type { UiLocale } from "../../model";
+import { applySetupDirection } from "./setup-a11y";
 
 export class SetupCloseConfirm extends Modal {
 	private resolved = false;
@@ -7,6 +9,7 @@ export class SetupCloseConfirm extends Modal {
 	constructor(
 		app: App,
 		private readonly t: Translator,
+		private readonly locale: UiLocale,
 		private readonly onContinue: () => void,
 		private readonly onDiscard: () => void,
 	) {
@@ -14,6 +17,7 @@ export class SetupCloseConfirm extends Modal {
 	}
 
 	onOpen(): void {
+		applySetupDirection(this.modalEl, this.locale);
 		this.titleEl.setText(this.t("setup.closeTitle"));
 		this.contentEl.empty();
 		this.contentEl.createEl("p", { text: this.t("setup.closeDescription") });

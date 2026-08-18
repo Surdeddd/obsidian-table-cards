@@ -31,6 +31,8 @@ export type EmptyValueMode = "hide" | "dash" | "custom" | "preserve" | "fallback
 export interface TableSelector {
 	headerSignature: string;
 	occurrence: number;
+	/** Present for folder sources; absent selectors retain legacy match-all semantics. */
+	sourcePath?: string;
 }
 
 export type TableSelection = { mode: "all" } | { mode: "include"; selectors: TableSelector[] };

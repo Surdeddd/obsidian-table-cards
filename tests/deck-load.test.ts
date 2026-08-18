@@ -208,4 +208,87 @@ describe("deck loading", () => {
 		expect(result.tables).toEqual([]);
 		expect(result.cards).toEqual([]);
 	});
+
+	it("selects one path-aware table from identical folder tables", async () => {
+		const deck = createDeck({
+			sources: [{
+				id: "folder",
+				kind: "folder",
+				path: "Folder",
+				tables: {
+					mode: "include",
+					selectors: [{
+						headerSignature: headerSignature(["Term", "RU"]),
+						occurrence: 0,
+						sourcePath: "Folder/b.md",
+					}],
+				},
+			}],
+		});
+		const result = await loadDeckData(fakeApp(
+			{
+				"Folder/a.md": "| Term | RU |\n|---|---|\n|one|один|",
+				"Folder/b.md": "| Term | RU |\n|---|---|\n|two|два|",
+			},
+			{ Folder: ["Folder/a.md", "Folder/b.md"] },
+		), deck);
+
+		expect(result.cards.map((card) => card.cells.Term?.text)).toEqual(["two"]);
+		expect(result.catalog.map((table) => table.sourcePath)).toEqual(["Folder/b.md"]);
+		expect(result.diagnostics.some((item) => item.code === "tableMissing")).toBe(false);
+	});
+
+	it("keeps a legacy folder selector pathless and matching identical tables in every file", async () => {
+		const deck = createDeck({
+			sources: [{
+				id: "folder",
+				kind: "folder",
+				path: "Folder",
+				tables: {
+					mode: "include",
+					selectors: [{ headerSignature: headerSignature(["Term", "RU"]), occurrence: 0 }],
+				},
+			}],
+		});
+		const result = await loadDeckData(fakeApp(
+			{
+				"Folder/a.md": "| Term | RU |\n|---|---|\n|one|один|",
+				"Folder/b.md": "| Term | RU |\n|---|---|\n|two|два|",
+			},
+			{ Folder: ["Folder/a.md", "Folder/b.md"] },
+		), deck);
+
+		expect(result.cards.map((card) => card.cells.Term?.text)).toEqual(["one", "two"]);
+		expect(result.catalog).toHaveLength(2);
+	});
+
+	it("reports a missing path-aware folder selector instead of matching another identical table", async () => {
+		const deck = createDeck({
+			sources: [{
+				id: "folder",
+				kind: "folder",
+				path: "Folder",
+				tables: {
+					mode: "include",
+					selectors: [{
+						headerSignature: headerSignature(["Term", "RU"]),
+						occurrence: 0,
+						sourcePath: "Folder/missing.md",
+					}],
+				},
+			}],
+		});
+		const result = await loadDeckData(fakeApp(
+			{ "Folder/a.md": SIMPLE_TABLE },
+			{ Folder: ["Folder/a.md"] },
+		), deck);
+
+		expect(result.cards).toEqual([]);
+		expect(result.catalog).toEqual([]);
+		expect(result.diagnostics).toContainEqual(expect.objectContaining({
+			code: "tableMissing",
+			sourcePath: "Folder",
+			detail: expect.stringContaining("Folder/missing.md"),
+		}));
+	});
 });

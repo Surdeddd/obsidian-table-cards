@@ -4,6 +4,7 @@ import { parseCell } from "../src/parse/tables";
 import { mergeSettings } from "../src/settings/defaults";
 import {
 	canFinishSetup,
+	canAdvanceSetup,
 	createSetupState,
 	finishSetup,
 	reduceSetupState,
@@ -86,6 +87,36 @@ describe("setup draft", () => {
 		expect(reduceSetupState({ ...preset, step: "finish" }, { type: "back" }).step).toBe("preset");
 	});
 
+	it("does not advance from preset when its required blocks reject every row", () => {
+		const invalid = {
+			...completeSetupState(),
+			step: "preset" as const,
+			result: {
+				...setupResult,
+				cards: [{
+					...setupResult.cards[0]!,
+					cells: { Word: parseCell(""), Translation: parseCell("оставаться") },
+				}],
+			},
+		};
+		expect(canAdvanceSetup(invalid)).toBe(false);
+		expect(reduceSetupState(invalid, { type: "next" })).toBe(invalid);
+	});
+
+	it("invalidates A immediately when topology B starts and remains unusable after B fails", () => {
+		const stateA = { ...completeSetupState(), step: "data" as const, scan: { tables: [], diagnostics: [] } };
+		const sourceB = source("other.md");
+		const replaced = reduceSetupState(stateA, { type: "replaceSources", sources: [sourceB] });
+		expect(replaced.result).toBeNull();
+		expect(canAdvanceSetup(replaced)).toBe(false);
+
+		const loadingB = reduceSetupState(replaced, { type: "loadStarted", preserveScan: false });
+		const failedB = reduceSetupState(loadingB, { type: "loadFailed" });
+		expect(failedB).toMatchObject({ result: null, scan: null });
+		expect(canAdvanceSetup(failedB)).toBe(false);
+		expect(canFinishSetup({ ...failedB, step: "finish" })).toBe(false);
+	});
+
 	it("creates one ordinary deck and marks setup complete", () => {
 		const settings = mergeSettings(null);
 		const result = finishSetup(settings, completeSetupState(), profiles, { deckId: "deck-english", seed: 42 });
@@ -127,6 +158,12 @@ describe("setup draft", () => {
 			setupVersion: 1,
 			decks: [{ id: "enabled", name: "Enabled", enabled: true }],
 		}))).toBe(false);
+	});
+
+	it("defaults the ribbon on only for the first deck", () => {
+		expect(createSetupState(0).ribbonVisible).toBe(true);
+		expect(createSetupState(1).ribbonVisible).toBe(false);
+		expect(createSetupState(8).ribbonVisible).toBe(false);
 	});
 });
 

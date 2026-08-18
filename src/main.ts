@@ -7,10 +7,12 @@ import { CardsModal } from "./ui/CardsModal";
 import { DeckEditorModal } from "./ui/DeckEditorModal";
 import { SetupWizard } from "./ui/SetupWizard";
 import { shouldAutoOpenSetup, shouldOpenSetupForCards } from "./setup/state";
+import { SetupSavedCallbacks } from "./setup/session";
 
 export default class TableCardsPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	private setupWizard: SetupWizard | null = null;
+	private readonly setupSavedCallbacks = new SetupSavedCallbacks();
 
 	async onload(): Promise<void> {
 		this.settings = mergeSettings(await this.loadData());
@@ -52,7 +54,8 @@ export default class TableCardsPlugin extends Plugin {
 		new CardsModal(this.app, this).open();
 	}
 
-	openSetup(): void {
+	openSetup(onSaved?: () => void): void {
+		this.setupSavedCallbacks.add(onSaved);
 		if (this.setupWizard) return;
 		this.setupWizard = new SetupWizard(this.app, this);
 		this.setupWizard.open();
@@ -60,6 +63,11 @@ export default class TableCardsPlugin extends Plugin {
 
 	onSetupClosed(): void {
 		this.setupWizard = null;
+		this.setupSavedCallbacks.clear();
+	}
+
+	onSetupSaved(): void {
+		this.setupSavedCallbacks.notifySaved();
 	}
 
 	openEditor(): void {
@@ -73,8 +81,8 @@ export default class TableCardsPlugin extends Plugin {
 		new DeckEditorModal(this.app, this, deck).open();
 	}
 
-	async saveSettings(): Promise<void> {
-		await this.saveData(this.settings);
+	async saveSettings(settings: PluginSettings = this.settings): Promise<void> {
+		await this.saveData(settings);
 	}
 
 	getTranslator(): Translator {

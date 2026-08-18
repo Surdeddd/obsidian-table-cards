@@ -2,6 +2,7 @@ import { setIcon } from "obsidian";
 import { formatUiNumber, type Translator } from "../../i18n";
 import { RIBBON_ICONS, type RibbonIcon, type UiLocale } from "../../model";
 import type { SetupState } from "../../setup/state";
+import { setupDirectionAttributes } from "./setup-a11y";
 
 export interface FinishFormOptions {
 	state: SetupState;
@@ -20,7 +21,7 @@ export function renderFinishForm(parent: HTMLElement, options: FinishFormOptions
 	nameLabel.createSpan({ text: options.t("setup.deckName") });
 	const name = nameLabel.createEl("input", {
 		type: "text",
-		attr: { value: options.state.deckName, autocomplete: "off" },
+		attr: { value: options.state.deckName, autocomplete: "off", dir: setupDirectionAttributes(options.locale).userDataDir },
 	});
 	name.addEventListener("input", () => options.onName(name.value));
 

@@ -1,6 +1,13 @@
-import { cloneJson, UI_LOCALES, type DeckSource, type ParsedTable, type TableSelector, type UiLocale } from "../../model";
+import { cloneJson, UI_LOCALES, type DeckSource, type ParsedTable, type TableCatalogItem, type UiLocale } from "../../model";
 import { formatUiNumber, type Translator } from "../../i18n";
 import { normalizeSearchText } from "../../deck/filter";
+import { selectorMatchesTable, tableSelectedBySource, toggleSourceTable } from "../../deck/selectors";
+import { disambiguateTableLabels } from "../ScopePicker";
+import {
+	reconcileTableSelectionInteraction,
+	stableTableSelectionKey,
+	type TableSelectionInteraction,
+} from "./table-selection-state";
 
 export interface TableSelectionViewOptions {
 	source: DeckSource;
@@ -14,20 +21,6 @@ export interface TableSelectionViewOptions {
 interface TableGroup {
 	path: string;
 	tables: ParsedTable[];
-}
-
-function sameSelector(left: TableSelector, right: TableSelector): boolean {
-	return left.headerSignature === right.headerSignature && left.occurrence === right.occurrence;
-}
-
-function uniqueSelectors(tables: ParsedTable[]): TableSelector[] {
-	const selectors: TableSelector[] = [];
-	for (const table of tables) {
-		if (!selectors.some((selector) => sameSelector(selector, table.selector))) {
-			selectors.push({ ...table.selector });
-		}
-	}
-	return selectors;
 }
 
 function localeAt(element: HTMLElement): UiLocale {
@@ -64,22 +57,45 @@ export class TableSelectionView {
 	private readonly options: TableSelectionViewOptions;
 	private readonly locale: UiLocale;
 	private source: DeckSource;
+	private tables: ParsedTable[];
 	private query = "";
 	private listEl: HTMLElement | null = null;
+	private interaction: TableSelectionInteraction = {
+		query: "",
+		expandedKeys: [],
+		scrollTop: 0,
+		focusedCheckboxKey: null,
+	};
+	private tableLabels = new Map<string, string>();
+	private focusTimer: number | null = null;
 
 	constructor(parent: HTMLElement, options: TableSelectionViewOptions) {
 		this.options = options;
 		this.source = cloneJson(options.source);
+		this.tables = options.tables.slice();
 		this.locale = localeAt(parent);
 		this.root = parent.createDiv({ cls: "tc-table-selection" });
 		this.render();
 	}
 
 	destroy(): void {
+		if (this.focusTimer !== null) window.clearTimeout(this.focusTimer);
 		this.root.remove();
 	}
 
+	update(source: DeckSource, tables: ParsedTable[]): void {
+		this.captureInteraction();
+		this.source = cloneJson(source);
+		this.tables = tables.slice();
+		this.render();
+	}
+
+	setLoading(loading: boolean): void {
+		this.root.setAttr("aria-busy", String(loading));
+	}
+
 	private render(): void {
+		this.captureInteraction();
 		this.root.empty();
 		const header = this.root.createDiv({ cls: "tc-table-selection-header" });
 		const back = header.createEl("button", {
@@ -121,29 +137,28 @@ export class TableSelectionView {
 		search.value = this.query;
 		search.addEventListener("input", () => {
 			this.query = normalizeSearchText(search.value);
+			this.interaction.query = this.query;
 			this.renderList();
 		});
 		this.listEl = this.root.createDiv({ cls: "tc-table-selection-list" });
-		this.renderList();
+		this.renderList(false);
+		this.restoreInteraction();
 	}
 
-	private renderList(): void {
+	private renderList(capture = true): void {
 		if (!this.listEl) return;
+		if (capture) this.captureInteraction();
 		this.listEl.empty();
-		const available = tablesForSource(this.source, this.options.tables);
+		const available = tablesForSource(this.source, this.tables);
+		this.tableLabels = disambiguateTableLabels(
+			available.map((table) => this.catalogItem(table)),
+			this.options.t,
+			this.locale,
+		);
 		const filtered = available.filter((table) => !this.query || tableSearchText(table).includes(this.query));
-		if (filtered.length === 0) {
-			this.listEl.createDiv({
-				cls: "tc-field-empty",
-				text: available.length === 0 ? this.options.t("editor.table.none") : this.options.t("scope.noMatches"),
-			});
-			return;
-		}
-		for (const group of groupsFor(filtered)) this.renderGroup(group);
-
 		if (
 			this.source.tables.mode === "include" &&
-			this.source.tables.selectors.some((selector) => !available.some((table) => sameSelector(selector, table.selector)))
+			this.source.tables.selectors.some((selector) => !available.some((table) => selectorMatchesTable(selector, table)))
 		) {
 			const warning = this.listEl.createDiv({ cls: "tc-field-warning" });
 			warning.createSpan({ text: this.options.t("editor.table.missing") });
@@ -153,6 +168,16 @@ export class TableSelectionView {
 			});
 			repair.addEventListener("click", () => this.replaceSelection({ mode: "all" }));
 		}
+		if (filtered.length === 0) {
+			this.listEl.createDiv({
+				cls: "tc-field-empty",
+				text: available.length === 0 ? this.options.t("editor.table.none") : this.options.t("scope.noMatches"),
+			});
+			this.restoreInteraction();
+			return;
+		}
+		for (const group of groupsFor(filtered)) this.renderGroup(group);
+		this.restoreInteraction();
 	}
 
 	private renderGroup(group: TableGroup): void {
@@ -165,14 +190,20 @@ export class TableSelectionView {
 	}
 
 	private renderTable(parent: HTMLElement, table: ParsedTable): void {
+		const key = stableTableSelectionKey(table.sourcePath, table.selector);
 		const row = parent.createDiv({ cls: "tc-table-selection-row" });
 		const select = row.createEl("label", { cls: "tc-table-selection-check" });
 		const checkbox = select.createEl("input", { type: "checkbox" });
-		checkbox.checked = this.isSelected(table.selector);
+		checkbox.checked = this.isSelected(table);
+		checkbox.setAttr("data-table-key", key);
 		checkbox.setAttr("aria-label", this.tableLabel(table));
 		checkbox.addEventListener("change", () => this.toggleTable(table));
 
-		const details = row.createEl("details", { cls: "tc-table-selection-details" });
+		const details = row.createEl("details", {
+			cls: "tc-table-selection-details",
+			attr: { "data-table-key": key },
+		});
+		details.open = this.interaction.expandedKeys.includes(key);
 		const summary = details.createEl("summary");
 		const title = summary.createDiv({ cls: "tc-table-selection-title", text: this.tableLabel(table), attr: { dir: "auto" } });
 		title.setAttr("title", this.tableLabel(table));
@@ -203,32 +234,86 @@ export class TableSelectionView {
 	}
 
 	private tableLabel(table: ParsedTable): string {
-		return table.headingPath.at(-1) || this.options.t("table.untitled", {
-			number: formatUiNumber(table.index + 1, this.locale),
-		});
+		return this.tableLabels.get(stableTableSelectionKey(table.sourcePath, table.selector)) ??
+			(table.headingPath.at(-1) || this.options.t("table.untitled", {
+				number: formatUiNumber(table.index + 1, this.locale),
+			}));
 	}
 
-	private isSelected(selector: TableSelector): boolean {
-		return this.source.tables.mode === "all" || this.source.tables.selectors.some((item) => sameSelector(item, selector));
+	private isSelected(table: ParsedTable): boolean {
+		return tableSelectedBySource(this.source, table);
 	}
 
 	private toggleTable(table: ParsedTable): void {
-		const available = tablesForSource(this.source, this.options.tables);
-		const selectors = this.source.tables.mode === "all"
-			? uniqueSelectors(available)
-			: this.source.tables.selectors.map((selector) => ({ ...selector }));
-		const selected = selectors.some((selector) => sameSelector(selector, table.selector));
-		this.replaceSelection({
-			mode: "include",
-			selectors: selected
-				? selectors.filter((selector) => !sameSelector(selector, table.selector))
-				: [...selectors, { ...table.selector }],
-		});
+		const available = tablesForSource(this.source, this.tables);
+		this.replaceSelection(toggleSourceTable(this.source, available, table).tables);
 	}
 
 	private replaceSelection(tables: DeckSource["tables"]): void {
 		this.source = cloneJson({ ...this.source, tables });
 		this.options.onChange(cloneJson(this.source));
 		this.render();
+	}
+
+	private catalogItem(table: ParsedTable): TableCatalogItem {
+		return {
+			key: stableTableSelectionKey(table.sourcePath, table.selector),
+			selector: table.selector,
+			sourcePath: table.sourcePath,
+			sourceIds: [this.source.id],
+			label: table.headingPath.at(-1) || this.options.t("table.untitled", {
+				number: formatUiNumber(table.index + 1, this.locale),
+			}),
+			tableNumber: table.index + 1,
+			headingPath: table.headingPath.slice(),
+			headers: table.headers.slice(),
+			rowCount: table.rows.length,
+		};
+	}
+
+	private captureInteraction(): void {
+		if (!this.listEl?.isConnected) return;
+		const expandedKeys = Array.from(
+			this.listEl.querySelectorAll<HTMLDetailsElement>("details[data-table-key][open]"),
+			(details) => details.dataset.tableKey ?? "",
+		).filter(Boolean);
+		const activeElement = document.activeElement;
+		const active = activeElement instanceof HTMLInputElement
+			? activeElement.closest<HTMLInputElement>('input[type="checkbox"][data-table-key]')
+			: null;
+		this.interaction = {
+			query: this.query,
+			expandedKeys,
+			scrollTop: this.listEl.scrollTop,
+			focusedCheckboxKey: active?.dataset.tableKey ?? (
+				activeElement instanceof Node && this.root.contains(activeElement)
+					? null
+					: this.interaction.focusedCheckboxKey
+			),
+		};
+	}
+
+	private restoreInteraction(): void {
+		if (!this.listEl) return;
+		const liveKeys = new Set(
+			Array.from(this.listEl.querySelectorAll<HTMLElement>("[data-table-key]"), (item) => item.dataset.tableKey ?? "")
+				.filter(Boolean),
+		);
+		this.interaction = reconcileTableSelectionInteraction(this.interaction, liveKeys);
+		this.query = this.interaction.query;
+		this.listEl.scrollTop = this.interaction.scrollTop;
+		for (const details of Array.from(this.listEl.querySelectorAll<HTMLDetailsElement>("details[data-table-key]"))) {
+			details.open = this.interaction.expandedKeys.includes(details.dataset.tableKey ?? "");
+		}
+		if (this.focusTimer !== null) window.clearTimeout(this.focusTimer);
+		const focusKey = this.interaction.focusedCheckboxKey;
+		if (!focusKey) return;
+		this.focusTimer = window.setTimeout(() => {
+			this.root.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-table-key]')
+				.forEach((input) => {
+					if (input.dataset.tableKey === focusKey) input.focus();
+				});
+			this.focusTimer = null;
+		}, 0);
 	}
 }

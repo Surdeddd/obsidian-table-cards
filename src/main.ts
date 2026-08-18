@@ -6,21 +6,28 @@ import type { PluginSettings, UiLocale } from "./model";
 import { CardsModal } from "./ui/CardsModal";
 import { DeckEditorModal } from "./ui/DeckEditorModal";
 import { SetupWizard } from "./ui/SetupWizard";
+import { RibbonDecks } from "./ui/RibbonDecks";
 import { shouldAutoOpenSetup, shouldOpenSetupForCards } from "./setup/state";
 import { SetupSavedCallbacks } from "./setup/session";
+import type { DeckOpenRequest } from "./session/launcher-state";
 
 export default class TableCardsPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	private setupWizard: SetupWizard | null = null;
 	private readonly setupSavedCallbacks = new SetupSavedCallbacks();
+	private ribbonDecks: RibbonDecks | null = null;
 
 	async onload(): Promise<void> {
 		this.settings = mergeSettings(await this.loadData());
+		this.ribbonDecks = new RibbonDecks({
+			add: this.addRibbonIcon.bind(this),
+			openDeck: (deckId) => this.openCards({ deckId, lockedDeck: true }),
+		});
 
 		this.addCommand({
 			id: "open",
 			name: this.getTranslator()("command.open"),
-			callback: () => this.openCards(),
+			callback: () => this.openCards({ lockedDeck: false }),
 		});
 
 		this.addCommand({
@@ -36,8 +43,9 @@ export default class TableCardsPlugin extends Plugin {
 		});
 
 		this.addRibbonIcon("gallery-horizontal", this.getTranslator()("ribbon.open"), () => {
-			this.openCards();
+			this.openCards({ lockedDeck: false });
 		});
+		this.ribbonDecks.sync(this.settings.decks);
 
 		this.addSettingTab(new TableCardsSettingTab(this.app, this));
 
@@ -46,12 +54,17 @@ export default class TableCardsPlugin extends Plugin {
 		}
 	}
 
-	openCards(): void {
+	onunload(): void {
+		this.ribbonDecks?.destroy();
+		this.ribbonDecks = null;
+	}
+
+	openCards(request: DeckOpenRequest = { lockedDeck: false }): void {
 		if (shouldOpenSetupForCards(this.settings)) {
 			this.openSetup();
 			return;
 		}
-		new CardsModal(this.app, this).open();
+		new CardsModal(this.app, this, request).open();
 	}
 
 	openSetup(onSaved?: () => void): void {
@@ -83,6 +96,8 @@ export default class TableCardsPlugin extends Plugin {
 
 	async saveSettings(settings: PluginSettings = this.settings): Promise<void> {
 		await this.saveData(settings);
+		this.settings = settings;
+		this.ribbonDecks?.sync(settings.decks);
 	}
 
 	getTranslator(): Translator {

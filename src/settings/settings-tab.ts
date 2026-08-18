@@ -1,5 +1,16 @@
 import { Modal, Plugin, PluginSettingTab, Setting, getLanguage, type App } from "obsidian";
-import { cloneJson, createBlock, newId, UI_LOCALES, type Deck, type LocaleMode, type PluginSettings, type UiLocale } from "../model";
+import {
+	cloneJson,
+	createBlock,
+	newId,
+	RIBBON_ICONS,
+	UI_LOCALES,
+	type Deck,
+	type LocaleMode,
+	type PluginSettings,
+	type RibbonIcon,
+	type UiLocale,
+} from "../model";
 import {
 	applyUiChromeDirection,
 	applyUserDataDirection,
@@ -38,6 +49,16 @@ export interface SettingsHost {
 	saveSettings: (settings?: PluginSettings) => Promise<void>;
 	getTranslator: () => Translator;
 	openSetup: (onSaved?: () => void) => void;
+}
+
+export function moveDeck(decks: Deck[], deckId: string, offset: -1 | 1): boolean {
+	const from = decks.findIndex((deck) => deck.id === deckId);
+	const to = from + offset;
+	if (from < 0 || to < 0 || to >= decks.length) return false;
+	const [deck] = decks.splice(from, 1);
+	if (!deck) return false;
+	decks.splice(to, 0, deck);
+	return true;
 }
 
 class DeleteDeckModal extends Modal {
@@ -229,7 +250,52 @@ export class TableCardsSettingTab extends PluginSettingTab {
 						void this.plugin.saveSettings().then(() => this.display());
 					}).open();
 				});
+			})
+			.addExtraButton((button) => {
+				const index = this.plugin.settings.decks.indexOf(deck);
+				button
+					.setIcon("arrow-up")
+					.setTooltip(t("ribbon.moveUp"))
+					.setDisabled(index <= 0)
+					.onClick(() => {
+						if (moveDeck(this.plugin.settings.decks, deck.id, -1)) {
+							void this.plugin.saveSettings().then(() => this.display());
+						}
+					});
+			})
+			.addExtraButton((button) => {
+				const index = this.plugin.settings.decks.indexOf(deck);
+				button
+					.setIcon("arrow-down")
+					.setTooltip(t("ribbon.moveDown"))
+					.setDisabled(index < 0 || index >= this.plugin.settings.decks.length - 1)
+					.onClick(() => {
+						if (moveDeck(this.plugin.settings.decks, deck.id, 1)) {
+							void this.plugin.saveSettings().then(() => this.display());
+						}
+					});
 			});
+		new Setting(wrap)
+			.setName(t("ribbon.show"))
+			.setDesc(t("ribbon.pinHint"))
+			.addToggle((toggle) => {
+				toggle.setValue(deck.ribbon.visible).setDisabled(!deck.enabled).onChange((value) => {
+					deck.ribbon.visible = value;
+					void this.plugin.saveSettings();
+				});
+			});
+		const iconSetting = new Setting(wrap).setName(t("ribbon.icon"));
+		new Listbox<RibbonIcon>(iconSetting.controlEl, {
+			id: `table-cards-ribbon-icon-${deck.id}`,
+			label: t("ribbon.icon"),
+			value: deck.ribbon.icon,
+			options: RIBBON_ICONS.map((icon) => ({ value: icon, label: icon })),
+			onChange: (icon) => {
+				deck.ribbon.icon = icon;
+				void this.plugin.saveSettings();
+			},
+		});
+		iconSetting.controlEl.querySelector<HTMLElement>(".tc-listbox > label")?.addClass("tc-visually-hidden");
 		applyUserDataDirection(setting.nameEl);
 		void loadDeckData(this.app, deck)
 			.then((result) => {

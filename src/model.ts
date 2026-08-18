@@ -1,10 +1,14 @@
-export const SCHEMA_VERSION = 2 as const;
+export const SCHEMA_VERSION = 3 as const;
+
+export const UI_LOCALES = ["en", "ru", "uk", "es", "de", "fr", "pt-BR", "it", "pl", "tr", "zh-CN", "zh-TW", "ja", "ko", "ar", "hi"] as const;
+export const RIBBON_ICONS = ["gallery-horizontal", "languages", "message-square-quote", "circle-help", "image", "book-open", "layers-3", "graduation-cap", "brain", "library", "notebook-tabs", "rows-3"] as const;
 
 export const BLOCK_KINDS = ["title", "text", "chips", "quote", "note", "image"] as const;
 export type BlockKind = (typeof BLOCK_KINDS)[number];
 export type BlockStyle = BlockKind;
-export type LocaleMode = "auto" | "en" | "ru";
-export type UiLocale = "en" | "ru";
+export type UiLocale = (typeof UI_LOCALES)[number];
+export type LocaleMode = "auto" | UiLocale;
+export type RibbonIcon = (typeof RIBBON_ICONS)[number];
 export type OverlayMode = "auto" | "center" | "full";
 export type SizePreset = "compact" | "comfort" | "large";
 export type BorderStyle = "none" | "thin" | "solid";
@@ -29,11 +33,19 @@ export interface TableSelector {
 	occurrence: number;
 }
 
+export type TableSelection = { mode: "all" } | { mode: "include"; selectors: TableSelector[] };
+export type StudyScope = { mode: "all" } | { mode: "tables"; tableKeys: string[] };
+
+export interface DeckRibbonSettings {
+	visible: boolean;
+	icon: RibbonIcon;
+}
+
 export interface DeckSource {
 	id: string;
 	kind: "file" | "folder";
 	path: string;
-	table: { mode: "all" } | { mode: "single"; selector: TableSelector };
+	tables: TableSelection;
 }
 
 export interface EmptyValuePolicy {
@@ -119,16 +131,20 @@ export interface Deck {
 	columnTypes: Record<string, ColumnDataType>;
 	appearance?: Partial<AppearanceSettings>;
 	shuffleDefault: boolean;
+	ribbon: DeckRibbonSettings;
 }
 
 export interface DeckProgress {
 	index: number;
 	shuffle: boolean;
 	seed: number;
+	scope: StudyScope;
+	cardKey: string | null;
 }
 
 export interface PluginSettings {
 	schemaVersion: typeof SCHEMA_VERSION;
+	setupVersion: number;
 	locale: LocaleMode;
 	lastDeckId: string | null;
 	decks: Deck[];

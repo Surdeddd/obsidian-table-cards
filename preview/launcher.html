@@ -13,9 +13,12 @@
 		.preview-launcher-modal .tc-launcher-body { width: min(620px, 100%); }
 		.preview-check { accent-color: var(--interactive-accent); }
 		.preview-mobile-scope { display: none; }
+		.preview-selector-underlay { min-height: 218px; }
 		.preview-browser-underlay { opacity: .2; pointer-events: none; }
 		.preview-browser-sheet .tc-sheet { width: min(430px, 92%); }
 		.preview-browser-sheet .tc-sheet-body { padding-block-end: 0; }
+		[data-selector-mount="general"],
+		.preview-desktop-scope { position: absolute; inset-inline: 0; z-index: 8; }
 		@media (max-width: 700px) {
 			.preview-desktop-scope { display: none; }
 			.preview-mobile-scope { display: block; }
@@ -54,10 +57,10 @@
 							</div>
 						</div>
 						<div class="tc-launcher-state">
-							<div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button" aria-expanded="false" data-open-layer="general-scope"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value" dir="auto">3 tables</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button><div id="general-scope" data-layer hidden></div></div>
+							<div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button" aria-expanded="false" data-scope-open="general"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value" dir="auto">3 tables</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button><div id="general-scope" data-selector-mount="general" hidden></div></div>
 							<div class="tc-launcher-messages" aria-live="polite"><div class="tc-launcher-warning">1 saved table is missing and will be skipped</div></div>
 						</div>
-						<footer class="tc-launcher-footer"><div class="tc-launcher-summary" aria-live="polite">583 cards · 3 tables</div><button class="tc-launcher-start mod-cta" type="button">Open cards: 583</button></footer>
+						<footer class="tc-launcher-footer"><div class="tc-launcher-summary" aria-live="polite" data-live-summary>583 cards · 3 tables</div><button class="tc-launcher-start mod-cta" type="button" data-live-start>Open cards: 583</button></footer>
 					</div>
 				</div>
 			</div>
@@ -79,22 +82,22 @@
 				<header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close"><span class="preview-icon" aria-hidden="true">×</span></button></header>
 				<div class="tc-launcher-body">
 					<div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name" dir="auto">English · Dictionary</div></div>
-					<div class="tc-launcher-scope preview-desktop-scope"><button class="tc-scope-trigger" type="button" aria-expanded="true"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value">3 tables</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button>
-						<div class="tc-scope-picker" data-selector-root><div class="tc-scope-searchbar"><input class="tc-scope-search" type="search" aria-label="Search tables" placeholder="Search headings, paths, or columns"></div><div class="tc-scope-groups">
+					<div class="tc-launcher-state preview-selector-underlay"><div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button" aria-expanded="false" data-scope-open="selector"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value">3 tables</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button>
+						<div class="tc-scope-picker preview-desktop-scope" data-selector-root="desktop" hidden><div class="tc-scope-searchbar"><input class="tc-scope-search" type="search" aria-label="Search tables" placeholder="Search headings, paths, or columns"></div><div class="tc-scope-groups">
 							<section class="tc-scope-group"><header class="tc-scope-group-header"><div class="tc-scope-source" dir="auto"><div class="tc-scope-source-name">Dictionary.md</div><div class="tc-scope-source-path">English/Core</div></div><div class="tc-scope-group-controls"><span class="tc-scope-group-count">2 / 2</span><button class="tc-scope-group-toggle" type="button" data-group-toggle>Clear</button></div></header>
-								<label class="tc-scope-row"><input class="preview-check" type="checkbox" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Vocabulary · Core</span><span class="tc-scope-row-meta"><span>412 rows</span><span>7 columns</span><span class="tc-scope-columns" dir="auto">Word · Translation · Example…</span></span></span></label>
-								<label class="tc-scope-row"><input class="preview-check" type="checkbox" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Phrases for travel</span><span class="tc-scope-row-meta"><span>96 rows</span><span>4 columns</span><span class="tc-scope-columns" dir="auto">Phrase · Translation · Context</span></span></span></label>
+								<label class="tc-scope-row"><input class="preview-check" type="checkbox" data-cards="412" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Vocabulary · Core</span><span class="tc-scope-row-meta"><span>412 rows</span><span>7 columns</span><span class="tc-scope-columns" dir="auto">Word · Translation · Example…</span></span></span></label>
+								<label class="tc-scope-row"><input class="preview-check" type="checkbox" data-cards="96" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Phrases for travel</span><span class="tc-scope-row-meta"><span>96 rows</span><span>4 columns</span><span class="tc-scope-columns" dir="auto">Phrase · Translation · Context</span></span></span></label>
 							</section>
 							<section class="tc-scope-group"><header class="tc-scope-group-header"><div class="tc-scope-source" dir="auto"><div class="tc-scope-source-name">Notes.md</div><div class="tc-scope-source-path">English/Reference</div></div><div class="tc-scope-group-controls"><span class="tc-scope-group-count">1 / 2</span><button class="tc-scope-group-toggle" type="button" data-group-toggle>Select all</button></div></header>
-								<label class="tc-scope-row"><input class="preview-check" type="checkbox" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Common collocations</span><span class="tc-scope-row-meta"><span>75 rows</span><span>5 columns</span><span class="tc-scope-columns" dir="auto">Verb · Noun · Example</span></span></span></label>
-								<label class="tc-scope-row"><input class="preview-check" type="checkbox"><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Archived terms</span><span class="tc-scope-row-meta"><span>21 rows</span><span>3 columns</span><span class="tc-scope-columns" dir="auto">Term · Meaning · Note</span></span></span></label>
+								<label class="tc-scope-row"><input class="preview-check" type="checkbox" data-cards="75" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Common collocations</span><span class="tc-scope-row-meta"><span>75 rows</span><span>5 columns</span><span class="tc-scope-columns" dir="auto">Verb · Noun · Example</span></span></span></label>
+								<label class="tc-scope-row"><input class="preview-check" type="checkbox" data-cards="21"><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Archived terms</span><span class="tc-scope-row-meta"><span>21 rows</span><span>3 columns</span><span class="tc-scope-columns" dir="auto">Term · Meaning · Note</span></span></span></label>
 							</section>
-						</div><div class="tc-scope-actions"><button type="button" data-clear-all>Clear</button><button class="mod-cta" type="button">Apply</button></div></div>
-					</div>
+						</div><div class="tc-scope-actions"><button type="button" data-clear-all>Clear</button><button class="mod-cta" type="button" data-apply>Apply</button></div></div>
+					</div></div>
 					<div class="tc-launcher-messages" aria-live="polite"></div>
 					<footer class="tc-launcher-footer"><div class="tc-launcher-summary" data-live-summary>583 cards · 3 tables</div><button class="tc-launcher-start mod-cta" type="button" data-live-start>Open cards: 583</button></footer>
 				</div>
-				<div class="tc-sheet-layer preview-mobile-scope" aria-hidden="false"><div class="tc-sheet-scrim"></div><section class="tc-sheet" data-variant="full" role="dialog" aria-modal="true" aria-labelledby="mobile-scope-title"><header class="tc-sheet-header"><h2 id="mobile-scope-title">Tables</h2><button class="tc-sheet-close" type="button" aria-label="Close">×</button></header><div class="tc-sheet-body"><div class="tc-scope-picker is-mobile" data-selector-root><div class="tc-scope-searchbar"><input class="tc-scope-search" type="search" aria-label="Search tables" placeholder="Search tables"></div><div class="tc-scope-groups"><section class="tc-scope-group"><header class="tc-scope-group-header"><div class="tc-scope-source"><div class="tc-scope-source-name">Dictionary.md</div><div class="tc-scope-source-path">English/Core</div></div><div class="tc-scope-group-controls"><span class="tc-scope-group-count">2 / 2</span><button class="tc-scope-group-toggle" type="button">Clear</button></div></header><label class="tc-scope-row"><input type="checkbox" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title">Vocabulary · Core</span><span class="tc-scope-row-meta"><span>412 rows</span><span>7 columns</span></span></span></label><label class="tc-scope-row"><input type="checkbox" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title">Phrases for travel</span><span class="tc-scope-row-meta"><span>96 rows</span><span>4 columns</span></span></span></label></section><section class="tc-scope-group"><header class="tc-scope-group-header"><div class="tc-scope-source"><div class="tc-scope-source-name">Notes.md</div><div class="tc-scope-source-path">English/Reference</div></div><div class="tc-scope-group-controls"><span class="tc-scope-group-count">1 / 2</span><button class="tc-scope-group-toggle" type="button">Select all</button></div></header><label class="tc-scope-row"><input type="checkbox" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title">Common collocations</span><span class="tc-scope-row-meta"><span>75 rows</span><span>5 columns</span></span></span></label></section></div></div></div><footer class="tc-sheet-footer"><button type="button">Clear</button><button class="mod-cta" type="button">Apply</button></footer></section></div>
+				<div class="tc-sheet-layer preview-mobile-scope" hidden><button class="tc-sheet-scrim" type="button" aria-label="Close table selector" data-mobile-close></button><section class="tc-sheet" data-variant="full" role="dialog" aria-modal="true" aria-labelledby="mobile-scope-title"><header class="tc-sheet-header"><h2 id="mobile-scope-title">Tables</h2><button class="tc-sheet-close" type="button" aria-label="Close" data-mobile-close>×</button></header><div class="tc-sheet-body" data-selector-mount="mobile"></div><footer class="tc-sheet-footer" data-selector-actions="mobile"></footer></section></div>
 			</div></div>
 		</section>
 
@@ -102,7 +105,7 @@
 
 		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="loading" role="dialog" aria-modal="true" aria-label="Open Table Cards" tabindex="-1" hidden><div class="modal-content table-cards-shell"><div class="tc-launcher"><header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close">×</button></header><div class="tc-launcher-body"><div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name">English · Dictionary</div></div><div class="tc-launcher-state is-loading" aria-live="polite" aria-busy="true" tabindex="-1"><div class="tc-launcher-state-title">Loading tables…</div><div class="tc-launcher-skeleton" aria-hidden="true"><div class="tc-launcher-skeleton-row"><span></span><span></span></div><div class="tc-launcher-skeleton-row"><span></span><span></span></div><div class="tc-launcher-skeleton-row"><span></span><span></span></div></div></div><footer class="tc-launcher-footer"><div class="tc-launcher-summary">Loading…</div><button class="tc-launcher-start mod-cta" type="button" disabled>Open cards: 0</button></footer></div></div></div></section>
 
-		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="error" role="dialog" aria-modal="true" aria-label="Open Table Cards" tabindex="-1" hidden><div class="modal-content table-cards-shell"><div class="tc-launcher"><header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close">×</button></header><div class="tc-launcher-body"><div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name">English · Dictionary</div></div><div class="tc-launcher-state is-error" role="alert" tabindex="-1"><div class="tc-launcher-state-title">Could not load this deck</div><div class="tc-launcher-error-scope">Last scope: 3 tables</div><button type="button">Try again</button></div><footer class="tc-launcher-footer"><div class="tc-launcher-summary">Unavailable</div><button class="tc-launcher-start mod-cta" type="button" disabled>Open cards: 0</button></footer></div></div></div></section>
+		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="error" role="dialog" aria-modal="true" aria-label="Open Table Cards" tabindex="-1" hidden><div class="modal-content table-cards-shell"><div class="tc-launcher"><header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close">×</button></header><div class="tc-launcher-body"><div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name">English · Dictionary</div></div><div class="tc-launcher-state is-error" role="alert" tabindex="-1"><div class="tc-launcher-state-title">Could not load this deck</div><div class="tc-launcher-error-scope">Last scope: 3 tables</div><button type="button" data-retry>Try again</button></div><footer class="tc-launcher-footer"><div class="tc-launcher-summary">Unavailable</div><button class="tc-launcher-start mod-cta" type="button" disabled>Open cards: 0</button></footer></div></div></div></section>
 
 		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="browser" role="dialog" aria-modal="true" aria-label="Browse cards" tabindex="-1" hidden><div class="modal-content table-cards-shell"><div class="tc-launcher preview-browser-underlay"><header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>English · Dictionary</h1></div></header><div class="tc-launcher-body"></div></div><div class="tc-sheet-layer preview-browser-sheet"><button class="tc-sheet-scrim" type="button" aria-label="Close browser"></button><section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="browser-title"><header class="tc-sheet-header"><h2 id="browser-title">Browse cards</h2><button class="tc-sheet-close" type="button" aria-label="Close">×</button></header><div class="tc-sheet-body"><div class="tc-card-browser"><div class="tc-card-browser-controls"><button class="tc-card-browser-scope" type="button" aria-label="Tables: All tables" aria-expanded="false"><span>All tables</span><span class="tc-card-browser-scope-mark" aria-hidden="true">⌄</span></button><div class="tc-card-browser-search-wrap"><span class="tc-card-browser-search-icon" aria-hidden="true">⌕</span><input class="tc-card-browser-search" type="search" value="remain" aria-label="Search cards" placeholder="Search every cell" dir="auto"></div></div><div class="tc-card-browser-status" aria-live="polite">3 results</div><div class="tc-card-browser-results"><section class="tc-card-browser-group"><header class="tc-card-browser-group-header"><div class="tc-card-browser-group-title" dir="auto">Vocabulary · Core</div><div class="tc-card-browser-group-file" dir="auto">Dictionary</div></header><button class="tc-card-browser-result" type="button"><span class="tc-card-browser-primary" dir="auto">remain</span><span class="tc-card-browser-snippet" dir="auto">to continue to exist or stay in the same place</span><span class="tc-card-browser-meta"><span>Vocabulary · Core</span><span>Dictionary</span><span>Row 18</span></span></button><button class="tc-card-browser-result" type="button"><span class="tc-card-browser-primary" dir="auto">remainder</span><span class="tc-card-browser-snippet" dir="auto">the part that remains</span><span class="tc-card-browser-meta"><span>Vocabulary · Core</span><span>Dictionary</span><span>Row 204</span></span></button></section><section class="tc-card-browser-group"><header class="tc-card-browser-group-header"><div class="tc-card-browser-group-title" dir="auto">Phrases for travel</div><div class="tc-card-browser-group-file" dir="auto">Dictionary</div></header><button class="tc-card-browser-result" type="button"><span class="tc-card-browser-primary" dir="auto">Please remain seated</span><span class="tc-card-browser-meta"><span>Phrases for travel</span><span>Dictionary</span><span>Row 41</span></span></button></section></div></div></div></section></div></div></section>
 
@@ -110,46 +113,6 @@
 	</main>
 	<div class="preview-note">Production-class fixture · query with <code>?state=selector&amp;capture=1</code> for deterministic captures.</div>
 
-	<script type="module">
-		import { installNoOverflowSignal, layerController, stateController } from './preview.js';
-
-		const states = stateController({ buttons: '[data-state].preview-toolbar button, .preview-toolbar [data-state]', panels: '.preview-root > [data-state]', initial: 'general' });
-		const layers = layerController();
-		for (const opener of document.querySelectorAll('[data-open-layer]')) {
-			opener.addEventListener('click', () => {
-				const layer = document.getElementById(opener.dataset.openLayer);
-				if (!layer) return;
-				if (!layer.hidden) layers.close(layer);
-				else layers.open(layer, opener, '[aria-selected="true"], input, button');
-			});
-		}
-		for (const option of document.querySelectorAll('#general-decks [role="option"]')) {
-			option.addEventListener('click', () => {
-				for (const candidate of document.querySelectorAll('#general-decks [role="option"]')) candidate.setAttribute('aria-selected', String(candidate === option));
-				document.getElementById('general-deck-value').textContent = option.textContent;
-				layers.close(document.getElementById('general-decks'));
-			});
-		}
-		for (const root of document.querySelectorAll('[data-selector-root]')) {
-			const checkboxes = Array.from(root.querySelectorAll('input[type="checkbox"]'));
-			const section = root.closest('[data-state="selector"]');
-			const update = () => {
-				const count = checkboxes.filter((input) => input.checked).length;
-				const summary = section?.querySelector('[data-live-summary]');
-				const start = section?.querySelector('[data-live-start]');
-				if (summary) summary.textContent = count ? `${count === 3 ? '583' : count * 171} cards · ${count} tables` : '0 cards · 0 tables';
-				if (start) { start.textContent = `Open cards: ${count ? (count === 3 ? '583' : count * 171) : 0}`; start.disabled = count === 0; }
-			};
-			for (const checkbox of checkboxes) checkbox.addEventListener('change', update);
-			root.querySelector('[data-clear-all]')?.addEventListener('click', () => { for (const checkbox of checkboxes) checkbox.checked = false; update(); });
-		}
-		document.addEventListener('keydown', (event) => {
-			if (event.key !== 'Escape' || layers.stack.length > 0) return;
-			const active = document.querySelector('.preview-root > [data-state]:not([hidden])');
-			active?.querySelector('.tc-launcher-close, .tc-sheet-close')?.focus();
-		});
-		window.previewFixtures = states;
-		installNoOverflowSignal();
-	</script>
+	<script type="module" src="launcher.js"></script>
 </body>
 </html>

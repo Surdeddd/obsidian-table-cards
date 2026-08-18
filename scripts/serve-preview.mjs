@@ -5,6 +5,7 @@ import { extname, resolve, sep } from "node:path";
 
 const root = resolve(process.cwd());
 const port = Number.parseInt(process.env.TABLE_CARDS_PREVIEW_PORT ?? "4173", 10);
+/** @type {Record<string, string>} */
 const contentTypes = {
 	".css": "text/css; charset=utf-8",
 	".html": "text/html; charset=utf-8",
@@ -23,6 +24,7 @@ createServer(async (request, response) => {
 		response.writeHead(200, {
 			"Cache-Control": "no-store",
 			"Content-Type": contentTypes[extname(target)] ?? "application/octet-stream",
+			"X-Table-Cards-Preview-Root": root,
 		});
 		createReadStream(target).pipe(response);
 	} catch {

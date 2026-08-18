@@ -104,11 +104,14 @@ The plugin is TypeScript with small boundaries for table scanning/cataloguing, s
 ```bash
 npm install
 npm test
+npm run test:tools
 npm run lint
 npx tsc --noEmit
+npm run typecheck:tools
 npm run build
 npx playwright install chromium
 npm run test:ui
+npm run check:links
 ```
 
 `npx playwright install chromium` is a one-time browser setup for a clean checkout. Deterministic production-class fixtures live in `preview/launcher.html`, `preview/setup.html`, `preview/v2.html`, and `preview/editor.html`. The Playwright gate covers desktop, tablet, zoom-equivalent, phone, Arabic RTL, reduced motion, focus restoration, target geometry, overflow, and console output.

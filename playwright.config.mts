@@ -14,7 +14,7 @@ export default defineConfig({
 	webServer: {
 		command: "node scripts/serve-preview.mjs",
 		url: "http://127.0.0.1:4173/preview/launcher.html",
-		reuseExistingServer: true,
+		reuseExistingServer: false,
 		timeout: 15_000,
 	},
 });

@@ -84,6 +84,74 @@ async function expectFooterSafe(page: Page): Promise<void> {
 	expect(failures, "fixed footer must stay inside viewport with safe-area padding").toEqual([]);
 }
 
+async function expectTabWrap(page: Page, rootSelector: string): Promise<void> {
+	const root = page.locator(rootSelector);
+	const focusable = root.locator([
+		"button:not([disabled]):visible",
+		"input:not([disabled]):visible",
+		"summary:visible",
+		"[href]:visible",
+		'[tabindex]:not([tabindex="-1"]):visible',
+	].join(", "));
+	const count = await focusable.count();
+	expect(count, `${rootSelector} needs a focusable control`).toBeGreaterThan(0);
+	const first = focusable.first();
+	const last = focusable.last();
+	await last.focus();
+	await page.keyboard.press("Tab");
+	await expect(first, `Tab wraps inside ${rootSelector}`).toBeFocused();
+	await first.focus();
+	await page.keyboard.press("Shift+Tab");
+	await expect(last, `Shift+Tab wraps inside ${rootSelector}`).toBeFocused();
+}
+
+async function expectFaintTextContrast(page: Page): Promise<void> {
+	const result = await page.evaluate(() => {
+		const parse = (value: string): [number, number, number, number] => {
+			const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
+			return [channels[0] ?? 0, channels[1] ?? 0, channels[2] ?? 0, channels[3] ?? 1];
+		};
+		const luminance = ([red, green, blue]: [number, number, number, number]) => {
+			const linear = [red, green, blue].map((channel) => {
+				const normalized = channel / 255;
+				return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+			});
+			return 0.2126 * (linear[0] ?? 0) + 0.7152 * (linear[1] ?? 0) + 0.0722 * (linear[2] ?? 0);
+		};
+		const contrast = (foreground: [number, number, number, number], background: [number, number, number, number]) => {
+			const light = Math.max(luminance(foreground), luminance(background));
+			const dark = Math.min(luminance(foreground), luminance(background));
+			return (light + 0.05) / (dark + 0.05);
+		};
+		const faint = getComputedStyle(document.documentElement).getPropertyValue("--text-faint").trim();
+		const probe = document.createElement("span");
+		probe.style.color = faint;
+		document.body.append(probe);
+		const faintColor = getComputedStyle(probe).color;
+		probe.remove();
+		const samples = Array.from(document.querySelectorAll<HTMLElement>("main *")).flatMap((element) => {
+			const style = getComputedStyle(element);
+			if (element.getClientRects().length === 0 || style.color !== faintColor || Number.parseFloat(style.fontSize) > 11.1) return [];
+			let background = element;
+			let backgroundColor = parse(style.backgroundColor);
+			while (backgroundColor[3] < 1 && background.parentElement) {
+				background = background.parentElement;
+				backgroundColor = parse(getComputedStyle(background).backgroundColor);
+			}
+			return [{
+				selector: element.className || element.tagName,
+				fontSize: style.fontSize,
+				foreground: style.color,
+				background: getComputedStyle(background).backgroundColor,
+				ratio: contrast(parse(style.color), backgroundColor),
+			}];
+		});
+		return { samples, failures: samples.filter((sample) => sample.ratio < 4.5) };
+	});
+	expect(result.samples.length, "representative 10–11px faint text samples").toBeGreaterThan(0);
+	expect(result.failures, "faint text must reach 4.5:1 on every sampled background").toEqual([]);
+}
+
 async function capture(page: Page, name: string, withAccessibility = false): Promise<void> {
 	await page.screenshot({ path: join(screenshotRoot, `${name}.png`), animations: "disabled" });
 	if (!withAccessibility) return;
@@ -93,6 +161,11 @@ async function capture(page: Page, name: string, withAccessibility = false): Pro
 
 test.beforeAll(async () => {
 	await mkdir(accessibilityRoot, { recursive: true });
+});
+
+test("preview server identifies this worktree", async ({ request }) => {
+	const response = await request.get("/preview/launcher.html");
+	expect(response.headers()["x-table-cards-preview-root"]).toBe(process.cwd());
 });
 
 test("desktop release fixtures and accessibility snapshots", async ({ browser }) => {
@@ -112,6 +185,10 @@ test("desktop release fixtures and accessibility snapshots", async ({ browser })
 		const fixture = await openFixture(browser, path, { width: 1440, height: 1000 });
 		await expectFixtureClean(fixture);
 		await expectFooterSafe(fixture.page);
+		if (name === "launcher-selector-desktop") {
+			await fixture.page.locator('[data-selector-root="desktop"] .tc-scope-search').focus();
+			await expect(fixture.page.locator('[data-selector-root="desktop"] .tc-scope-search')).toBeFocused();
+		}
 		await capture(fixture.page, name, withAccessibility);
 		await fixture.context.close();
 	}
@@ -121,15 +198,24 @@ test("responsive matrix has no overflow and keeps coarse targets", async ({ brow
 	const cases = [
 		["/preview/setup.html?state=preset&capture=1", 768, 1024, false],
 		["/preview/editor.html?panel=fields&route=tables&expanded=1&capture=1", 720, 500, false],
+		["/preview/launcher.html?state=general&capture=1", 390, 844, true],
 		["/preview/launcher.html?state=selector&capture=1", 390, 844, true],
+		["/preview/setup.html?state=data&capture=1", 390, 844, true],
+		["/preview/setup.html?state=preset&capture=1", 390, 844, true],
+		["/preview/setup.html?state=finish&capture=1", 390, 844, true],
+		["/preview/v2.html?state=normal&capture=1", 390, 844, true],
 		["/preview/v2.html?state=long&capture=1", 320, 568, true],
+		["/preview/v2.html?state=image&capture=1", 390, 844, true],
+		["/preview/v2.html?state=rtl&capture=1", 390, 844, true],
+		["/preview/editor.html?panel=fields&capture=1", 390, 844, true],
+		["/preview/editor.html?panel=fields&route=tables&capture=1", 390, 844, true],
 	] as const;
 	for (const [path, width, height, coarse] of cases) {
 		const fixture = await openFixture(browser, path, { width, height }, coarse);
 		await expectFixtureClean(fixture);
 		await expectFooterSafe(fixture.page);
 		if (coarse) await expectCoarseTargets(fixture.page);
-		if (width === 390) await capture(fixture.page, "launcher-mobile", true);
+		if (path.includes("launcher.html?state=selector")) await capture(fixture.page, "launcher-mobile", true);
 		if (width === 320) await capture(fixture.page, "study-long-320", false);
 		await fixture.context.close();
 	}
@@ -150,46 +236,191 @@ test("RTL chrome uses Arabic numbers while English content stays natural", async
 	await expectCoarseTargets(study.page);
 	await expect(study.page.locator(".preview-study-modal")).toHaveAttribute("dir", "rtl");
 	await expect(study.page.locator(".table-cards-counter")).toHaveText("١٨ / ٥٨٣");
+	await expect(study.page.locator(".table-cards-counter")).toHaveAttribute("aria-label", "التقدم");
+	await expect(study.page.locator(".table-cards-progress")).toHaveAttribute("aria-label", "التقدم");
+	await expect(study.page.locator(".table-cards-progress")).toHaveAttribute("aria-valuetext", "١٨ من ٥٨٣");
+	await expect(study.page.getByRole("button", { name: "البحث في البطاقات" })).toBeVisible();
+	await expect(study.page.getByRole("button", { name: "خلط البطاقات" })).toBeVisible();
+	await expect(study.page.getByRole("button", { name: "إغلاق" })).toBeVisible();
 	await expect(study.page.locator('[data-card="rtl"]')).toHaveAttribute("dir", "auto");
 	await expect(study.page.locator('[data-card="rtl"] .preview-ltr-content').first()).toHaveCSS("direction", "ltr");
+	await study.page.getByRole("button", { name: "البحث في البطاقات" }).click();
+	await expect(study.page.getByRole("dialog", { name: "تصفح البطاقات" })).toBeVisible();
+	await expect(study.page.getByRole("searchbox", { name: "البحث في البطاقات" })).toBeVisible();
+	await expect(study.page.getByRole("dialog", { name: "تصفح البطاقات" }).getByRole("button", { name: "إغلاق المتصفح" })).toBeVisible();
+	const rtlBrowserSnapshot = await study.page.locator("main").ariaSnapshot();
+	await writeFile(join(accessibilityRoot, "study-rtl-browser-mobile.aria.txt"), `${rtlBrowserSnapshot}\n`, "utf8");
+	await study.page.keyboard.press("Escape");
 	await capture(study.page, "study-rtl-mobile", true);
 	await study.context.close();
 });
 
-test("launcher selection, focus restoration, and exact-card browser interactions", async ({ browser }) => {
+test("general and desktop grouped selectors update exact counts and restore their opener", async ({ browser }) => {
 	const launcher = await openFixture(browser, "/preview/launcher.html?state=general&capture=1", { width: 1440, height: 1000 });
-	const deckTrigger = launcher.page.locator('[data-open-layer="general-decks"]');
-	await deckTrigger.click();
-	await expect(launcher.page.locator("#general-decks")).toBeVisible();
-	await launcher.page.keyboard.press("Escape");
-	await expect(deckTrigger).toBeFocused();
+	const general = launcher.page.locator('[data-state="general"]');
+	const generalTrigger = general.locator('[data-scope-open="general"]');
+	await generalTrigger.click();
+	const generalPicker = general.locator('[data-selector-root="general"]');
+	await expect(generalPicker).toBeVisible();
+	await expect(generalPicker.locator(".tc-scope-search")).toBeFocused();
+	await generalPicker.locator(".tc-scope-group").first().locator("[data-group-toggle]").click();
+	await expect(generalPicker.locator(".tc-scope-group-count").first()).toHaveText("0 / 2");
+	await expect(general.locator("[data-live-summary]")).toHaveText("75 cards · 1 table");
+	await generalPicker.locator(".tc-scope-group").first().locator("[data-group-toggle]").click();
+	await expect(general.locator("[data-live-summary]")).toHaveText("583 cards · 3 tables");
+	await generalPicker.locator("[data-apply]").click();
+	await expect(generalPicker).toBeHidden();
+	await expect(generalTrigger).toBeFocused();
 	await launcher.context.close();
 
 	const selection = await openFixture(browser, "/preview/launcher.html?state=selector&capture=1", { width: 1440, height: 1000 });
-	await selection.page.locator("[data-clear-all]").click();
-	await expect(selection.page.locator("[data-live-start]")).toBeDisabled();
-	await expect(selection.page.locator("[data-live-summary]")).toHaveText("0 cards · 0 tables");
-	await selection.page.locator('.preview-desktop-scope input[type="checkbox"]').first().check();
-	await expect(selection.page.locator("[data-live-start]")).toBeEnabled();
+	const selectorPanel = selection.page.locator('[data-state="selector"]');
+	const desktopPicker = selectorPanel.locator('[data-selector-root="desktop"]');
+	await desktopPicker.locator(".tc-scope-group").last().locator("[data-group-toggle]").click();
+	await expect(desktopPicker.locator(".tc-scope-group-count").last()).toHaveText("2 / 2");
+	await expect(selectorPanel.locator("[data-live-summary]")).toHaveText("604 cards · 4 tables");
+	await desktopPicker.locator("[data-clear-all]").click();
+	await expect(selectorPanel.locator("[data-live-start]")).toBeDisabled();
+	await expect(selectorPanel.locator("[data-live-summary]")).toHaveText("0 cards · 0 tables");
+	await desktopPicker.locator(".tc-scope-group").first().locator("[data-group-toggle]").click();
+	await expect(selectorPanel.locator("[data-live-start]")).toBeEnabled();
+	await expect(selectorPanel.locator("[data-live-summary]")).toHaveText("508 cards · 2 tables");
+	const selectorTrigger = selectorPanel.locator('[data-scope-open="selector"]');
+	await desktopPicker.locator("[data-apply]").click();
+	await expect(desktopPicker).toBeHidden();
+	await expect(selectorTrigger).toBeFocused();
 	await selection.context.close();
+});
 
+test("mobile grouped selector clears, reselects, applies, and restores focus", async ({ browser }) => {
+	const selection = await openFixture(browser, "/preview/launcher.html?state=selector&capture=1", { width: 390, height: 844 }, true);
+	const panel = selection.page.locator('[data-state="selector"]');
+	const mobile = panel.locator('[data-selector-root="mobile"]');
+	const footer = panel.locator(".preview-mobile-scope > .tc-sheet > .tc-sheet-footer");
+	await expect(footer).toBeVisible();
+	const footerBox = await footer.boundingBox();
+	expect(footerBox).not.toBeNull();
+	expect(Math.abs(844 - ((footerBox?.y ?? 0) + (footerBox?.height ?? 0))), "mobile sheet footer hugs the safe-area edge").toBeLessThanOrEqual(32);
+	await expect(mobile.locator('.tc-scope-group').nth(1).locator('input[type="checkbox"]')).toHaveCount(2);
+	await expect(mobile.locator(".tc-scope-group-count").nth(1)).toHaveText("1 / 2");
+	await mobile.locator("[data-clear-all]").click();
+	await expect(panel.locator("[data-live-summary]")).toHaveText("0 cards · 0 tables");
+	await expect(panel.locator("[data-live-start]")).toBeDisabled();
+	await mobile.locator(".tc-scope-group").nth(1).locator("[data-group-toggle]").click();
+	await expect(mobile.locator(".tc-scope-group-count").nth(1)).toHaveText("2 / 2");
+	await expect(panel.locator("[data-live-summary]")).toHaveText("96 cards · 2 tables");
+	await expect(panel.locator("[data-live-start]")).toBeEnabled();
+	const opener = panel.locator('[data-scope-open="selector"]');
+	await mobile.locator("[data-apply]").click();
+	await expect(panel.locator(".preview-mobile-scope")).toBeHidden();
+	await expect(opener).toBeFocused();
+	await selection.context.close();
+});
+
+test("exact browser result opens a different row with matching source context", async ({ browser }) => {
 	const study = await openFixture(browser, "/preview/v2.html?state=normal&capture=1", { width: 1440, height: 1000 });
 	const search = study.page.locator("[data-open-browser]");
-	await search.click();
-	await expect(study.page.locator('[data-layer="browser"]')).toBeVisible();
-	await study.page.keyboard.press("Escape");
-	await expect(search).toBeFocused();
-	const scope = study.page.locator("[data-open-scope]");
-	await scope.click();
-	await study.page.keyboard.press("Escape");
-	await expect(scope).toBeFocused();
+	await expect(study.page.locator('[data-card="normal"] .table-cards-word')).toHaveText("remain");
+	await expect(study.page.locator(".table-cards-counter")).toHaveText("18 / 583");
+	await expect(study.page.locator('[data-card="normal"] .table-cards-source-table')).toHaveText("Vocabulary · Core");
 	await search.click();
 	await study.page.locator("[data-exact-result]").click();
 	await expect(study.page.locator('[data-layer="browser"]')).toBeHidden();
-	await expect(study.page.locator('[data-card="normal"] .table-cards-word')).toHaveText("remain");
+	await expect(study.page.locator('[data-card="normal"] .table-cards-word')).toHaveText("Please remain seated");
+	await expect(study.page.locator(".table-cards-counter")).toHaveText("41 / 583");
+	await expect(study.page.locator('[data-card="normal"] .table-cards-source-table')).toHaveText("Phrases for travel");
+	await expect(study.page.locator('[data-card="normal"] .table-cards-source-file')).toHaveText("Travel.md");
 	await expect(search).toBeFocused();
 	await expectFixtureClean(study);
 	await study.context.close();
+});
+
+test("base and nested dialogs trap Tab in both directions", async ({ browser }) => {
+	const launcher = await openFixture(browser, "/preview/launcher.html?state=general&capture=1", { width: 1440, height: 1000 });
+	await expectTabWrap(launcher.page, '[data-state="general"]');
+	await launcher.context.close();
+	const setup = await openFixture(browser, "/preview/setup.html?state=data&capture=1", { width: 1440, height: 1000 });
+	await expectTabWrap(setup.page, '[data-state="data"]');
+	await setup.context.close();
+	const editor = await openFixture(browser, "/preview/editor.html?capture=1", { width: 1440, height: 1000 });
+	await expectTabWrap(editor.page, ".table-cards-editor");
+	await editor.context.close();
+	const study = await openFixture(browser, "/preview/v2.html?state=normal&capture=1", { width: 1440, height: 1000 });
+	await expectTabWrap(study.page, ".preview-study-modal");
+	await study.page.locator("[data-open-browser]").click();
+	await expectTabWrap(study.page, '[data-layer="browser"] [role="dialog"]');
+	await study.page.keyboard.press("Escape");
+	await study.page.locator("[data-open-scope]").click();
+	await expectTabWrap(study.page, '[data-layer="scope"] [role="dialog"]');
+	await study.context.close();
+	const lightbox = await openFixture(browser, "/preview/v2.html?state=image&capture=1", { width: 1440, height: 1000 });
+	await lightbox.page.locator("[data-open-lightbox]").click();
+	await expectTabWrap(lightbox.page, '[data-layer="lightbox"] [role="dialog"]');
+	await lightbox.context.close();
+	const mobile = await openFixture(browser, "/preview/launcher.html?state=selector&capture=1", { width: 390, height: 844 }, true);
+	await expectTabWrap(mobile.page, ".preview-mobile-scope > [role=dialog]");
+	await mobile.context.close();
+});
+
+test("requested states are visible and state actions have observable outcomes", async ({ browser }) => {
+	for (const state of ["general", "locked", "selector", "empty", "loading", "error", "browser", "rtl"]) {
+		const fixture = await openFixture(browser, `/preview/launcher.html?state=${state}&capture=1`, { width: 1440, height: 1000 });
+		const panel = fixture.page.locator(`.preview-root > [data-state="${state}"]`);
+		await expect(panel).toBeVisible();
+		expect((await panel.innerText()).trim().length, `${state} launcher state is nonblank`).toBeGreaterThan(20);
+		if (state === "empty") await expect(panel.locator(".tc-launcher-start")).toBeDisabled();
+		if (state === "loading") await expect(panel.locator('[aria-busy="true"]')).toBeVisible();
+		if (state === "error") {
+			await panel.locator("[data-retry]").click();
+			await expect(fixture.page.locator('.preview-root > [data-state="loading"]')).toBeVisible();
+		}
+		await fixture.context.close();
+	}
+	for (const state of ["data", "preset", "finish"]) {
+		const fixture = await openFixture(browser, `/preview/setup.html?state=${state}&capture=1`, { width: 1440, height: 1000 });
+		const panel = fixture.page.locator(`.preview-root > [data-state="${state}"]`);
+		await expect(panel).toBeVisible();
+		expect((await panel.innerText()).trim().length, `${state} setup state is nonblank`).toBeGreaterThan(20);
+		await fixture.context.close();
+	}
+	for (const state of ["launcher", "normal", "long", "empty", "image", "browser", "rtl"]) {
+		const fixture = await openFixture(browser, `/preview/v2.html?state=${state}&capture=1`, { width: 1440, height: 1000 });
+		const view = fixture.page.locator(`[data-view="${state === "launcher" ? "launcher" : "study"}"]`);
+		await expect(view).toBeVisible();
+		expect((await view.innerText()).trim().length, `${state} study state is nonblank`).toBeGreaterThan(20);
+		if (state === "empty") await expect(view.locator('[data-card="empty"]')).toBeVisible();
+		if (state === "browser") await expect(fixture.page.locator('[data-layer="browser"]')).toBeVisible();
+		await fixture.context.close();
+	}
+
+	const setup = await openFixture(browser, "/preview/setup.html?state=data&capture=1", { width: 1440, height: 1000 });
+	await setup.page.locator('[data-state="data"] [data-next="preset"]').click();
+	await expect(setup.page.locator('.preview-root > [data-state="preset"]')).toBeVisible();
+	const gallery = setup.page.getByRole("button", { name: /Gallery/ });
+	await gallery.click();
+	await expect(gallery).toHaveAttribute("aria-pressed", "true");
+	await expect(setup.page.locator('[data-preview-title]')).toHaveText("lighthouse");
+	await setup.page.locator('[data-state="preset"] [data-next="finish"]').click();
+	await expect(setup.page.locator('.preview-root > [data-state="finish"]')).toBeVisible();
+	const languageIcon = setup.page.getByRole("button", { name: "Languages" });
+	await languageIcon.click();
+	await expect(languageIcon).toHaveAttribute("aria-pressed", "true");
+	await setup.page.locator("[data-create-deck]").click();
+	await expect(setup.page.locator("[data-created]")).toContainText("English · Dictionary");
+	await setup.context.close();
+});
+
+test("representative faint labels meet 4.5 to 1 contrast", async ({ browser }) => {
+	for (const path of [
+		"/preview/launcher.html?state=selector&capture=1",
+		"/preview/setup.html?state=preset&capture=1",
+		"/preview/v2.html?state=normal&capture=1",
+		"/preview/editor.html?panel=fields&capture=1",
+	]) {
+		const fixture = await openFixture(browser, path, { width: 1440, height: 1000 });
+		await expectFaintTextContrast(fixture.page);
+		await fixture.context.close();
+	}
 });
 
 test("study keyboard, swipe, image zoom, editor route, and reduced motion", async ({ browser }) => {
@@ -197,6 +428,13 @@ test("study keyboard, swipe, image zoom, editor route, and reduced motion", asyn
 	await expect(study.page.locator(".table-cards-counter")).toHaveText("18 / 583");
 	await study.page.keyboard.press("ArrowRight");
 	await expect(study.page.locator(".table-cards-counter")).toHaveText("19 / 583");
+	await study.page.keyboard.press("s");
+	await expect(study.page.locator("[data-shuffle]")).toHaveAttribute("aria-pressed", "true");
+	const scope = study.page.locator("[data-open-scope]");
+	await scope.click();
+	await study.page.locator('[data-layer="scope"] [data-apply]').click();
+	await expect(study.page.locator('[data-layer="scope"]')).toBeHidden();
+	await expect(scope).toBeFocused();
 	const stage = study.page.locator('[data-card="normal"]');
 	const box = await stage.boundingBox();
 	expect(box).not.toBeNull();
@@ -209,9 +447,16 @@ test("study keyboard, swipe, image zoom, editor route, and reduced motion", asyn
 	await expect(study.page.locator(".table-cards-counter")).toHaveText("20 / 583");
 	await study.context.close();
 
-	const image = await openFixture(browser, "/preview/v2.html?state=image&capture=1", { width: 390, height: 844 }, true);
+	const image = await openFixture(browser, "/preview/v2.html?state=image&capture=1", { width: 1440, height: 1000 });
+	const sourceImage = image.page.locator("[data-open-lightbox] img");
+	const source = await sourceImage.getAttribute("src");
+	const sourceBox = await sourceImage.boundingBox();
 	await image.page.locator("[data-open-lightbox]").click();
 	await expect(image.page.locator('[data-layer="lightbox"]')).toBeVisible();
+	const lightboxImage = image.page.locator('[data-layer="lightbox"] img');
+	await expect(lightboxImage).toHaveAttribute("src", source ?? "");
+	const lightboxBox = await lightboxImage.boundingBox();
+	expect(lightboxBox?.width ?? 0).toBeGreaterThan(sourceBox?.width ?? Number.POSITIVE_INFINITY);
 	await image.page.keyboard.press("Escape");
 	await expect(image.page.locator("[data-open-lightbox]")).toBeFocused();
 	await image.context.close();

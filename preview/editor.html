@@ -8,7 +8,7 @@
 	<link rel="stylesheet" href="../styles.css">
 	<link rel="stylesheet" href="preview.css">
 	<style>
-		.tc-editor-preview { --tc-window-bg:#0d0d0e; --tc-card-bg:#151516; --tc-text:#f3f3f3; --tc-text-muted:#a7a7ac; --tc-label:#77777e; --tc-accent:#fff; --tc-border:#303034; --tc-border-w:1px; --tc-radius:20px; --tc-pad:22px; --tc-gap:14px; --tc-word:1; --tc-max-w:920px; }
+		.tc-editor-preview { --tc-window-bg:#0d0d0e; --tc-card-bg:#151516; --tc-text:#f3f3f3; --tc-text-muted:#a7a7ac; --tc-label:var(--text-faint); --tc-accent:#fff; --tc-border:#303034; --tc-border-w:1px; --tc-radius:20px; --tc-pad:22px; --tc-gap:14px; --tc-word:1; --tc-max-w:920px; }
 		.tc-editor-icon-button { font-size: 18px; }
 		.preview-table-route[hidden], .preview-fields-list[hidden] { display: none; }
 		.preview-table-route .tc-table-selection-list { max-height: 470px; overflow: auto; }
@@ -59,59 +59,6 @@
 	</main>
 	<div class="preview-note">Source list and table picker are one sheet route. Back restores the exact Choose tables opener; all edits stay draft-only until Save.</div>
 
-	<script type="module">
-		import { installNoOverflowSignal, layerController, setPressed } from './preview.js';
-
-		const params = new URLSearchParams(location.search);
-		const panels = Array.from(document.querySelectorAll('[data-panel]'));
-		const layers = layerController();
-		let panelOpener = null;
-		const showPanel = (name, opener = null) => {
-			if (opener) panelOpener = opener;
-			for (const panel of panels) panel.hidden = panel.dataset.panel !== name;
-			const active = panels.find((panel) => !panel.hidden);
-			if (active) requestAnimationFrame(() => active.querySelector('.tc-sheet-close')?.focus());
-			else if (panelOpener) requestAnimationFrame(() => panelOpener.focus());
-		};
-		for (const button of document.querySelectorAll('[data-open]')) button.addEventListener('click', () => showPanel(button.dataset.open, button));
-		for (const button of document.querySelectorAll('[data-close]')) button.addEventListener('click', () => showPanel(''));
-		const fieldsList = document.querySelector('.preview-fields-list');
-		const tableRoute = document.querySelector('.preview-table-route');
-		let tableOpener = null;
-		const showTables = (open, opener = null) => {
-			if (opener) tableOpener = opener;
-			fieldsList.hidden = open; tableRoute.hidden = !open;
-			requestAnimationFrame(() => (open ? tableRoute.querySelector('.tc-table-selection-back') : tableOpener)?.focus());
-		};
-		document.querySelector('[data-choose-tables]').addEventListener('click', (event) => showTables(true, event.currentTarget));
-		document.querySelector('[data-back-sources]').addEventListener('click', () => showTables(false));
-		document.querySelector('[data-open-exact]').addEventListener('click', () => { const status = document.querySelector('.preview-opened-state'); status.hidden = false; status.focus?.(); });
-		const listboxTrigger = document.querySelector('[data-demo-listbox]');
-		const listbox = document.querySelector('[data-demo-options]');
-		listboxTrigger.addEventListener('click', () => listbox.hidden ? layers.open(listbox, listboxTrigger, '[aria-selected="true"]') : layers.close(listbox));
-		for (const option of listbox.querySelectorAll('[role="option"]')) option.addEventListener('click', () => { for (const candidate of listbox.querySelectorAll('[role="option"]')) candidate.setAttribute('aria-selected', String(candidate === option)); listboxTrigger.querySelector('span').textContent = option.textContent; layers.close(listbox); });
-		const preview = document.querySelector('.tc-editor-preview');
-		const deviceButtons = Array.from(document.querySelectorAll('[data-device]'));
-		const setPhone = (phone) => { preview.classList.toggle('is-phone', phone); preview.classList.toggle('is-desktop', !phone); setPressed(deviceButtons, deviceButtons.find((button) => button.dataset.device === (phone ? 'phone' : 'desktop'))); document.querySelector('[data-phone]').setAttribute('aria-pressed', String(phone)); };
-		for (const button of deviceButtons) button.addEventListener('click', () => setPhone(button.dataset.device === 'phone'));
-		document.querySelector('[data-phone]').addEventListener('click', (event) => setPhone(event.currentTarget.getAttribute('aria-pressed') !== 'true'));
-		const expandedButton = document.querySelector('[data-expanded]');
-		const setExpanded = (expanded) => { expandedButton.setAttribute('aria-pressed', String(expanded)); for (const node of document.querySelectorAll('[data-copy-expanded]')) node.textContent = expanded ? node.dataset.copyExpanded : node.dataset.copyNormal; };
-		expandedButton.addEventListener('click', () => setExpanded(expandedButton.getAttribute('aria-pressed') !== 'true'));
-		for (const button of document.querySelectorAll('[data-open-preview]')) button.addEventListener('click', () => { showPanel('fields', button); showTables(button.dataset.openPreview === 'tables', button); });
-		document.addEventListener('keydown', (event) => {
-			if (event.key !== 'Escape' || layers.stack.length > 0) return;
-			const active = panels.find((panel) => !panel.hidden);
-			if (!active) return;
-			event.preventDefault();
-			if (!tableRoute.hidden) showTables(false);
-			else showPanel('');
-		});
-		setPhone(params.get('device') === 'phone');
-		setExpanded(params.get('expanded') === '1');
-		showPanel(params.get('panel') || '');
-		if (params.get('route') === 'tables') { showPanel('fields'); showTables(true, document.querySelector('[data-choose-tables]')); }
-		installNoOverflowSignal();
-	</script>
+	<script type="module" src="editor.js"></script>
 </body>
 </html>

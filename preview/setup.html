@@ -8,7 +8,7 @@
 	<link rel="stylesheet" href="../styles.css">
 	<link rel="stylesheet" href="preview.css">
 	<style>
-		.tc-setup-card-preview { --tc-window-bg:#0d0d0e; --tc-card-bg:#151516; --tc-text:#f3f3f3; --tc-text-muted:#a7a7ac; --tc-label:#77777e; --tc-accent:#fff; --tc-border:#303034; --tc-border-w:1px; --tc-radius:16px; --tc-pad:16px; --tc-gap:10px; --tc-word:.78; }
+		.tc-setup-card-preview { --tc-window-bg:#0d0d0e; --tc-card-bg:#151516; --tc-text:#f3f3f3; --tc-text-muted:#a7a7ac; --tc-label:var(--text-faint); --tc-accent:#fff; --tc-border:#303034; --tc-border-w:1px; --tc-radius:16px; --tc-pad:16px; --tc-gap:10px; --tc-word:.78; }
 		.tc-setup-card-preview .table-cards-word { font-size: clamp(1.8rem, 5vw, 2.7rem); }
 		.tc-setup-preset-icon { font-size: 18px; }
 		.preview-setup-icon { font-size: 18px; }
@@ -51,15 +51,15 @@
 				<div class="tc-setup-progress"><div class="tc-setup-progress-label">Step 2 of 3</div><div class="tc-setup-progress-track" aria-hidden="true"><span class="is-complete"></span><span class="is-complete"></span><span></span></div></div>
 				<div class="tc-setup-body"><div class="tc-setup-intro"><h2>Choose a card layout</h2><p>The recommendation uses your real columns and values.</p></div>
 					<div class="tc-setup-presets" role="group" aria-label="Card layouts">
-						<button class="tc-setup-preset" type="button" aria-pressed="true" data-preset><span class="tc-setup-preset-icon" aria-hidden="true">Aa</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Vocabulary<span class="tc-setup-recommended">Recommended</span></span><span class="tc-setup-preset-description">Term, translation, pronunciation, example, note, and image.</span><span class="tc-setup-preset-reasons">Word column · translation column · image found</span></span></button>
-						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset><span class="tc-setup-preset-icon" aria-hidden="true">“ ”</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Phrases</span><span class="tc-setup-preset-description">Phrase, translation, context quote, and note.</span></span></button>
-						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset><span class="tc-setup-preset-icon" aria-hidden="true">?</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Question and answer</span><span class="tc-setup-preset-description">Question, answer, explanation, and optional image.</span></span></button>
-						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset><span class="tc-setup-preset-icon" aria-hidden="true">▧</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Gallery</span><span class="tc-setup-preset-description">Leading image, title, tags, and description.</span></span></button>
-						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset><span class="tc-setup-preset-icon" aria-hidden="true">≡</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Reference</span><span class="tc-setup-preset-description">Title with dense, labelled properties.</span></span></button>
-						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset><span class="tc-setup-preset-icon" aria-hidden="true">✣</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Universal</span><span class="tc-setup-preset-description">Best title plus every remaining column in source order.</span></span></button>
+					<button class="tc-setup-preset" type="button" aria-pressed="true" data-preset data-preview-word="remain"><span class="tc-setup-preset-icon" aria-hidden="true">Aa</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Vocabulary<span class="tc-setup-recommended">Recommended</span></span><span class="tc-setup-preset-description">Term, translation, pronunciation, example, note, and image.</span><span class="tc-setup-preset-reasons">Word column · translation column · image found</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="Could you help me?"><span class="tc-setup-preset-icon" aria-hidden="true">“ ”</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Phrases</span><span class="tc-setup-preset-description">Phrase, translation, context quote, and note.</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="What remains?"><span class="tc-setup-preset-icon" aria-hidden="true">?</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Question and answer</span><span class="tc-setup-preset-description">Question, answer, explanation, and optional image.</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="lighthouse"><span class="tc-setup-preset-icon" aria-hidden="true">▧</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Gallery</span><span class="tc-setup-preset-description">Leading image, title, tags, and description.</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="API response"><span class="tc-setup-preset-icon" aria-hidden="true">≡</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Reference</span><span class="tc-setup-preset-description">Title with dense, labelled properties.</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="remain"><span class="tc-setup-preset-icon" aria-hidden="true">✣</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Universal</span><span class="tc-setup-preset-description">Best title plus every remaining column in source order.</span></span></button>
 					</div>
 					<div class="tc-setup-card-preview" dir="auto">
-						<article class="table-cards-box" data-kind="title" data-width="full" data-overflow="shrink"><div class="table-cards-word">remain</div></article>
+						<article class="table-cards-box" data-kind="title" data-width="full" data-overflow="shrink"><div class="table-cards-word" data-preview-title>remain</div></article>
 						<article class="table-cards-box" data-kind="chips" data-width="half"><div class="table-cards-label">Pronunciation</div><div class="table-cards-pron"><span class="table-cards-chip">/rɪˈmeɪn/</span></div></article>
 						<article class="table-cards-box" data-kind="text" data-width="half"><div class="table-cards-label">Translation</div><div class="table-cards-translation">оставаться</div></article>
 						<article class="table-cards-box" data-kind="quote" data-width="full"><div class="table-cards-label">Example</div><div class="table-cards-example">Please remain calm while we check the details.</div></article>
@@ -80,40 +80,14 @@
 					<div class="tc-setup-icons" role="group" aria-label="Ribbon icon">
 						<button type="button" aria-label="Card gallery" aria-pressed="true" data-icon><span class="preview-setup-icon" aria-hidden="true">▤</span></button><button type="button" aria-label="Languages" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">文</span></button><button type="button" aria-label="Quote" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">❝</span></button><button type="button" aria-label="Question" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">?</span></button><button type="button" aria-label="Image" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">▧</span></button><button type="button" aria-label="Book" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">▱</span></button><button type="button" aria-label="Layers" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">≋</span></button><button type="button" aria-label="Graduation cap" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">⌂</span></button><button type="button" aria-label="Brain" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">✺</span></button><button type="button" aria-label="Library" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">▥</span></button><button type="button" aria-label="Notebook" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">▣</span></button><button type="button" aria-label="Rows" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">☷</span></button>
 					</div>
-					<label class="tc-setup-ribbon"><input type="checkbox" checked><span>Show this deck in the left ribbon</span></label><div class="tc-setup-hint">Pin decks you open often.</div><div class="tc-setup-final-summary">583 cards · 4 tables · 7 fields</div>
+					<label class="tc-setup-ribbon"><input type="checkbox" checked><span>Show this deck in the left ribbon</span></label><div class="tc-setup-hint">Pin decks you open often.</div><div class="tc-setup-final-summary">583 cards · 4 tables · 7 fields</div><div class="tc-setup-status has-data" role="status" data-created hidden></div>
 				</div></div>
-				<footer class="tc-setup-footer"><button type="button" data-next="preset">Back</button><button class="mod-cta" type="button">Create deck</button></footer>
+			<footer class="tc-setup-footer"><button type="button" data-next="preset">Back</button><button class="mod-cta" type="button" data-create-deck>Create deck</button></footer>
 			</div></div>
 		</section>
 	</main>
 	<div class="preview-note">Setup is a draft until Create deck. Toggle RTL to verify scoped direction; row content remains <code>dir="auto"</code>.</div>
 
-	<script type="module">
-		import { installNoOverflowSignal, setPressed, stateController } from './preview.js';
-
-		const controller = stateController({ buttons: '.preview-toolbar [data-state]', panels: '.preview-root > [data-state]', initial: 'data' });
-		for (const button of document.querySelectorAll('[data-next]')) button.addEventListener('click', () => controller.show(button.dataset.next));
-		for (const button of document.querySelectorAll('[data-preset]')) button.addEventListener('click', () => setPressed(document.querySelectorAll('[data-preset]'), button));
-		for (const button of document.querySelectorAll('[data-icon]')) button.addEventListener('click', () => setPressed(document.querySelectorAll('[data-icon]'), button));
-		const rtlButton = document.querySelector('[data-rtl]');
-		const applyRtl = (rtl) => {
-			rtlButton.setAttribute('aria-pressed', String(rtl));
-			for (const fixture of document.querySelectorAll('.table-cards-setup')) {
-				fixture.dir = rtl ? 'rtl' : 'ltr'; fixture.lang = rtl ? 'ar' : 'en'; fixture.classList.toggle('preview-setup-rtl', rtl);
-			}
-			for (const node of document.querySelectorAll('.tc-setup-progress-label, .tc-setup-source-summary, .tc-setup-status-summary, .tc-setup-warning-count, .tc-setup-final-summary')) {
-				node.dataset.ltrCopy ||= node.textContent;
-				node.textContent = rtl ? node.dataset.ltrCopy.replace(/[0-9]/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]) : node.dataset.ltrCopy;
-			}
-		};
-		rtlButton.addEventListener('click', () => applyRtl(rtlButton.getAttribute('aria-pressed') !== 'true'));
-		applyRtl(new URLSearchParams(location.search).get('rtl') === '1');
-		document.addEventListener('keydown', (event) => {
-			if (event.key !== 'Escape') return;
-			event.preventDefault();
-			document.querySelector('.preview-root > [data-state]:not([hidden]) .tc-setup-close')?.focus();
-		});
-		installNoOverflowSignal();
-	</script>
+	<script type="module" src="setup.js"></script>
 </body>
 </html>

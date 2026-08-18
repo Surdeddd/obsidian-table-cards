@@ -2,15 +2,15 @@
   - dialog "Table Cards":
     - text: Table Cards English · Dictionary
     - button "٣ جداول"
-    - button "Search cards": ⌕
+    - button "البحث في البطاقات": ⌕
     - text: ١٨ / ٥٨٣
-    - button "Close": ×
-    - progressbar "Progress"
+    - button "إغلاق": ×
+    - progressbar "التقدم"
     - article: remain
     - article: الترجمة يبقى، يظل
     - article: Example Please remain calm while we check the details.
     - article: يبقى المحتوى الذي كتبه المستخدم في اتجاهه الطبيعي.
     - text: Vocabulary · Core Dictionary.md
     - button "السابق"
-    - button "Shuffle": ↝
+    - button "خلط البطاقات": ↝
     - button "التالي"

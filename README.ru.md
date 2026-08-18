@@ -104,11 +104,14 @@ Table Cards никогда не переписывает Markdown-таблицы
 ```bash
 npm install
 npm test
+npm run test:tools
 npm run lint
 npx tsc --noEmit
+npm run typecheck:tools
 npm run build
 npx playwright install chromium
 npm run test:ui
+npm run check:links
 ```
 
 `npx playwright install chromium` — одноразовая установка браузера для чистого checkout. Детерминированные production-class fixtures: `preview/launcher.html`, `preview/setup.html`, `preview/v2.html` и `preview/editor.html`. Playwright проверяет пк, планшет, zoom-equivalent, телефон, арабский RTL, reduced motion, восстановление фокуса, размеры controls, overflow и console output.

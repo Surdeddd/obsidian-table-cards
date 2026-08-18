@@ -18,11 +18,11 @@
     - button "Close browser"
     - dialog "Browse cards":
       - heading "Browse cards" [level=2]
-      - button "Close": ×
+      - button "Close browser": ×
       - button "3 tables"
       - searchbox "Search cards": remain
       - text: 3 results Vocabulary · Core Dictionary
       - button "remain to continue to exist or stay in the same place Vocabulary · Core ·Dictionary ·Row 18"
       - button "remainder the part that remains Vocabulary · Core ·Dictionary ·Row 204"
-      - text: Phrases for travel Dictionary
-      - button "Please remain seated Phrases for travel ·Dictionary ·Row 41"
+      - text: Phrases for travel Travel
+      - button "Please remain seated Phrases for travel ·Travel ·Row 41"

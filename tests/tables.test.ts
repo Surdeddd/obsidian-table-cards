@@ -99,6 +99,15 @@ describe("table parsing", () => {
 		expect(tables[0]?.headingPath).toEqual(["Real"]);
 	});
 
+	it("does not open a backtick fence when its info string contains a backtick", () => {
+		const tables = scanMarkdownTables(
+			"```md `inline`\n## Real\n| B |\n|---|\n|y|",
+			"x.md",
+		);
+		expect(tables).toHaveLength(1);
+		expect(tables[0]?.headingPath).toEqual(["Real"]);
+	});
+
 	it("reads any number of headers", () => {
 		expect(listTableHeaders(DICT)).toEqual([
 			"Words",

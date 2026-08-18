@@ -119,7 +119,7 @@ export function scanMarkdownTables(markdown: string, sourcePath = ""): ParsedTab
 			continue;
 		}
 		const opening = /^ {0,3}(`{3,}|~{3,})/.exec(line);
-		if (opening?.[1]) {
+		if (opening?.[1] && (opening[1][0] === "~" || !line.slice(opening[0].length).includes("`"))) {
 			fence = { marker: opening[1][0] as "`" | "~", length: opening[1].length };
 			continue;
 		}

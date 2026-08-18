@@ -80,11 +80,15 @@ export class Listbox<T extends string> {
 	private renderOptions(filter: string): void {
 		if (!this.popover) return;
 		this.popover.querySelector<HTMLElement>(".tc-listbox-options")?.remove();
+		const query = filter.trim().toLocaleLowerCase();
+		const visibleIndexes = this.options.options.flatMap((option, index) =>
+			query && !option.label.toLocaleLowerCase().includes(query) ? [] : [index],
+		);
+		if (!visibleIndexes.includes(this.activeIndex)) this.activeIndex = visibleIndexes[0] ?? 0;
 		const list = this.popover.createDiv({
 			cls: "tc-listbox-options",
 			attr: { id: `${this.options.id}-options`, role: "listbox", "aria-labelledby": `${this.options.id}-label` },
 		});
-		const query = filter.trim().toLocaleLowerCase();
 		for (const [index, option] of this.options.options.entries()) {
 			if (query && !option.label.toLocaleLowerCase().includes(query)) continue;
 			const item = list.createEl("button", {
@@ -120,8 +124,10 @@ export class Listbox<T extends string> {
 	private move(delta: number): void {
 		const items = this.items();
 		if (items.length === 0) return;
-		const current = Math.max(0, items.findIndex((item) => item === document.activeElement));
-		const next = (current + delta + items.length) % items.length;
+		const current = items.findIndex((item) => item === document.activeElement);
+		const next = current < 0
+			? delta > 0 ? 0 : items.length - 1
+			: (current + delta + items.length) % items.length;
 		for (const item of items) item.tabIndex = -1;
 		const target = items[next];
 		if (target) {

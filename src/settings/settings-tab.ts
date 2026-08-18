@@ -1,6 +1,13 @@
 import { Modal, Plugin, PluginSettingTab, Setting, getLanguage, type App } from "obsidian";
 import { cloneJson, createBlock, newId, UI_LOCALES, type Deck, type LocaleMode, type PluginSettings, type UiLocale } from "../model";
-import { formatUiNumber, resolveUiLocale, uiDirection, type TranslationKey, type Translator } from "../i18n";
+import {
+	applyUiChromeDirection,
+	applyUserDataDirection,
+	formatUiNumber,
+	resolveUiLocale,
+	type TranslationKey,
+	type Translator,
+} from "../i18n";
 import { DeckEditorModal } from "../ui/DeckEditorModal";
 import { applySizePreset } from "./appearance";
 import { createDeck } from "./defaults";
@@ -37,17 +44,21 @@ class DeleteDeckModal extends Modal {
 		app: App,
 		private readonly deck: Deck,
 		private readonly t: Translator,
+		private readonly locale: UiLocale,
 		private readonly onConfirm: () => void,
 	) {
 		super(app);
 	}
 
 	onOpen(): void {
+		applyUiChromeDirection(this.modalEl, this.locale);
 		this.titleEl.setText(this.t("settings.deck.deleteTitle"));
 		this.contentEl.empty();
-		this.contentEl.createEl("p", {
-			text: `${this.t("settings.deck.deleteDesc")} “${this.deck.name}”`,
-		});
+		const description = this.contentEl.createEl("p");
+		description.createSpan({ text: `${this.t("settings.deck.deleteDesc")} “` });
+		const deckName = description.createSpan({ text: this.deck.name });
+		applyUserDataDirection(deckName);
+		description.createSpan({ text: "”" });
 		const actions = this.contentEl.createDiv({ cls: "tc-confirm-actions" });
 		const cancel = actions.createEl("button", { text: this.t("settings.deck.cancel"), attr: { type: "button" } });
 		cancel.addEventListener("click", () => this.close());
@@ -77,8 +88,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 		const locale = resolveUiLocale(this.plugin.settings.locale, getLanguage() || "en");
 		containerEl.empty();
 		containerEl.addClass("table-cards-settings");
-		containerEl.setAttr("lang", locale);
-		containerEl.setAttr("dir", uiDirection(locale));
+		applyUiChromeDirection(containerEl, locale);
 
 		const languageSetting = new Setting(containerEl)
 			.setName(t("settings.language.name"))
@@ -204,7 +214,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			})
 			.addButton((button) => {
 				button.setIcon("trash-2").setTooltip(t("settings.deck.delete")).setWarning().onClick(() => {
-					new DeleteDeckModal(this.app, deck, t, () => {
+					new DeleteDeckModal(this.app, deck, t, locale, () => {
 						this.plugin.settings.decks = this.plugin.settings.decks.filter((item) => item.id !== deck.id);
 						delete this.plugin.settings.perDeck[deck.id];
 						if (this.plugin.settings.lastDeckId === deck.id) {
@@ -214,6 +224,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 					}).open();
 				});
 			});
+		applyUserDataDirection(setting.nameEl);
 		void loadDeckData(this.app, deck)
 			.then((result) => {
 				if (!wrap.isConnected) return;

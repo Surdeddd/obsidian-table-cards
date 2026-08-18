@@ -1,0 +1,112 @@
+import { describe, expect, it } from "vitest";
+import { createBlock } from "../src/model";
+import {
+	createEditorState,
+	isDirty,
+	reduceEditorState,
+	redo,
+	undo,
+} from "../src/editor/state";
+import { createDeck } from "../src/settings/defaults";
+import { representativeRowIndexes } from "../src/editor/rows";
+import { parseCell } from "../src/parse/tables";
+import type { Card } from "../src/model";
+
+function stateWithBlocks(...ids: string[]) {
+	return createEditorState(
+		createDeck({ blocks: ids.map((id) => createBlock({ id, width: "half", columns: [id.toUpperCase()] })) }),
+	);
+}
+
+describe("editor state", () => {
+	it("changes only the draft and records one undo state", () => {
+		const persisted = createDeck({ blocks: [createBlock({ id: "a", width: "half" })] });
+		const initial = createEditorState(persisted);
+		const next = reduceEditorState(initial, { type: "setBlockWidth", blockId: "a", width: "full" });
+		expect(persisted.blocks[0]?.width).toBe("half");
+		expect(next.draft.blocks[0]?.width).toBe("full");
+		expect(next.past).toHaveLength(1);
+		expect(undo(next).draft.blocks[0]?.width).toBe("half");
+	});
+
+	it("reorders pointer and keyboard interactions through one action", () => {
+		const initial = stateWithBlocks("a", "b", "c");
+		const next = reduceEditorState(initial, { type: "moveBlock", blockId: "c", toIndex: 0 });
+		expect(next.draft.blocks.map((block) => block.id)).toEqual(["c", "a", "b"]);
+		expect(next.past).toHaveLength(1);
+		expect(undo(next).draft.blocks.map((block) => block.id)).toEqual(["a", "b", "c"]);
+		expect(redo(undo(next)).draft.blocks.map((block) => block.id)).toEqual(["c", "a", "b"]);
+	});
+
+	it("keeps at most 100 past states", () => {
+		let state = stateWithBlocks("a");
+		for (let index = 0; index < 120; index += 1) {
+			state = reduceEditorState(state, {
+				type: "patchBlock",
+				blockId: "a",
+				patch: { label: String(index) },
+			});
+		}
+		expect(state.past).toHaveLength(100);
+	});
+
+	it("deep-merges nested block settings", () => {
+		const initial = createEditorState(
+			createDeck({
+				blocks: [
+					createBlock({
+						id: "a",
+						overflow: { mode: "ellipsis", minFontPx: 16, maxLines: 3 },
+					}),
+				],
+			}),
+		);
+		const next = reduceEditorState(initial, {
+			type: "patchBlock",
+			blockId: "a",
+			patch: { overflow: { maxLines: 5 } },
+		});
+		expect(next.draft.blocks[0]?.overflow).toEqual({ mode: "ellipsis", minFontPx: 16, maxLines: 5 });
+	});
+
+	it("does not record transient selection, panel, or preview-row actions", () => {
+		let state = stateWithBlocks("a");
+		state = reduceEditorState(state, { type: "selectBlock", blockId: "a" });
+		state = reduceEditorState(state, { type: "openPanel", panel: "block" });
+		state = reduceEditorState(state, { type: "setPreviewRow", index: 4 });
+		expect(state.past).toEqual([]);
+		expect(isDirty(state)).toBe(false);
+	});
+
+	it("enables and disables a column across blocks", () => {
+		let state = stateWithBlocks("a", "b");
+		state = reduceEditorState(state, { type: "setColumnEnabled", header: "A", enabled: false });
+		expect(state.draft.blocks.map((block) => block.columns)).toEqual([["B"]]);
+		state = reduceEditorState(state, { type: "setColumnType", header: "Picture", dataType: "image" });
+		state = reduceEditorState(state, { type: "setColumnEnabled", header: "Picture", enabled: true });
+		expect(state.draft.blocks.at(-1)).toMatchObject({ kind: "image", columns: ["Picture"] });
+	});
+
+	it("keeps the baseline unchanged so cancel can discard the draft", () => {
+		const initial = stateWithBlocks("a");
+		const next = reduceEditorState(initial, { type: "patchBlock", blockId: "a", patch: { label: "changed" } });
+		expect(isDirty(next)).toBe(true);
+		expect(next.baseline.blocks[0]?.label).toBe("");
+		expect(createEditorState(next.baseline).draft.blocks[0]?.label).toBe("");
+	});
+});
+
+describe("representative preview rows", () => {
+	it("finds the longest and most-empty cards", () => {
+		const cards: Card[] = [
+			{ cells: { A: parseCell("short"), B: parseCell("filled") }, headers: ["A", "B"], sourcePath: "x.md", tableSelector: { headerSignature: "x", occurrence: 0 }, rowIndex: 1 },
+			{ cells: { A: parseCell("a very long value"), B: parseCell("filled") }, headers: ["A", "B"], sourcePath: "x.md", tableSelector: { headerSignature: "x", occurrence: 0 }, rowIndex: 2 },
+			{ cells: { A: parseCell(""), B: parseCell("") }, headers: ["A", "B"], sourcePath: "x.md", tableSelector: { headerSignature: "x", occurrence: 0 }, rowIndex: 3 },
+		];
+		expect(representativeRowIndexes(cards)).toEqual({ first: 0, longest: 1, mostEmpty: 2 });
+	});
+
+	it("returns zeroes for an empty deck", () => {
+		expect(representativeRowIndexes([])).toEqual({ first: 0, longest: 0, mostEmpty: 0 });
+	});
+});

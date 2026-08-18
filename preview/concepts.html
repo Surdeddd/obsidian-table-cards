@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Table Cards — design directions</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --page: #0d0f0e;
+      --panel: #171a18;
+      --line: rgba(255,255,255,.11);
+      --muted: #929993;
+      --text: #f3f5f2;
+      --accent: #f2f2f2;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--page); color: var(--text); min-height: 100vh; }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+
+    .toolbar {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      min-height: 62px; padding: 10px 18px;
+      background: color-mix(in srgb, var(--page) 88%, transparent);
+      backdrop-filter: blur(18px); border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+    .brand-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: var(--accent); color: #111; font-weight: 900; }
+    .brand-title { font-size: 13px; font-weight: 720; }
+    .brand-sub { color: var(--muted); font-size: 10px; margin-top: 1px; }
+    .tabs, .viewport-switch { display: flex; padding: 3px; gap: 3px; border-radius: 12px; background: #1b1e1c; border: 1px solid var(--line); }
+    .tabs button, .viewport-switch button {
+      min-height: 34px; padding: 0 12px; border: 0; border-radius: 9px;
+      background: transparent; color: var(--muted); cursor: pointer;
+    }
+    .tabs button.on, .viewport-switch button.on { background: #303430; color: var(--text); box-shadow: 0 1px 0 rgba(255,255,255,.08) inset; }
+    .viewport-switch button { min-width: 42px; font-size: 12px; }
+    .page { padding: 24px; }
+    .caption { max-width: 1160px; margin: 0 auto 14px; display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+    .caption h1 { margin: 0; font-size: clamp(20px, 3vw, 34px); letter-spacing: -.035em; }
+    .caption p { margin: 6px 0 0; color: var(--muted); font-size: 13px; max-width: 650px; }
+    .recommended { border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.055); color: #ededed; padding: 7px 10px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
+
+    .device {
+      position: relative;
+      width: min(1160px, 100%); height: min(790px, calc(100vh - 132px)); min-height: 620px;
+      margin: 0 auto; border: 1px solid var(--line); border-radius: 26px;
+      background: #111411; box-shadow: 0 30px 80px rgba(0,0,0,.35); overflow: hidden;
+      transition: width .25s ease, border-radius .25s ease;
+    }
+    .device.phone { width: 390px; height: min(780px, calc(100vh - 132px)); min-height: 620px; border-radius: 38px; }
+    .study { height: 100%; display: flex; flex-direction: column; }
+    .study-head { flex: none; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 18px 22px 13px; }
+    .study-head .deck { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 660; }
+    .count { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .close { justify-self: end; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.04); }
+    .progress { height: 2px; margin: 0 22px; background: rgba(255,255,255,.08); overflow: hidden; }
+    .progress::after { content: ""; display: block; width: 13%; height: 100%; background: currentColor; }
+    .study-scroll { min-height: 0; flex: 1; overflow: auto; padding: 20px 22px; }
+    .study-foot { flex: none; display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; padding: 12px 22px 18px; border-top: 1px solid var(--line); }
+    .nav-btn, .shuffle { min-height: 48px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.05); }
+    .nav-btn.next { font-weight: 700; }
+    .shuffle { width: 48px; }
+
+    .card { min-height: 100%; overflow: hidden; }
+    .eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: .15em; }
+    .word { margin: 10px 0 5px; font-weight: 780; letter-spacing: -.055em; line-height: .97; font-size: clamp(52px, 7vw, 92px); overflow-wrap: anywhere; }
+    .phonetics { display: flex; flex-wrap: wrap; gap: 7px; }
+    .phonetic { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; padding: 6px 9px; border-radius: 999px; }
+    .label { margin-bottom: 7px; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .translation { font-size: clamp(22px, 3vw, 34px); font-weight: 630; letter-spacing: -.025em; line-height: 1.18; }
+    .example-en { font-size: clamp(18px, 2.2vw, 27px); line-height: 1.28; letter-spacing: -.018em; }
+    .example-ru { margin-top: 9px; font-size: 14px; line-height: 1.42; }
+    .tip-text { font-size: 14px; line-height: 1.48; }
+
+    /* Direction A — editorial notebook */
+    [data-direction="a"] .study { background: #151816; color: #f4f0e7; }
+    [data-direction="a"] .progress { color: #d8ff7a; }
+    [data-direction="a"] .study-scroll { padding-top: 14px; }
+    [data-direction="a"] .card {
+      position: relative; display: grid; grid-template-columns: minmax(260px,.82fr) minmax(340px,1.18fr);
+      grid-template-areas: "hero translation" "hero example" "hero tip"; grid-template-rows: auto 1fr auto;
+      border-radius: 22px; background: #f3efe5; color: #171b17;
+      box-shadow: 0 18px 55px rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.22);
+    }
+    [data-direction="a"] .card::before { content: ""; position: absolute; top: 0; bottom: 0; left: 40.8%; width: 1px; background: rgba(23,27,23,.12); }
+    [data-direction="a"] .hero { grid-area: hero; padding: clamp(24px,4vw,54px); display: flex; flex-direction: column; justify-content: center; }
+    [data-direction="a"] .eyebrow { color: #768071; }
+    [data-direction="a"] .word { font-family: Iowan Old Style, Palatino, Georgia, serif; font-weight: 600; }
+    [data-direction="a"] .phonetic { background: #e3dfd3; color: #4d564c; }
+    [data-direction="a"] .translation-block { grid-area: translation; padding: clamp(24px,3vw,42px) clamp(24px,4vw,54px) 18px; }
+    [data-direction="a"] .label { color: #778071; }
+    [data-direction="a"] .example-block { grid-area: example; padding: 24px clamp(24px,4vw,54px); border-top: 1px solid rgba(23,27,23,.12); }
+    [data-direction="a"] .example-en { font-family: Iowan Old Style, Palatino, Georgia, serif; }
+    [data-direction="a"] .example-en strong { text-decoration: underline; text-decoration-color: #9fc94c; text-decoration-thickness: 3px; text-underline-offset: 4px; }
+    [data-direction="a"] .example-ru { color: #667065; }
+    [data-direction="a"] .tip-block { grid-area: tip; margin: 0 clamp(24px,4vw,54px) clamp(24px,3vw,38px); padding: 16px 18px; border-radius: 14px; background: #e4f4bd; border-left: 4px solid #93b844; }
+    [data-direction="a"] .tip-block .label { color: #566b2c; }
+    [data-direction="a"] .nav-btn.next { background: #d8ff7a; color: #17200d; border-color: transparent; }
+
+    /* Direction B — native, quiet */
+    [data-direction="b"] .study { background: #121315; }
+    [data-direction="b"] .progress { color: #f4f4f4; }
+    [data-direction="b"] .card { display: grid; grid-template-columns: .85fr 1.15fr; grid-template-rows: 1fr auto; grid-template-areas: "hero details" "hero tip"; gap: 0; border: 1px solid #303030; border-radius: 20px; background: #181818; }
+    [data-direction="b"] .hero { grid-area: hero; padding: clamp(24px,4vw,50px); display: flex; flex-direction: column; justify-content: center; background: radial-gradient(circle at 10% 0%, rgba(255,255,255,.065), transparent 52%); }
+    [data-direction="b"] .eyebrow, [data-direction="b"] .label { color: #858585; }
+    [data-direction="b"] .word { color: #f5f7f8; }
+    [data-direction="b"] .phonetic { background: #242424; border: 1px solid #363636; color: #c8c8c8; }
+    [data-direction="b"] .right { grid-area: details; display: flex; flex-direction: column; border-left: 1px solid #303030; }
+    [data-direction="b"] .translation-block, [data-direction="b"] .example-block { padding: clamp(22px,3vw,38px); }
+    [data-direction="b"] .example-block { flex: 1; border-top: 1px solid #303030; }
+    [data-direction="b"] .example-ru { color: #9a9a9a; }
+    [data-direction="b"] .tip-block { grid-area: tip; margin: 0 clamp(22px,3vw,38px) clamp(22px,3vw,38px); padding: 15px 17px; border-radius: 14px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.13); }
+    [data-direction="b"] .tip-block .label { color: #ededed; }
+    [data-direction="b"] .nav-btn.next { background: #f1f1f1; color: #111; border-color: transparent; }
+
+    /* Direction C — bold study poster */
+    [data-direction="c"] .study { background: #181818; }
+    [data-direction="c"] .progress { color: #ff705d; }
+    [data-direction="c"] .card { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr auto; border-radius: 18px; color: #161616; background: #f4f0e8; border: 3px solid #111; box-shadow: 9px 9px 0 #3d6cff; }
+    [data-direction="c"] .hero { grid-row: 1 / 3; padding: clamp(24px,4vw,48px); background: #3d6cff; color: white; border-right: 3px solid #111; display: flex; flex-direction: column; justify-content: center; }
+    [data-direction="c"] .word { text-transform: lowercase; }
+    [data-direction="c"] .eyebrow { color: rgba(255,255,255,.65); }
+    [data-direction="c"] .phonetic { border: 1.5px solid rgba(255,255,255,.45); color: white; }
+    [data-direction="c"] .right { display: contents; }
+    [data-direction="c"] .translation-block { padding: clamp(22px,3vw,38px); border-bottom: 3px solid #111; }
+    [data-direction="c"] .example-block { padding: clamp(22px,3vw,38px); }
+    [data-direction="c"] .label { color: #555; }
+    [data-direction="c"] .example-ru { color: #646464; }
+    [data-direction="c"] .tip-block { grid-column: 1 / -1; padding: 15px 20px; background: #ffe66b; border-top: 3px solid #111; }
+    [data-direction="c"] .tip-block .label { display: inline; margin-right: 8px; color: #111; }
+    [data-direction="c"] .tip-text { display: inline; }
+    [data-direction="c"] .nav-btn.next { background: #ff705d; color: #111; border-color: #111; }
+
+    /* Builder */
+    .builder { display: none; height: 100%; background: #121412; }
+    .builder.on { display: flex; flex-direction: column; }
+    .builder-top { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+    .builder-back { width: 36px; height: 36px; border: 1px solid var(--line); background: #1b1e1b; border-radius: 10px; }
+    .builder-title { min-width: 0; flex: 1; }
+    .builder-title strong { display: block; font-size: 14px; }
+    .builder-title span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .save { min-height: 38px; padding: 0 15px; border: 0; border-radius: 10px; background: var(--accent); color: #111; font-weight: 750; }
+    .builder-language { min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: #1b1e1b; color: #d8dcd9; font-size: 10px; }
+    .builder-main { position: relative; min-height: 0; flex: 1; display: block; }
+    .builder-pane { display: none; min-height: 0; overflow: auto; padding: 18px; }
+    .pane-title { margin-bottom: 12px; font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+    .source { padding: 11px; border: 1px solid var(--line); border-radius: 11px; font-size: 11px; color: #c8cdc9; overflow-wrap: anywhere; background: #181b18; }
+    .source b { display: block; color: white; font-size: 12px; margin-bottom: 4px; }
+    .source-actions { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-top: 8px; }
+    .source-actions button, .table-select, .canvas-action, .advanced-open, .select-trigger {
+      min-height: 34px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--line);
+      background: #1b1e1b; color: #d5d9d6; font-size: 10px; box-shadow: none;
+    }
+    .table-select { width: 100%; margin-top: 8px; appearance: none; background-image: linear-gradient(45deg,transparent 50%,#888 50%),linear-gradient(135deg,#888 50%,transparent 50%); background-position: calc(100% - 14px) 14px,calc(100% - 10px) 14px; background-size: 4px 4px,4px 4px; background-repeat: no-repeat; }
+    .column-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; }
+    .column-head span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+    .column-head button { border: 0; background: transparent; color: #d3d8d4; font-size: 10px; }
+    .column-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .column-row { display: grid; grid-template-columns: 18px minmax(0,1fr) auto; align-items: center; gap: 8px; min-height: 46px; padding: 7px 9px; border-radius: 10px; border: 1px solid var(--line); background: #191c19; font-size: 12px; }
+    .column-info { min-width: 0; }
+    .column-info b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+    .column-info small { display: block; margin-top: 2px; color: #858b86; font-size: 8px; }
+    .type-chip { padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); color: #b6bbb7; font-size: 8px; text-transform: uppercase; letter-spacing: .06em; }
+    .check { width: 17px; height: 17px; display: grid; place-items: center; border-radius: 5px; background: var(--accent); color: #111; font-size: 11px; font-weight: 900; }
+    .grip { color: #656b66; letter-spacing: -2px; }
+    .builder-canvas { height: 100%; padding: 18px; min-height: 0; overflow: auto; background: #0d0f0d; }
+    .canvas-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .canvas-bar span { color: var(--muted); font-size: 11px; }
+    .canvas-actions { display: flex; align-items: center; gap: 5px; }
+    .canvas-action { min-height: 30px; }
+    .mini-switch { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; }
+    .mini-switch button { min-height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 10px; }
+    .mini-switch button.on { color: #fff; background: #30342f; }
+    .fields-open { min-height: 34px; padding: 0 11px; border-radius: 9px; border: 1px solid var(--line); background: #1b1e1b; color: #fff; font-size: 10px; }
+    .canvas-card-wrap { width: min(780px,100%); margin: 26px auto 0; }
+    .block-floating-toolbar { display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 10px; }
+    .block-floating-toolbar button { min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 9px; background: #1b1e1b; color: #d8dcd9; font-size: 10px; }
+    .block-floating-toolbar button:first-child { min-width: 128px; text-align: left; }
+    .block-floating-toolbar .toolbar-more { width: 36px; padding: 0; }
+    .toolbar-select-wrap { position: relative; }
+    .toolbar-select-menu { display: none; position: absolute; z-index: 18; top: calc(100% + 6px); left: 0; width: 250px; padding: 6px; border: 1px solid #3b3e3b; border-radius: 12px; background: #202320; box-shadow: 0 18px 48px rgba(0,0,0,.45); }
+    .toolbar-select-menu.on { display: block; }
+    .toolbar-select-menu .select-option { min-width: 100%; }
+    .layout-card { max-width: 680px; margin: 0 auto; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid #333; border-radius: 18px; background: #181818; color: #f2f2f2; box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+    .layout-block { position: relative; min-height: 70px; padding: 12px; border-radius: 11px; border: 1.5px solid #343434; background: #202020; cursor: grab; }
+    .layout-block.full { grid-column: 1 / -1; }
+    .layout-block.selected { border-color: #f0f0f0; box-shadow: 0 0 0 2px rgba(255,255,255,.12); }
+    .block-meta { display: flex; justify-content: space-between; color: #8c8c8c; font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }
+    .block-preview { margin-top: 9px; font-size: 13px; }
+    .block-preview.word-mini { font-family: Georgia, serif; font-size: 27px; }
+    .block-preview.note-mini { padding: 8px; border-radius: 8px; background: #2b2b2b; border: 1px solid #3b3b3b; }
+    .block-menu { position: absolute; top: 7px; right: 8px; color: #777d77; font-size: 13px; }
+    .resize-handle-x, .resize-handle-y {
+      position: absolute; z-index: 2; display: grid; place-items: center; color: #111; background: #f1f1f1;
+      border: 2px solid #202020; box-shadow: 0 2px 8px rgba(0,0,0,.25); font-size: 8px;
+    }
+    .resize-handle-x { top: 50%; right: -8px; width: 16px; height: 30px; margin-top: -15px; border-radius: 8px; cursor: ew-resize; }
+    .resize-handle-y { left: 50%; bottom: -8px; width: 30px; height: 16px; margin-left: -15px; border-radius: 8px; cursor: ns-resize; }
+    .inspector-section { padding-bottom: 17px; margin-bottom: 17px; border-bottom: 1px solid var(--line); }
+    .control-label { font-size: 11px; color: var(--muted); margin: 0 0 7px; }
+    .segment { display: grid; grid-template-columns: repeat(3,1fr); padding: 3px; gap: 3px; border-radius: 10px; background: #1c1f1c; border: 1px solid var(--line); }
+    .segment.two { grid-template-columns: repeat(2,1fr); }
+    .segment button { min-height: 31px; padding: 0 7px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 10px; }
+    .segment button.on { color: #fff; background: #343934; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; min-height: 38px; font-size: 12px; }
+    .toggle { width: 34px; height: 20px; padding: 2px; border-radius: 999px; background: #47524a; }
+    .toggle::after { content: ""; display: block; width: 16px; height: 16px; margin-left: 14px; border-radius: 50%; background: var(--accent); }
+    .advanced-open { width: 100%; margin-top: 12px; min-height: 38px; color: #fff; }
+    .editor-hint { margin-top: 10px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .fields-sheet {
+      display: flex; position: absolute; z-index: 28; top: 0; left: 0; bottom: 0; width: min(320px,88%);
+      flex-direction: column; background: #151715; border-right: 1px solid var(--line); box-shadow: 20px 0 55px rgba(0,0,0,.4);
+      transform: translateX(-103%); transition: transform .22s ease;
+    }
+    .fields-sheet.on { display: flex; transform: translateX(0); }
+    .fields-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px 0 12px; }
+    .fields-head .pane-title { margin: 0; }
+    .fields-close { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%; background: #202320; }
+    .quick-inspector { display: none; }
+    .drawer-scrim { display: none; position: absolute; z-index: 30; inset: 0; background: rgba(0,0,0,.42); }
+    .drawer-scrim.on { display: block; }
+    .advanced-drawer {
+      position: absolute; z-index: 31; top: 0; right: 0; bottom: 0; width: min(390px, 88%);
+      display: flex; flex-direction: column; background: #151715; border-left: 1px solid var(--line);
+      box-shadow: -22px 0 60px rgba(0,0,0,.42); transform: translateX(103%); transition: transform .22s ease;
+    }
+    .advanced-drawer.on { transform: translateX(0); }
+    .drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 62px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    .drawer-head strong { display: block; font-size: 14px; }
+    .drawer-head span { display: block; margin-top: 2px; font-size: 10px; color: var(--muted); }
+    .drawer-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: #202320; }
+    .drawer-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 8px; border-bottom: 1px solid var(--line); }
+    .drawer-tabs button { min-height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); }
+    .drawer-tabs button.on { background: #292c29; color: #fff; }
+    .drawer-content { display: none; min-height: 0; overflow: auto; padding: 16px; }
+    .drawer-content.on { display: block; }
+    .drawer-group { padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .drawer-group-title { margin-bottom: 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--muted); }
+    .drawer-field { display: grid; gap: 6px; margin-bottom: 12px; }
+    .drawer-field label { color: #a6aca7; font-size: 11px; }
+    .drawer-field input, .drawer-field select { width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: #1d201d; color: #f1f3f1; }
+    .drawer-field select { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg,transparent 50%,#888 50%),linear-gradient(135deg,#888 50%,transparent 50%); background-position: calc(100% - 16px) 16px,calc(100% - 12px) 16px; background-size: 4px 4px,4px 4px; background-repeat: no-repeat; }
+    .select-wrap { position: relative; }
+    .select-trigger { width: 100%; min-height: 42px; display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; text-align: left; }
+    .select-trigger-icon { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; background: #2a2d2a; color: #fff; }
+    .select-trigger strong { display: block; font-size: 11px; }
+    .select-trigger small { display: block; margin-top: 1px; color: #858b86; font-size: 8px; }
+    .select-chevron { color: #919792; }
+    .select-menu { display: none; position: absolute; z-index: 45; top: calc(100% + 6px); left: 0; right: 0; padding: 6px; border: 1px solid #3b3e3b; border-radius: 12px; background: #202320; box-shadow: 0 18px 48px rgba(0,0,0,.45); }
+    .select-menu.on { display: block; }
+    .select-search { width: 100%; min-height: 34px; margin-bottom: 5px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; background: #171917; color: #fff; font-size: 10px; }
+    .select-option { width: 100%; min-height: 43px; display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; padding: 5px 7px; border: 0; border-radius: 8px; background: transparent; text-align: left; }
+    .select-option:hover, .select-option.on { background: #303330; }
+    .select-option strong { display: block; font-size: 10px; }
+    .select-option small { display: block; color: #8e948f; font-size: 8px; }
+    .select-check { color: #fff; }
+    .drawer-subtabs { display: grid; grid-template-columns: repeat(4,1fr); gap: 3px; margin: -2px 0 14px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: #191b19; }
+    .drawer-subtabs button { min-height: 31px; padding: 0 5px; border: 0; border-radius: 7px; background: transparent; color: #8c928d; font-size: 9px; }
+    .drawer-subtabs button.on { background: #303330; color: #fff; }
+    .block-settings .drawer-group[data-section] { display: none; }
+    .block-settings .drawer-group.image-only { display: none !important; }
+    .block-settings[data-active-section="content"] .drawer-group[data-section="content"],
+    .block-settings[data-active-section="layout"] .drawer-group[data-section="layout"],
+    .block-settings[data-active-section="style"] .drawer-group[data-section="style"],
+    .block-settings[data-active-section="rules"] .drawer-group[data-section="rules"] { display: block; }
+    .range-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+    .range-row input { min-height: 0; padding: 0; accent-color: #f2f2f2; }
+    .range-value { min-width: 42px; text-align: right; color: #cbd0cc; font-size: 10px; }
+    .field-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+    .field-pill { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: #202320; font-size: 10px; }
+    .field-pill.on { border-color: #e4e7e5; color: #fff; }
+    .color-list { display: flex; flex-direction: column; gap: 8px; }
+    .color-row { display: grid; grid-template-columns: 1fr 26px 74px; align-items: center; gap: 8px; min-height: 34px; }
+    .color-row label { color: #bec3bf; font-size: 11px; }
+    .color-swatch { width: 26px; height: 26px; border: 1px solid #4a4a4a; border-radius: 7px; box-shadow: 0 0 0 2px #181a18 inset; }
+    .color-hex { padding: 6px 7px; border-radius: 7px; border: 1px solid var(--line); background: #1d201d; color: #dce0dd; font: 10px ui-monospace, monospace; }
+    .contrast-ok { display: flex; align-items: center; gap: 7px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; color: #cfd3d0; font-size: 10px; }
+    .contrast-ok::before { content: "✓"; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: #f1f1f1; color: #111; font-weight: 800; }
+    .drawer-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px 16px; border-top: 1px solid var(--line); }
+    .drawer-foot button { min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: #202320; }
+    .drawer-foot button:last-child { background: #f1f1f1; color: #111; border-color: transparent; font-weight: 720; }
+
+    .phone .study-head { padding: 16px 16px 11px; }
+    .phone .progress { margin: 0 16px; }
+    .phone .study-scroll { padding: 12px 12px 14px; }
+    .phone .study-foot { padding: 10px 12px 16px; }
+    .phone .card,
+    .phone[data-direction="a"] .card,
+    .phone[data-direction="b"] .card,
+    .phone[data-direction="c"] .card { display: flex; flex-direction: column; min-height: auto; }
+    .phone[data-direction="a"] .card::before { display: none; }
+    .phone .hero { min-height: 230px; padding: 26px 22px; }
+    .phone .word { font-size: 56px; }
+    .phone .right { display: flex; flex-direction: column; border: 0; }
+    .phone .translation-block { padding: 21px 22px 17px; }
+    .phone .translation { font-size: 25px; }
+    .phone .example-block { padding: 19px 22px; }
+    .phone .example-en { font-size: 20px; }
+    .phone .tip-block { margin: 0 16px 18px; padding: 14px; }
+    .phone[data-direction="c"] .hero { border-right: 0; border-bottom: 3px solid #111; }
+    .phone[data-direction="c"] .tip-block { margin: 0; border-top: 3px solid #111; border-radius: 0; }
+    .phone[data-direction="b"] .hero { min-height: 168px; padding: 24px 22px 18px; justify-content: flex-end; }
+    .phone[data-direction="b"] .word { margin-top: 7px; font-size: 49px; }
+    .phone[data-direction="b"] .translation-block { padding-top: 18px; }
+    .phone[data-direction="b"] .example-block { padding-top: 17px; padding-bottom: 17px; }
+    .phone[data-direction="b"] .tip-block { margin: 0 16px 16px; }
+    .phone .builder-main { display: block; overflow: hidden; }
+    .phone .builder-pane { display: none; border: 0; }
+    .phone .fields-sheet { display: flex; top: 18%; width: 100%; border-right: 0; border-top: 1px solid var(--line); border-radius: 22px 22px 0 0; transform: translateY(103%); }
+    .phone .fields-sheet.on { display: flex; transform: translateY(0); }
+    .phone .builder-canvas { min-height: calc(100% - 58px); }
+    .phone .canvas-bar > span { display: none; }
+    .phone .canvas-actions { width: 100%; justify-content: flex-end; }
+    .phone .canvas-actions .canvas-action:nth-child(2),
+    .phone .canvas-actions .mini-switch { display: none; }
+    .phone .layout-card { grid-template-columns: 1fr; }
+    .phone .layout-block { grid-column: 1; }
+    .phone .resize-handle-x { display: none; }
+    .phone .canvas-card-wrap { margin-top: 12px; }
+    .phone .block-floating-toolbar { position: sticky; top: 0; z-index: 4; justify-content: flex-start; overflow-x: auto; padding: 4px 0 7px; background: #0d0f0d; }
+    .phone .builder-top { padding: 12px; }
+    .phone .builder-title span { max-width: 190px; }
+    .phone .advanced-drawer { top: 20%; width: 100%; border-left: 0; border-top: 1px solid var(--line); border-radius: 22px 22px 0 0; transform: translateY(103%); }
+    .phone .advanced-drawer.on { transform: translateY(0); }
+    .phone .select-menu { position: fixed; z-index: 60; top: auto; left: 0; right: 0; bottom: 0; padding: 10px 10px calc(14px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; }
+    .mobile-steps { display: none; }
+    .phone .mobile-steps { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+    .mobile-steps button { min-height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 10px; }
+    .mobile-steps button.on { background: #29302b; color: var(--accent); }
+
+    @media (max-width: 720px) {
+      .toolbar { flex-wrap: wrap; }
+      .brand { flex: 1; }
+      .tabs { order: 3; width: 100%; overflow: auto; }
+      .tabs button { flex: 1; white-space: nowrap; }
+      .page { padding: 16px 8px; }
+      .caption { padding: 0 8px; }
+      .caption p { display: none; }
+      .device { width: min(390px,100%); border-radius: 30px; }
+      .device:not(.phone) { height: calc(100vh - 180px); }
+    }
+  </style>
+</head>
+<body>
+  <header class="toolbar">
+    <div class="brand">
+      <div class="brand-mark">T</div>
+      <div><div class="brand-title">Table Cards</div><div class="brand-sub">визуальные направления</div></div>
+    </div>
+    <nav class="tabs" aria-label="Варианты">
+      <button data-tab="a">A · editorial</button>
+      <button class="on" data-tab="b">B · ч/б native</button>
+      <button data-tab="c">C · poster</button>
+      <button data-tab="builder">конструктор</button>
+    </nav>
+    <div class="viewport-switch">
+      <button class="on" data-viewport="desktop">пк</button>
+      <button data-viewport="phone">телефон</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="caption">
+      <div><h1 id="concept-title">Cupertino monochrome</h1><p id="concept-copy">Почти чистый ч/б: системная геометрия текущего Obsidian, цвет только у фокуса и выбранных элементов.</p></div>
+      <span id="recommended" class="recommended">выбранный стиль</span>
+    </div>
+    <section id="device" class="device" data-direction="b">
+      <div id="study" class="study">
+        <header class="study-head">
+          <div class="deck">Dictionary <span aria-hidden="true">⌄</span></div>
+          <div class="count">14 / 583</div>
+          <button class="close" aria-label="Закрыть">×</button>
+        </header>
+        <div class="progress"></div>
+        <div class="study-scroll">
+          <article class="card">
+            <section class="hero">
+              <div class="eyebrow">слово</div>
+              <div class="word">remain</div>
+              <div class="phonetics"><span class="phonetic">/rɪˈmeɪn/</span><span class="phonetic">[римэ́йн]</span></div>
+            </section>
+            <div class="right">
+              <section class="translation-block">
+                <div class="label">перевод</div>
+                <div class="translation">оставаться <span style="font-weight:400;color:#6c746a">(в каком-то состоянии)</span></div>
+              </section>
+              <section class="example-block">
+                <div class="label">в контексте</div>
+                <div class="example-en">And you have to <strong>remain</strong> careful and attentive.</div>
+                <div class="example-ru">И ты должен оставаться осторожным и внимательным.</div>
+              </section>
+            </div>
+            <section class="tip-block">
+              <div class="label">✦ как запомнить</div>
+              <div class="tip-text">РЕ-МЕЙН — ремень держит, ты остаёшься на месте. Дальше всегда прилагательное: remain calm / careful.</div>
+            </section>
+          </article>
+        </div>
+        <footer class="study-foot">
+          <button class="nav-btn">← назад</button>
+          <button class="shuffle" aria-label="Перемешать">↻</button>
+          <button class="nav-btn next">дальше →</button>
+        </footer>
+      </div>
+
+      <div id="builder" class="builder">
+        <header class="builder-top">
+          <button class="builder-back">←</button>
+          <div class="builder-title"><strong>Карточка Dictionary</strong><span>Dictionary.md · 7 столбцов · 583 строки</span></div>
+          <button class="builder-language">RU ▾</button>
+          <button class="save">сохранить</button>
+        </header>
+        <nav class="mobile-steps"><button>1 · данные</button><button class="on">2 · блоки</button><button>3 · стиль</button><button>4 · превью</button></nav>
+        <div class="builder-main">
+          <aside class="builder-pane fields-sheet">
+            <div class="fields-head"><div class="pane-title">поля таблицы</div><button class="fields-close">×</button></div>
+            <div class="source"><b>Источник</b>30_Areas/English/Dictionary/Dictionary.md</div>
+            <div class="source-actions"><button>выбрать файл…</button><button>↻</button></div>
+            <select class="table-select" aria-label="Таблица"><option>Таблица 1 · 583 строки</option></select>
+            <div class="column-head"><span>столбцы · 7</span><button>все / ничего</button></div>
+            <div class="column-list">
+              <div class="column-row"><span class="check">✓</span><span class="column-info"><b>Words</b><small>583 / 583 заполнено</small></span><span class="type-chip">text</span></div>
+              <div class="column-row"><span class="check">✓</span><span class="column-info"><b>Transcription</b><small>581 / 583 · 2 пустых</small></span><span class="type-chip">text</span></div>
+              <div class="column-row"><span class="check">✓</span><span class="column-info"><b>RuPron</b><small>579 / 583 · 4 пустых</small></span><span class="type-chip">text</span></div>
+              <div class="column-row"><span class="check">✓</span><span class="column-info"><b>Translation</b><small>583 / 583 заполнено</small></span><span class="type-chip">text</span></div>
+              <div class="column-row"><span class="check">✓</span><span class="column-info"><b>Examples</b><small>510 / 583 · 73 пустых</small></span><span class="type-chip">md</span></div>
+              <div class="column-row"><span class="check">✓</span><span class="column-info"><b>Ex Translation</b><small>503 / 583 · 80 пустых</small></span><span class="type-chip">text</span></div>
+              <div class="column-row"><span class="check">✓</span><span class="column-info"><b>Memory Tip</b><small>540 / 583 · 43 пустых</small></span><span class="type-chip">text</span></div>
+            </div>
+          </aside>
+          <section class="builder-canvas">
+            <div class="canvas-bar">
+              <button class="fields-open">☷ поля · 7</button>
+              <span>строка 14 / 583</span>
+              <div class="canvas-actions"><button class="canvas-action">↶</button><button class="canvas-action">авто</button><div class="mini-switch"><button class="on">пк</button><button>телефон</button></div></div>
+            </div>
+            <div class="canvas-card-wrap">
+              <div class="block-floating-toolbar">
+                <div class="toolbar-select-wrap">
+                  <button class="toolbar-type">T&nbsp;&nbsp;Заголовок⌄</button>
+                  <div class="toolbar-select-menu" role="listbox">
+                    <button class="select-option on"><span class="select-trigger-icon">T</span><span><strong>Заголовок</strong><small>слово или термин</small></span><span>✓</span></button>
+                    <button class="select-option"><span class="select-trigger-icon">¶</span><span><strong>Текст</strong><small>перевод или описание</small></span><span></span></button>
+                    <button class="select-option"><span class="select-trigger-icon">◉</span><span><strong>Чипы</strong><small>теги и произношение</small></span><span></span></button>
+                    <button class="select-option"><span class="select-trigger-icon">❝</span><span><strong>Цитата</strong><small>пример использования</small></span><span></span></button>
+                    <button class="select-option"><span class="select-trigger-icon">▧</span><span><strong>Изображение</strong><small>локальное или markdown</small></span><span></span></button>
+                  </div>
+                </div>
+                <button>½ ширины</button><button>↕ переместить</button><button class="toolbar-more">•••</button>
+              </div>
+              <div class="layout-card">
+                <div class="layout-block selected"><span class="resize-handle-x">⋮</span><span class="resize-handle-y">••</span><div class="block-meta"><span>Words</span><span>½ · авто</span></div><div class="block-preview word-mini">remain</div></div>
+                <div class="layout-block"><div class="block-meta"><span>Translation</span><span>½</span></div><div class="block-preview">оставаться</div></div>
+                <div class="layout-block full"><div class="block-meta"><span>Pronunciation · 2 поля</span><span>1/1</span></div><div class="block-preview">/rɪˈmeɪn/ · [римэ́йн]</div></div>
+                <div class="layout-block full"><div class="block-meta"><span>Example · 2 поля</span><span>1/1</span></div><div class="block-preview">And you have to remain careful…<br><span style="color:#727972">И ты должен оставаться…</span></div></div>
+                <div class="layout-block full"><div class="block-meta"><span>Memory Tip</span><span>1/1</span></div><div class="block-preview note-mini">РЕ-МЕЙН — ремень держит…</div></div>
+              </div>
+            </div>
+          </section>
+          <aside class="builder-pane quick-inspector">
+            <div class="pane-title">блок · Words</div>
+            <section class="inspector-section">
+              <div class="control-label">тип блока</div>
+              <div class="select-wrap">
+                <button class="select-trigger" aria-haspopup="listbox" aria-expanded="false"><span class="select-trigger-icon">T</span><span><strong>Заголовок</strong><small>крупный основной текст</small></span><span class="select-chevron">⌄</span></button>
+                <div class="select-menu" role="listbox">
+                  <input class="select-search" placeholder="найти тип…" />
+                  <button class="select-option on"><span class="select-trigger-icon">T</span><span><strong>Заголовок</strong><small>слово, термин, название</small></span><span class="select-check">✓</span></button>
+                  <button class="select-option"><span class="select-trigger-icon">¶</span><span><strong>Текст</strong><small>перевод или описание</small></span><span></span></button>
+                  <button class="select-option"><span class="select-trigger-icon">◉</span><span><strong>Чипы</strong><small>теги и произношение</small></span><span></span></button>
+                  <button class="select-option"><span class="select-trigger-icon">❝</span><span><strong>Цитата</strong><small>пример использования</small></span><span></span></button>
+                  <button class="select-option"><span class="select-trigger-icon">▧</span><span><strong>Изображение</strong><small>вложение или markdown image</small></span><span></span></button>
+                </div>
+              </div>
+            </section>
+            <section class="inspector-section">
+              <div class="control-label">ширина на пк</div>
+              <div class="segment two"><button class="on">½</button><button>1/1</button></div>
+            </section>
+            <section class="inspector-section">
+              <div class="control-label">размер</div>
+              <div class="segment"><button>обычный</button><button class="on">крупный</button><button>макси</button></div>
+            </section>
+            <div class="toggle-row"><span>показывать подпись</span><span class="toggle"></span></div>
+            <div class="toggle-row"><span>акцентный блок</span><span class="toggle"></span></div>
+            <div class="toggle-row"><span>скрывать пустое</span><span class="toggle"></span></div>
+            <button class="advanced-open">настроить подробнее →</button>
+            <div class="editor-hint">Ещё: данные, overflow, цвета, условия и mobile override.</div>
+          </aside>
+        </div>
+        <div class="drawer-scrim"></div>
+        <aside class="advanced-drawer" aria-label="Расширенные настройки блока">
+          <header class="drawer-head"><div><strong class="drawer-title">Words</strong><span class="drawer-subtitle">расширенные настройки блока</span></div><button class="drawer-close">×</button></header>
+          <nav class="drawer-tabs"><button class="on" data-drawer-tab="block">блок</button><button data-drawer-tab="card">карточка</button></nav>
+          <div class="drawer-content block-settings on" data-active-section="content">
+            <nav class="drawer-subtabs"><button class="on" data-section-tab="content">контент</button><button data-section-tab="layout">размер</button><button data-section-tab="style">стиль</button><button data-section-tab="rules">правила</button></nav>
+            <section class="drawer-group" data-section="content">
+              <div class="drawer-group-title">данные</div>
+              <div class="drawer-field"><label>Тип блока</label><select><option>Заголовок</option><option>Обычный текст</option><option>Чипы</option><option>Цитата</option><option>Заметка</option><option>Изображение</option></select></div>
+              <div class="drawer-field"><label>Столбцы в этом блоке</label><div class="field-pills"><span class="field-pill on">Words</span><span class="field-pill">Transcription</span><span class="field-pill">RuPron</span><span class="field-pill">+ добавить</span></div></div>
+              <div class="drawer-field"><label>Если столбцов несколько</label><select><option>Показывать все непустые</option><option>Взять первый непустой · fallback</option></select></div>
+              <div class="drawer-field"><label>Подпись блока</label><input value="Слово" /></div>
+              <div class="toggle-row"><span>показывать markdown</span><span class="toggle"></span></div>
+              <div class="toggle-row"><span>скрыть, если пусто</span><span class="toggle"></span></div>
+            </section>
+            <section class="drawer-group" data-section="rules">
+              <div class="drawer-group-title">пустые значения</div>
+              <div class="drawer-field"><label>Если все поля блока пустые</label><select><option>Скрыть блок · рекомендуется</option><option>Показать —</option><option>Показать свой текст</option><option>Оставить пустое место</option><option>Взять fallback-столбец</option></select></div>
+              <div class="drawer-field"><label>Свой текст</label><input value="Нет данных" /></div>
+              <div class="toggle-row"><span>считать «-», «—», «n/a» пустыми</span><span class="toggle"></span></div>
+              <div class="toggle-row"><span>обязательное поле карточки</span><span class="toggle"></span></div>
+            </section>
+            <section class="drawer-group" data-section="style">
+              <div class="drawer-group-title">типографика</div>
+              <div class="drawer-field"><label>Выравнивание</label><div class="segment"><button class="on">слева</button><button>центр</button><button>справа</button></div></div>
+              <div class="drawer-field"><label>Длинный текст</label><select><option>Переносить на новые строки</option><option>Уменьшать шрифт до минимума</option><option>Обрезать с многоточием</option><option>Скролл внутри блока</option></select></div>
+              <div class="drawer-field"><label>Минимальный размер шрифта</label><div class="range-row"><input type="range" min="12" max="36" value="18" /><span class="range-value">18 px</span></div></div>
+              <div class="drawer-field"><label>Максимум строк</label><select><option>Без ограничения</option><option>2 строки</option><option>3 строки</option><option>5 строк</option></select></div>
+              <div class="drawer-field"><label>Насыщенность</label><select><option>Крупный акцент</option><option>Обычный текст</option><option>Вторичный текст</option></select></div>
+            </section>
+            <section class="drawer-group" data-section="layout">
+              <div class="drawer-group-title">адаптив</div>
+              <div class="drawer-field"><label>Ширина на компьютере</label><div class="segment two"><button class="on">½</button><button>1/1</button></div></div>
+              <div class="drawer-field"><label>Высота блока</label><select><option>Авто по содержимому</option><option>Задать минимум</option><option>Фиксированная</option><option>Заполнить свободное место</option></select></div>
+              <div class="drawer-field"><label>Минимальная высота</label><div class="range-row"><input type="range" min="48" max="320" value="96" /><span class="range-value">96 px</span></div></div>
+              <div class="drawer-field"><label>На телефоне</label><select><option>Во всю ширину · рекомендуется</option><option>Компактный ряд</option></select></div>
+              <div class="toggle-row"><span>уменьшать длинные слова</span><span class="toggle"></span></div>
+            </section>
+            <section class="drawer-group" data-section="style">
+              <div class="drawer-group-title">свой стиль блока</div>
+              <div class="toggle-row"><span>наследовать стиль карточки</span><span class="toggle"></span></div>
+              <div class="color-list">
+                <div class="color-row"><label>фон</label><span class="color-swatch" style="background:#202020"></span><span class="color-hex">#202020</span></div>
+                <div class="color-row"><label>текст</label><span class="color-swatch" style="background:#f2f2f2"></span><span class="color-hex">#F2F2F2</span></div>
+                <div class="color-row"><label>бордер</label><span class="color-swatch" style="background:#3a3a3a"></span><span class="color-hex">#3A3A3A</span></div>
+              </div>
+            </section>
+            <section class="drawer-group image-only" data-section="content">
+              <div class="drawer-group-title">если блок — изображение</div>
+              <div class="drawer-field"><label>Вписывание</label><div class="segment two"><button class="on">contain</button><button>cover</button></div></div>
+              <div class="drawer-field"><label>Соотношение сторон</label><select><option>Авто по изображению</option><option>1 : 1</option><option>4 : 3</option><option>16 : 9</option></select></div>
+              <div class="drawer-field"><label>Позиция кадра</label><div class="segment"><button>верх</button><button class="on">центр</button><button>низ</button></div></div>
+              <div class="drawer-field"><label>Подпись</label><select><option>Alt-текст изображения</option><option>Название столбца</option><option>Не показывать</option></select></div>
+              <div class="toggle-row"><span>открывать крупно по тапу</span><span class="toggle"></span></div>
+            </section>
+          </div>
+          <div class="drawer-content card-settings">
+            <section class="drawer-group">
+              <div class="drawer-group-title">палитра</div>
+              <div class="drawer-field"><label>Пресет</label><div class="segment"><button>Obsidian</button><button class="on">Ч/б</button><button>Свой</button></div></div>
+              <div class="color-list">
+                <div class="color-row"><label>фон окна</label><span class="color-swatch" style="background:#111213"></span><span class="color-hex">#111213</span></div>
+                <div class="color-row"><label>фон карточки</label><span class="color-swatch" style="background:#181818"></span><span class="color-hex">#181818</span></div>
+                <div class="color-row"><label>основной текст</label><span class="color-swatch" style="background:#f2f2f2"></span><span class="color-hex">#F2F2F2</span></div>
+                <div class="color-row"><label>вторичный текст</label><span class="color-swatch" style="background:#969696"></span><span class="color-hex">#969696</span></div>
+                <div class="color-row"><label>акцент</label><span class="color-swatch" style="background:#ffffff"></span><span class="color-hex">#FFFFFF</span></div>
+              </div>
+              <div class="contrast-ok">контраст текста 15.2:1 · WCAG AAA</div>
+            </section>
+            <section class="drawer-group">
+              <div class="drawer-group-title">карточка и бордер</div>
+              <div class="drawer-field"><label>Стиль бордера</label><div class="segment"><button>нет</button><button class="on">линия</button><button>плотный</button></div></div>
+              <div class="drawer-field"><label>Цвет бордера</label><div class="color-row"><label></label><span class="color-swatch" style="background:#343434"></span><span class="color-hex">#343434</span></div></div>
+              <div class="drawer-field"><label>Толщина</label><div class="range-row"><input type="range" min="0" max="8" value="1" /><span class="range-value">1 px</span></div></div>
+              <div class="drawer-field"><label>Скругление</label><div class="range-row"><input type="range" min="0" max="40" value="20" /><span class="range-value">20 px</span></div></div>
+              <div class="drawer-field"><label>Тень</label><select><option>Нет</option><option>Мягкая</option><option>Глубокая</option></select></div>
+            </section>
+            <section class="drawer-group">
+              <div class="drawer-group-title">ритм</div>
+              <div class="drawer-field"><label>Внутренние поля</label><div class="range-row"><input type="range" min="8" max="48" value="22" /><span class="range-value">22 px</span></div></div>
+              <div class="drawer-field"><label>Расстояние между блоками</label><div class="range-row"><input type="range" min="4" max="32" value="12" /><span class="range-value">12 px</span></div></div>
+              <div class="drawer-field"><label>Максимальная ширина на ПК</label><select><option>920 px</option><option>1100 px</option><option>На всю ширину</option></select></div>
+            </section>
+          </div>
+          <footer class="drawer-foot"><button class="drawer-reset">сбросить блок</button><button class="drawer-done">готово</button></footer>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const concepts = {
+      a: ["Editorial notebook", "Спокойная учебная карточка: типографика ведёт взгляд от слова к смыслу, примеру и мнемонике."],
+      b: ["Cupertino monochrome", "Почти чистый ч/б: системная геометрия текущего Obsidian, цвет только у фокуса и выбранных элементов."],
+      c: ["Study poster", "Контрастный плакатный стиль — быстрее считывается и сильнее запоминается, но заметнее спорит с темой Obsidian."],
+      builder: ["Визуальный конструктор", "Все столбцы видны сразу: включай, объединяй, меняй порядок, ширину и оформление прямо на карточке."]
+    };
+    const device = document.querySelector("#device");
+    const study = document.querySelector("#study");
+    const builder = document.querySelector("#builder");
+    const title = document.querySelector("#concept-title");
+    const copy = document.querySelector("#concept-copy");
+    const recommended = document.querySelector("#recommended");
+    document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-tab]").forEach((item) => item.classList.remove("on"));
+      button.classList.add("on");
+      const tab = button.dataset.tab;
+      const [nextTitle, nextCopy] = concepts[tab];
+      title.textContent = nextTitle;
+      copy.textContent = nextCopy;
+      recommended.style.display = tab === "b" ? "inline-flex" : "none";
+      if (tab === "builder") {
+        study.style.display = "none";
+        builder.classList.add("on");
+      } else {
+        device.dataset.direction = tab;
+        study.style.display = "flex";
+        builder.classList.remove("on");
+      }
+    }));
+    document.querySelectorAll("[data-viewport]").forEach((button) => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-viewport]").forEach((item) => item.classList.remove("on"));
+      button.classList.add("on");
+      device.classList.toggle("phone", button.dataset.viewport === "phone");
+    }));
+    const drawer = document.querySelector(".advanced-drawer");
+    const scrim = document.querySelector(".drawer-scrim");
+    const drawerTitle = document.querySelector(".drawer-title");
+    const drawerSubtitle = document.querySelector(".drawer-subtitle");
+    const fieldsSheet = document.querySelector(".fields-sheet");
+    const setDrawerMode = (mode) => {
+      document.querySelectorAll("[data-drawer-tab]").forEach((item) => item.classList.toggle("on", item.dataset.drawerTab === mode));
+      document.querySelector(".block-settings").classList.toggle("on", mode === "block");
+      document.querySelector(".card-settings").classList.toggle("on", mode === "card");
+      drawerTitle.textContent = mode === "block" ? "Words" : "Карточка Dictionary";
+      drawerSubtitle.textContent = mode === "block" ? "расширенные настройки блока" : "палитра, рамка и ритм";
+    };
+    const setDrawer = (open, mode = "block") => { drawer.classList.toggle("on", open); scrim.classList.toggle("on", open); if (open) { fieldsSheet.classList.remove("on"); setDrawerMode(mode); } };
+    const setFields = (open) => { fieldsSheet.classList.toggle("on", open); scrim.classList.toggle("on", open); if (open) drawer.classList.remove("on"); };
+    document.querySelector(".advanced-open").addEventListener("click", () => setDrawer(true, "block"));
+    document.querySelector(".toolbar-more").addEventListener("click", () => setDrawer(true, "block"));
+    document.querySelector(".fields-open").addEventListener("click", () => setFields(true));
+    document.querySelector(".fields-close").addEventListener("click", () => setFields(false));
+    document.querySelectorAll("[data-drawer-tab]").forEach((button) => button.addEventListener("click", () => setDrawerMode(button.dataset.drawerTab)));
+    document.querySelectorAll("[data-section-tab]").forEach((button) => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-section-tab]").forEach((item) => item.classList.remove("on"));
+      button.classList.add("on");
+      document.querySelector(".block-settings").dataset.activeSection = button.dataset.sectionTab;
+    }));
+    const selectTrigger = document.querySelector(".select-trigger");
+    const selectMenu = document.querySelector(".select-menu");
+    selectTrigger.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const open = !selectMenu.classList.contains("on");
+      selectMenu.classList.toggle("on", open);
+      selectTrigger.setAttribute("aria-expanded", String(open));
+    });
+    document.querySelectorAll(".select-wrap .select-option").forEach((option) => option.addEventListener("click", () => {
+      document.querySelectorAll(".select-wrap .select-option").forEach((item) => item.classList.remove("on"));
+      option.classList.add("on");
+      selectTrigger.querySelector("strong").textContent = option.querySelector("strong").textContent;
+      selectTrigger.querySelector("small").textContent = option.querySelector("small").textContent;
+      selectMenu.classList.remove("on");
+      selectTrigger.setAttribute("aria-expanded", "false");
+    }));
+    const toolbarType = document.querySelector(".toolbar-type");
+    const toolbarMenu = document.querySelector(".toolbar-select-menu");
+    toolbarType.addEventListener("click", (event) => { event.stopPropagation(); toolbarMenu.classList.toggle("on"); });
+    document.querySelectorAll(".toolbar-select-menu .select-option").forEach((option) => option.addEventListener("click", () => {
+      document.querySelectorAll(".toolbar-select-menu .select-option").forEach((item) => item.classList.remove("on"));
+      option.classList.add("on");
+      toolbarType.textContent = `${option.querySelector(".select-trigger-icon").textContent}  ${option.querySelector("strong").textContent}⌄`;
+      toolbarMenu.classList.remove("on");
+    }));
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".select-wrap")) {
+        selectMenu.classList.remove("on");
+        selectTrigger.setAttribute("aria-expanded", "false");
+      }
+      if (!event.target.closest(".toolbar-select-wrap")) toolbarMenu.classList.remove("on");
+    });
+    document.querySelector(".drawer-close").addEventListener("click", () => setDrawer(false));
+    document.querySelector(".drawer-done").addEventListener("click", () => setDrawer(false));
+    scrim.addEventListener("click", () => { setDrawer(false); setFields(false); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0; url=v2.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="canonical" href="v2.html" />
+  <title>Table Cards v2 preview</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    :root {
+      --background-primary: #1c1c1e;
+      --background-secondary: #2c2c2e;
+      --background-modifier-border: #3a3a3c;
+      --background-modifier-border-hover: #48484a;
+      --background-modifier-hover: #3a3a3c;
+      --background-modifier-cover: #000;
+      --text-normal: #f2f2f7;
+      --text-muted: #aeaeb2;
+      --text-faint: #8e8e93;
+      --text-on-accent: #10231c;
+      --text-error: #ff6b6b;
+      --interactive-accent: #6de8c3;
+      --modal-background: #1c1c1e;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111113;
+      color: var(--text-normal);
+    }
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #161618;
+      border-bottom: 1px solid var(--background-modifier-border);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .nav button {
+      min-height: 36px;
+      border: 0;
+      border-radius: 10px;
+      padding: 0 12px;
+      background: #2c2c2e;
+      color: var(--text-normal);
+    }
+    .nav button.on { background: var(--interactive-accent); color: var(--text-on-accent); }
+    .page { display: none; padding: 24px; }
+    .page.on { display: block; }
+    .stage-wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      height: min(680px, calc(100vh - 80px));
+    }
+    .modal.table-cards-modal {
+      position: relative;
+      height: 100%;
+      max-height: 100%;
+    }
+    @media (max-width: 520px) {
+      .page { padding: 0; }
+      .stage-wrap { height: calc(100vh - 56px); max-width: none; }
+      .modal.table-cards-modal {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0;
+      }
+    }
+    .editor-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    .modal.table-cards-editor {
+      position: relative;
+      height: auto;
+      max-height: none;
+      padding: 16px;
+      background: var(--background-primary);
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <button id="btn-front" class="on">front</button>
+    <button id="btn-back">revealed 7</button>
+    <button id="btn-nine">revealed 9</button>
+    <button id="btn-editor">editor</button>
+  </div>
+
+  <section id="page-front" class="page on">
+    <div class="stage-wrap">
+      <div class="modal table-cards-modal is-center has-shadow border-thin">
+        <div class="table-cards-shell">
+          <div class="table-cards-header">
+            <div class="table-cards-header-lead">
+              <div class="table-cards-kicker">cards</div>
+              <div class="table-cards-deck-select">Dictionary</div>
+            </div>
+            <div class="table-cards-counter">9 / 583</div>
+            <button class="table-cards-icon-btn">✕</button>
+          </div>
+          <div class="table-cards-progress"><div class="table-cards-progress-bar" style="width:12%"></div></div>
+          <div class="table-cards-stage">
+            <div class="tc-stack tc-stack-main">
+              <div class="table-cards-box" data-style="title">
+                <div class="table-cards-word">remain</div>
+              </div>
+              <div class="table-cards-box" data-style="chips">
+                <div class="table-cards-pron">
+                  <span class="table-cards-chip">/rɪˈmeɪn/</span>
+                  <span class="table-cards-chip">[римэ́йн]</span>
+                </div>
+              </div>
+            </div>
+            <div class="tc-stack tc-stack-full">
+              <div class="table-cards-flip"><span>Click to reveal</span></div>
+            </div>
+          </div>
+          <div class="table-cards-footer">
+            <button class="table-cards-nav-btn">Previous</button>
+            <button class="table-cards-shuffle-btn">↺</button>
+            <button class="table-cards-nav-btn table-cards-nav-next">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-back" class="page">
+    <div class="stage-wrap">
+      <div class="modal table-cards-modal is-center has-shadow border-thin">
+        <div class="table-cards-shell">
+          <div class="table-cards-header">
+            <div class="table-cards-header-lead">
+              <div class="table-cards-kicker">cards</div>
+              <div class="table-cards-deck-select">Dictionary</div>
+            </div>
+            <div class="table-cards-counter">9 / 583</div>
+            <button class="table-cards-icon-btn">✕</button>
+          </div>
+          <div class="table-cards-progress"><div class="table-cards-progress-bar" style="width:12%"></div></div>
+          <div class="table-cards-stage is-split">
+            <div class="tc-stack tc-stack-main">
+              <div class="table-cards-box" data-style="title">
+                <div class="table-cards-word">remain</div>
+              </div>
+              <div class="table-cards-box" data-style="chips">
+                <div class="table-cards-pron">
+                  <span class="table-cards-chip">/rɪˈmeɪn/</span>
+                  <span class="table-cards-chip">[римэ́йн]</span>
+                </div>
+              </div>
+            </div>
+            <div class="tc-stack tc-stack-side">
+              <div class="table-cards-box" data-style="text">
+                <div class="table-cards-label">Translation</div>
+                <div class="table-cards-translation">оставаться (в каком-то состоянии)</div>
+              </div>
+              <div class="table-cards-box" data-style="quote">
+                <div class="table-cards-label">Examples</div>
+                <div class="table-cards-example">And you have to remain careful and attentive.</div>
+              </div>
+              <div class="table-cards-box" data-style="text">
+                <div class="table-cards-label">Ex Translation</div>
+                <div class="table-cards-translation">И ты должен оставаться осторожным и внимательным.</div>
+              </div>
+              <div class="table-cards-box" data-style="note">
+                <div class="table-cards-label">Memory Tip</div>
+                <div class="table-cards-tip">
+                  <span class="table-cards-tip-mark">✦</span>
+                  <span class="table-cards-tip-text">РЕ-МЕЙН — ремень держит, ты остаёшься на месте. Дальше всегда прилагательное: remain calm / careful.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="table-cards-footer">
+            <button class="table-cards-nav-btn">Previous</button>
+            <button class="table-cards-shuffle-btn">↺</button>
+            <button class="table-cards-nav-btn table-cards-nav-next">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-nine" class="page">
+    <div class="stage-wrap">
+      <div class="modal table-cards-modal is-center has-shadow border-thin">
+        <div class="table-cards-shell">
+          <div class="table-cards-header">
+            <div class="table-cards-header-lead">
+              <div class="table-cards-kicker">cards</div>
+              <div class="table-cards-deck-select">Irregular</div>
+            </div>
+            <div class="table-cards-counter">3 / 40</div>
+            <button class="table-cards-icon-btn">✕</button>
+          </div>
+          <div class="table-cards-progress"><div class="table-cards-progress-bar" style="width:8%"></div></div>
+          <div class="table-cards-stage is-split">
+            <div class="tc-stack tc-stack-main">
+              <div class="table-cards-box" data-style="title">
+                <div class="table-cards-word">go</div>
+              </div>
+              <div class="table-cards-box" data-style="chips">
+                <div class="table-cards-pron">
+                  <span class="table-cards-chip">/ɡəʊ/</span>
+                  <span class="table-cards-chip">[гоу]</span>
+                </div>
+              </div>
+            </div>
+            <div class="tc-stack tc-stack-side">
+              <div class="table-cards-box" data-style="text">
+                <div class="table-cards-label">V2</div>
+                <div class="table-cards-translation">went</div>
+              </div>
+              <div class="table-cards-box" data-style="text">
+                <div class="table-cards-label">V3</div>
+                <div class="table-cards-translation">gone</div>
+              </div>
+              <div class="table-cards-box" data-style="text">
+                <div class="table-cards-label">Translation</div>
+                <div class="table-cards-translation">идти, ехать</div>
+              </div>
+              <div class="table-cards-box" data-style="quote">
+                <div class="table-cards-label">Example</div>
+                <div class="table-cards-example">I went home after work.</div>
+              </div>
+              <div class="table-cards-box" data-style="text">
+                <div class="table-cards-label">Ex Translation</div>
+                <div class="table-cards-translation">Я поехал домой после работы.</div>
+              </div>
+              <div class="table-cards-box" data-style="text">
+                <div class="table-cards-label">Source</div>
+                <div class="table-cards-translation">Irregular Verbs</div>
+              </div>
+              <div class="table-cards-box" data-style="note">
+                <div class="table-cards-label">Memory Tip</div>
+                <div class="table-cards-tip">
+                  <span class="table-cards-tip-mark">✦</span>
+                  <span class="table-cards-tip-text">go → went → gone. Три разные формы, не go/goed.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="table-cards-footer">
+            <button class="table-cards-nav-btn">Previous</button>
+            <button class="table-cards-shuffle-btn">↺</button>
+            <button class="table-cards-nav-btn table-cards-nav-next">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-editor" class="page">
+    <div class="editor-wrap">
+      <div class="modal table-cards-editor">
+        <div class="table-cards-editor-body">
+          <div class="tc-work">
+            <div class="tc-strip">
+              <div class="tc-editor-kicker">Table columns</div>
+              <div class="tc-chip-list">
+                <button class="tc-col-chip">Source</button>
+                <button class="tc-col-chip">Level</button>
+              </div>
+              <div class="tc-add-row">
+                <input class="tc-add-input" placeholder="Column name" />
+                <button class="tc-add-btn">+</button>
+                <button class="tc-rest-btn">Place the rest on the back</button>
+              </div>
+            </div>
+            <div class="tc-canvas">
+              <div class="tc-face">
+                <div class="tc-face-title">Front</div>
+                <div class="tc-block-list">
+                  <div class="tc-block is-selected">
+                    <div class="tc-block-line"><span>Title</span><span>Left</span></div>
+                    <div class="tc-block-names">Words</div>
+                  </div>
+                  <div class="tc-block">
+                    <div class="tc-block-line"><span>Chips</span><span>Left</span></div>
+                    <div class="tc-block-names">Transcription · RuPron</div>
+                  </div>
+                </div>
+              </div>
+              <div class="tc-face">
+                <div class="tc-face-title">Back</div>
+                <div class="tc-block-list">
+                  <div class="tc-block">
+                    <div class="tc-block-line"><span>Text</span><span>Right</span></div>
+                    <div class="tc-block-names">Translation</div>
+                  </div>
+                  <div class="tc-block">
+                    <div class="tc-block-line"><span>Quote</span><span>Right</span></div>
+                    <div class="tc-block-names">Examples</div>
+                  </div>
+                  <div class="tc-block">
+                    <div class="tc-block-line"><span>Note</span><span>Right</span></div>
+                    <div class="tc-block-names">Memory Tip</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tc-inspector">
+              <div class="tc-pills">
+                <button class="tc-pill is-on">Title</button>
+                <button class="tc-pill">Chips</button>
+                <button class="tc-pill">Text</button>
+                <button class="tc-pill">Quote</button>
+                <button class="tc-pill">Note</button>
+              </div>
+              <div class="tc-pills">
+                <button class="tc-pill is-on">Left</button>
+                <button class="tc-pill">Right</button>
+                <button class="tc-pill">Full</button>
+              </div>
+              <button class="tc-pill">Label</button>
+              <button class="tc-pill is-danger">Remove block</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const pages = {
+      front: document.getElementById("page-front"),
+      back: document.getElementById("page-back"),
+      nine: document.getElementById("page-nine"),
+      editor: document.getElementById("page-editor"),
+    };
+    const buttons = {
+      front: document.getElementById("btn-front"),
+      back: document.getElementById("btn-back"),
+      nine: document.getElementById("btn-nine"),
+      editor: document.getElementById("btn-editor"),
+    };
+    function show(name) {
+      for (const key of Object.keys(pages)) {
+        pages[key].classList.toggle("on", key === name);
+        buttons[key].classList.toggle("on", key === name);
+      }
+    }
+    for (const key of Object.keys(buttons)) {
+      buttons[key].addEventListener("click", () => show(key));
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" href="data:,">
+	<title>Table Cards v2 preview</title>
+	<link rel="stylesheet" href="../styles.css">
+	<style>
+		:root {
+			--background-primary: #0d0d0e;
+			--background-secondary: #171719;
+			--background-modifier-border: #303034;
+			--background-modifier-hover: #242427;
+			--background-modifier-cover: #000000;
+			--interactive-accent: #f3f3f3;
+			--text-normal: #f3f3f3;
+			--text-muted: #b3b3b7;
+			--text-faint: #7c7c82;
+			--text-on-accent: #101011;
+			color-scheme: dark;
+			font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+		}
+		* { box-sizing: border-box; }
+		body { margin: 0; min-height: 100dvh; background: #080809; color: var(--text-normal); }
+		.preview-toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+		.preview-toolbar button, .preview-toolbar a { min-height: 40px; padding: 0 14px; border: 1px solid #333; border-radius: 10px; background: #18181a; color: inherit; display: inline-flex; align-items: center; text-decoration: none; }
+		.preview-toolbar button[aria-pressed="true"] { background: #f3f3f3; color: #111; }
+		.preview-root { min-height: calc(100dvh - 64px); display: grid; place-items: center; padding: 12px; }
+		.modal.table-cards-modal { position: relative; inset: auto; }
+		[data-fixture][hidden] { display: none; }
+		@media (max-width: 560px) {
+			.preview-toolbar { display: none; }
+			.preview-root { min-height: 100dvh; padding: 0; }
+			.modal.table-cards-modal {
+				width: 100%;
+				max-width: 100%;
+				height: 100dvh;
+				max-height: 100dvh;
+				border-radius: 0;
+			}
+		}
+	</style>
+</head>
+<body>
+	<nav class="preview-toolbar" aria-label="Fixtures">
+		<button type="button" data-show="normal" aria-pressed="true">Обычная</button>
+		<button type="button" data-show="long" aria-pressed="false">Длинный текст</button>
+		<button type="button" data-show="empty" aria-pressed="false">Пустые значения</button>
+		<button type="button" data-show="image" aria-pressed="false">Изображение</button>
+		<a href="editor.html">Редактор</a>
+	</nav>
+	<main class="preview-root">
+		<section class="modal table-cards-modal border-thin has-shadow" data-preset="monochrome" role="dialog" aria-modal="true" aria-label="Table Cards">
+			<div class="modal-content table-cards-shell">
+				<header class="table-cards-header">
+					<div class="table-cards-header-lead">
+						<div class="table-cards-kicker">карточки</div>
+						<div class="table-cards-deck-picker"><div class="tc-listbox"><label id="preview-deck-label">Колода</label><button class="tc-listbox-trigger" type="button" aria-labelledby="preview-deck-label preview-deck-value" aria-haspopup="listbox" aria-expanded="false" aria-controls="preview-deck-options" data-preview-deck><span id="preview-deck-value">English · Dictionary</span><span class="tc-listbox-chevron" aria-hidden="true">⌄</span></button><div class="tc-listbox-popover" data-preview-deck-options hidden><div class="tc-listbox-options" id="preview-deck-options" role="listbox" aria-labelledby="preview-deck-label"><button class="tc-listbox-option" type="button" role="option" aria-selected="true">English · Dictionary</button><button class="tc-listbox-option" type="button" role="option" aria-selected="false">English · Phrases</button></div></div></div></div>
+					</div>
+					<div class="table-cards-counter" aria-live="polite">18 / 583</div>
+					<button class="table-cards-icon-btn" type="button" aria-label="Закрыть">×</button>
+				</header>
+				<div class="table-cards-progress" role="progressbar" aria-label="Прогресс" aria-valuenow="18" aria-valuemin="0" aria-valuemax="583">
+					<div class="table-cards-progress-bar" style="width: 3%"></div>
+				</div>
+
+				<div class="table-cards-stage" data-fixture="normal">
+					<article class="table-cards-box" data-kind="title" data-width="full" data-mobile="stack" data-overflow="shrink" data-height="auto">
+						<div class="table-cards-word">remain</div>
+					</article>
+					<article class="table-cards-box" data-kind="chips" data-width="half" data-mobile="compact" data-overflow="wrap" data-height="auto">
+						<div class="table-cards-label">transcription</div>
+						<div class="table-cards-pron"><span class="table-cards-chip">/rɪˈmeɪn/</span><span class="table-cards-chip">римэ́йн</span></div>
+					</article>
+					<article class="table-cards-box" data-kind="text" data-width="half" data-mobile="stack" data-overflow="wrap" data-height="auto">
+						<div class="table-cards-label">перевод</div><div class="table-cards-translation">оставаться, сохраняться</div>
+					</article>
+					<article class="table-cards-box" data-kind="quote" data-width="full" data-mobile="stack" data-overflow="wrap" data-height="auto">
+						<div class="table-cards-label">example</div><div class="table-cards-example">Please remain calm while we check the details.</div>
+					</article>
+					<article class="table-cards-box" data-kind="note" data-width="full" data-mobile="compact" data-overflow="wrap" data-height="auto">
+						<div class="table-cards-tip"><span class="table-cards-tip-mark" aria-hidden="true">✦</span><div class="table-cards-tip-text"><div class="table-cards-value">РЕ-МЕЙН — ремень остаётся на месте.</div></div></div>
+					</article>
+				</div>
+
+				<div class="table-cards-stage" data-fixture="long" hidden>
+					<article class="table-cards-box" data-kind="title" data-width="full" data-mobile="stack" data-overflow="shrink" data-height="auto">
+						<div class="table-cards-word">antidisestablishmentarianism-without-any-breakpoint</div>
+					</article>
+					<article class="table-cards-box" data-kind="text" data-width="full" data-mobile="stack" data-overflow="scroll" data-height="fixed" style="--tc-block-height: 190px">
+						<div class="table-cards-label">long explanation</div>
+						<div class="table-cards-translation">A deliberately long paragraph checks wrapping, internal scrolling and the absence of horizontal document overflow. На маленьком телефоне этот текст остаётся читаемым, не уезжает под футер и не ломает ширину карточки.</div>
+					</article>
+				</div>
+
+				<div class="table-cards-stage" data-fixture="empty" hidden>
+					<article class="table-cards-box" data-kind="title" data-width="full" data-mobile="stack" data-overflow="shrink" data-height="auto"><div class="table-cards-word">serendipity</div></article>
+					<article class="table-cards-box" data-kind="text" data-width="half" data-mobile="compact" data-overflow="wrap" data-height="min" style="--tc-block-height: 88px"><div class="table-cards-label">перевод</div><div class="table-cards-translation">—</div></article>
+					<article class="table-cards-box" data-kind="note" data-width="half" data-mobile="compact" data-overflow="wrap" data-height="min" style="--tc-block-height: 88px"><div class="table-cards-label">подсказка</div><div class="table-cards-tip-text"></div></article>
+				</div>
+
+				<div class="table-cards-stage" data-fixture="image" hidden>
+					<article class="table-cards-box" data-kind="title" data-width="half" data-mobile="stack" data-overflow="shrink" data-height="auto"><div class="table-cards-word">lighthouse</div></article>
+					<article class="table-cards-box" data-kind="text" data-width="half" data-mobile="stack" data-overflow="wrap" data-height="auto"><div class="table-cards-label">перевод</div><div class="table-cards-translation">маяк</div></article>
+					<article class="table-cards-box" data-kind="image" data-width="full" data-mobile="stack" data-overflow="wrap" data-height="auto">
+						<figure class="table-cards-image-figure" data-fit="cover" data-aspect="16:9" data-position="center">
+							<button type="button" class="table-cards-image-button" aria-label="Открыть изображение: lighthouse">
+								<img class="table-cards-image" alt="lighthouse" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 675'%3E%3Crect width='1200' height='675' fill='%231b1b1d'/%3E%3Cpath d='M0 540L260 330 450 500 700 230 1200 570V675H0Z' fill='%233b3b40'/%3E%3Crect x='570' y='190' width='90' height='330' rx='12' fill='%23e7e7e7'/%3E%3Crect x='548' y='145' width='134' height='70' rx='16' fill='%23fafafa'/%3E%3Cpath d='M680 170L1100 70V270Z' fill='%23ffffff' opacity='.18'/%3E%3C/svg%3E">
+							</button>
+							<figcaption class="table-cards-image-caption">lighthouse · coast</figcaption>
+						</figure>
+					</article>
+				</div>
+
+				<footer class="table-cards-footer">
+					<button class="table-cards-nav-btn" type="button">‹ <span>Назад</span></button>
+					<button class="table-cards-shuffle-btn" type="button" aria-label="Перемешать" aria-pressed="false">↝</button>
+					<button class="table-cards-nav-btn table-cards-nav-next" type="button"><span>Дальше</span> ›</button>
+				</footer>
+			</div>
+		</section>
+	</main>
+	<script>
+		const buttons = Array.from(document.querySelectorAll('[data-show]'));
+		const fixtures = Array.from(document.querySelectorAll('[data-fixture]'));
+		for (const button of buttons) button.addEventListener('click', () => {
+			const selected = button.dataset.show;
+			for (const candidate of buttons) candidate.setAttribute('aria-pressed', String(candidate === button));
+			for (const fixture of fixtures) fixture.hidden = fixture.dataset.fixture !== selected;
+		});
+		const updateColumns = () => {
+			for (const fixture of fixtures) fixture.classList.toggle('is-single-column', fixture.clientWidth < 840);
+		};
+		const observer = new ResizeObserver(updateColumns);
+		for (const fixture of fixtures) observer.observe(fixture);
+		updateColumns();
+		const deckTrigger = document.querySelector('[data-preview-deck]');
+		const deckOptions = document.querySelector('[data-preview-deck-options]');
+		deckTrigger.addEventListener('click', () => {
+			deckOptions.hidden = !deckOptions.hidden;
+			deckTrigger.setAttribute('aria-expanded', String(!deckOptions.hidden));
+			if (!deckOptions.hidden) requestAnimationFrame(() => deckOptions.querySelector('[aria-selected="true"]')?.focus());
+		});
+		for (const option of deckOptions.querySelectorAll('[role="option"]')) option.addEventListener('click', () => {
+			for (const candidate of deckOptions.querySelectorAll('[role="option"]')) candidate.setAttribute('aria-selected', String(candidate === option));
+			document.querySelector('#preview-deck-value').textContent = option.textContent;
+			deckOptions.hidden = true;
+			deckTrigger.setAttribute('aria-expanded', 'false');
+			deckTrigger.focus();
+		});
+		document.addEventListener('keydown', event => {
+			if (event.key !== 'Escape' || deckOptions.hidden) return;
+			event.preventDefault();
+			deckOptions.hidden = true;
+			deckTrigger.setAttribute('aria-expanded', 'false');
+			deckTrigger.focus();
+		});
+	</script>
+</body>
+</html>

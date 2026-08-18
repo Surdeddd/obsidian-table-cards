@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EN, RU, createTranslator, type TranslationKey } from "../src/i18n";
+import { EN, RU, createTranslator, resolveUiLocale, type TranslationKey } from "../src/i18n";
 
 describe("localization", () => {
 	it("keeps Russian and English catalogs in parity", () => {
@@ -11,5 +11,10 @@ describe("localization", () => {
 			expect(createTranslator("en")(key)).toBeTruthy();
 			expect(createTranslator("ru")(key)).toBeTruthy();
 		}
+	});
+
+	it("keeps an explicit v3 locale and falls back to English until its catalog exists", () => {
+		expect(resolveUiLocale("de", "ru")).toBe("de");
+		expect(createTranslator("de")("modal.close")).toBe(EN["modal.close"]);
 	});
 });

@@ -44,16 +44,16 @@ function fakeApp(
 }
 
 describe("deck loading", () => {
-	it("loads only the saved table selector", async () => {
+	it("loads only the saved table selection", async () => {
 		const deck = createDeck({
 			sources: [
 				{
 					id: "source-1",
 					kind: "file",
 					path: "two.md",
-					table: {
-						mode: "single",
-						selector: { headerSignature: headerSignature(["Term", "RU"]), occurrence: 0 },
+					tables: {
+						mode: "include",
+						selectors: [{ headerSignature: headerSignature(["Term", "RU"]), occurrence: 0 }],
 					},
 				},
 			],
@@ -70,9 +70,9 @@ describe("deck loading", () => {
 					id: "source-1",
 					kind: "file",
 					path: "x.md",
-					table: {
-						mode: "single",
-						selector: { headerSignature: headerSignature(["Missing"]), occurrence: 0 },
+					tables: {
+						mode: "include",
+						selectors: [{ headerSignature: headerSignature(["Missing"]), occurrence: 0 }],
 					},
 				},
 			],
@@ -85,8 +85,8 @@ describe("deck loading", () => {
 	it("loads direct Markdown children from folders and reports missing sources", async () => {
 		const deck = createDeck({
 			sources: [
-				{ id: "folder", kind: "folder", path: "English", table: { mode: "all" } },
-				{ id: "missing", kind: "file", path: "gone.md", table: { mode: "all" } },
+				{ id: "folder", kind: "folder", path: "English", tables: { mode: "all" } },
+				{ id: "missing", kind: "file", path: "gone.md", tables: { mode: "all" } },
 			],
 		});
 		const app = fakeApp(
@@ -103,8 +103,8 @@ describe("deck loading", () => {
 	it("does not duplicate a table selected through overlapping sources", async () => {
 		const deck = createDeck({
 			sources: [
-				{ id: "folder", kind: "folder", path: "English", table: { mode: "all" } },
-				{ id: "file", kind: "file", path: "English/a.md", table: { mode: "all" } },
+				{ id: "folder", kind: "folder", path: "English", tables: { mode: "all" } },
+				{ id: "file", kind: "file", path: "English/a.md", tables: { mode: "all" } },
 			],
 		});
 		const app = fakeApp(
@@ -119,7 +119,7 @@ describe("deck loading", () => {
 	it("returns profiles and broken-image diagnostics", async () => {
 		const markdown = "| Word | Picture |\n|---|---|\n|cat|![[assets/missing.png]]|";
 		const deck = createDeck({
-			sources: [{ id: "source", kind: "file", path: "cards.md", table: { mode: "all" } }],
+			sources: [{ id: "source", kind: "file", path: "cards.md", tables: { mode: "all" } }],
 			columnTypes: { word: "text" },
 		});
 		const result = await loadDeckData(fakeApp({ "cards.md": markdown }), deck);
@@ -132,7 +132,7 @@ describe("deck loading", () => {
 	it("skips required-empty rows and reports their source row", async () => {
 		const markdown = "| Term | RU |\n|---|---|\n||пусто|\n|remain|оставаться|";
 		const deck = createDeck({
-			sources: [{ id: "source", kind: "file", path: "cards.md", table: { mode: "all" } }],
+			sources: [{ id: "source", kind: "file", path: "cards.md", tables: { mode: "all" } }],
 			blocks: [
 				createBlock({
 					columns: ["Term"],
@@ -145,5 +145,14 @@ describe("deck loading", () => {
 		expect(result.diagnostics).toContainEqual(
 			expect.objectContaining({ code: "requiredEmpty", sourcePath: "cards.md", rowIndex: 3 }),
 		);
+	});
+
+	it("does not select any table for an explicit empty include selection", async () => {
+		const deck = createDeck({
+			sources: [{ id: "source", kind: "file", path: "cards.md", tables: { mode: "include", selectors: [] } }],
+		});
+		const result = await loadDeckData(fakeApp({ "cards.md": SIMPLE_TABLE }), deck);
+		expect(result.tables).toEqual([]);
+		expect(result.cards).toEqual([]);
 	});
 });

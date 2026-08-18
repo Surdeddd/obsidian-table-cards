@@ -91,11 +91,31 @@ function sourceTables(source: DeckSource, tables: ParsedTable[]): ParsedTable[] 
 }
 
 function selectedTable(source: DeckSource, table: ParsedTable): boolean {
-	return (
-		source.table.mode === "single" &&
-		source.table.selector.headerSignature === table.selector.headerSignature &&
-		source.table.selector.occurrence === table.selector.occurrence
+	return source.tables.mode === "all" || source.tables.selectors.some(
+		(selector) =>
+			selector.headerSignature === table.selector.headerSignature &&
+			selector.occurrence === table.selector.occurrence,
 	);
+}
+
+function sameSelector(left: ParsedTable["selector"], right: ParsedTable["selector"]): boolean {
+	return left.headerSignature === right.headerSignature && left.occurrence === right.occurrence;
+}
+
+function toggleTable(source: DeckSource, table: ParsedTable): DeckSource {
+	if (source.tables.mode === "all") {
+		return { ...source, tables: { mode: "include", selectors: [{ ...table.selector }] } };
+	}
+	const selected = source.tables.selectors.some((selector) => sameSelector(selector, table.selector));
+	return {
+		...source,
+		tables: {
+			mode: "include",
+			selectors: selected
+				? source.tables.selectors.filter((selector) => !sameSelector(selector, table.selector))
+				: [...source.tables.selectors, { ...table.selector }],
+		},
+	};
 }
 
 function columnEnabled(state: EditorState, header: string): boolean {
@@ -165,10 +185,10 @@ function renderSource(parent: HTMLElement, source: DeckSource, context: FieldsSh
 	const all = choices.createEl("button", {
 		cls: "tc-table-choice",
 		text: context.t("editor.table.all"),
-		attr: { type: "button", "aria-pressed": String(source.table.mode === "all") },
+		attr: { type: "button", "aria-pressed": String(source.tables.mode === "all") },
 	});
 	all.addEventListener("click", () =>
-		replaceSource(context, source.id, (item) => ({ ...item, table: { mode: "all" } })),
+		replaceSource(context, source.id, (item) => ({ ...item, tables: { mode: "all" } })),
 	);
 
 	const tables = sourceTables(source, context.tables);
@@ -187,17 +207,17 @@ function renderSource(parent: HTMLElement, source: DeckSource, context: FieldsSh
 			text: `${table.rows.length} ${context.t("editor.summary.rows")}`,
 		});
 		choice.addEventListener("click", () =>
-			replaceSource(context, source.id, (item) => ({
-				...item,
-				table: { mode: "single", selector: { ...table.selector } },
-			})),
+			replaceSource(context, source.id, (item) => toggleTable(item, table)),
 		);
 	}
 
 	if (tables.length === 0 && !context.loading) {
 		card.createDiv({ cls: "tc-field-empty", text: context.t("editor.table.none") });
 	}
-	if (source.table.mode === "single" && !tables.some((table) => selectedTable(source, table))) {
+	if (
+		source.tables.mode === "include" &&
+		source.tables.selectors.some((selector) => !tables.some((table) => sameSelector(selector, table.selector)))
+	) {
 		const repair = card.createDiv({ cls: "tc-field-warning" });
 		repair.createSpan({ text: context.t("editor.table.missing") });
 		const button = repair.createEl("button", {
@@ -205,7 +225,7 @@ function renderSource(parent: HTMLElement, source: DeckSource, context: FieldsSh
 			attr: { type: "button" },
 		});
 		button.addEventListener("click", () =>
-			replaceSource(context, source.id, (item) => ({ ...item, table: { mode: "all" } })),
+			replaceSource(context, source.id, (item) => ({ ...item, tables: { mode: "all" } })),
 		);
 	}
 }
@@ -292,7 +312,7 @@ export function renderFieldsSheet(parent: HTMLElement, context: FieldsSheetConte
 				type: "replaceSources",
 				sources: [
 					...context.state.draft.sources,
-					{ id: newId("source"), kind: "file", path: file.path, table: { mode: "all" } },
+					{ id: newId("source"), kind: "file", path: file.path, tables: { mode: "all" } },
 				],
 			});
 		}).open();
@@ -308,7 +328,7 @@ export function renderFieldsSheet(parent: HTMLElement, context: FieldsSheetConte
 				type: "replaceSources",
 				sources: [
 					...context.state.draft.sources,
-					{ id: newId("source"), kind: "folder", path: folder.path, table: { mode: "all" } },
+					{ id: newId("source"), kind: "folder", path: folder.path, tables: { mode: "all" } },
 				],
 			});
 		}).open();

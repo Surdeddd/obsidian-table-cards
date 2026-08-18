@@ -38,14 +38,17 @@ function sourceFiles(app: App, source: DeckSource, diagnostics: DeckDiagnostic[]
 }
 
 function matchingTables(source: DeckSource, tables: ParsedTable[]): ParsedTable[] {
-	if (source.table.mode === "all") {
+	const selection = source.tables;
+	if (selection.mode === "all") {
 		return tables;
 	}
-	const { selector } = source.table;
 	return tables.filter(
 		(table) =>
-			table.selector.headerSignature === selector.headerSignature &&
-			table.selector.occurrence === selector.occurrence,
+			selection.selectors.some(
+				(selector) =>
+					table.selector.headerSignature === selector.headerSignature &&
+					table.selector.occurrence === selector.occurrence,
+			),
 	);
 }
 
@@ -160,13 +163,17 @@ export async function loadDeckData(app: App, deck: Deck): Promise<DeckLoadResult
 		reads.set(file.path, pending);
 		const tables = scanMarkdownTables(await pending, file.path);
 		const selected = matchingTables(source, tables);
-		if (source.table.mode === "single" && selected.length === 0) {
-			diagnostics.push({
-				code: "tableMissing",
-				sourcePath: file.path,
-				detail: `${source.table.selector.headerSignature}:${source.table.selector.occurrence}`,
-			});
-			continue;
+		if (source.tables.mode === "include") {
+			for (const selector of source.tables.selectors) {
+				if (selected.some((table) =>
+					table.selector.headerSignature === selector.headerSignature && table.selector.occurrence === selector.occurrence,
+				)) continue;
+				diagnostics.push({
+					code: "tableMissing",
+					sourcePath: file.path,
+					detail: `${selector.headerSignature}:${selector.occurrence}`,
+				});
+			}
 		}
 		for (const table of selected) {
 			const tableKey = `${file.path}\u0000${table.selector.headerSignature}\u0000${table.selector.occurrence}`;

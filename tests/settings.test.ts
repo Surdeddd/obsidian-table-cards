@@ -45,6 +45,74 @@ describe("settings merge", () => {
 		});
 	});
 
+	it("preserves representative v2 deck, block, appearance, source, locale, and progress values", () => {
+		const settings = mergeSettings({
+			schemaVersion: 2,
+			locale: "ru",
+			lastDeckId: "study",
+			appearance: { preset: "monochrome", cardBackground: "#101010", radius: 18 },
+			decks: [{
+				id: "study",
+				name: "Study",
+				enabled: true,
+				sources: [
+					{ id: "all", kind: "folder", path: "notes", table: { mode: "all" } },
+					{ id: "one", kind: "file", path: "words.md", table: { mode: "single", selector: { headerSignature: "term\u001fru", occurrence: 2 } } },
+				],
+				blocks: [{
+					id: "term",
+					kind: "title",
+					columns: ["Term"],
+					visible: false,
+					showLabel: true,
+					label: "Prompt",
+					combine: "firstNonEmpty",
+					width: "half",
+					mobile: "compact",
+					height: { mode: "fixed", valuePx: 120 },
+					overflow: { mode: "ellipsis", minFontPx: 15, maxLines: 2 },
+					empty: { mode: "custom", customText: "—", emptyTokens: ["", "n/a"], required: true },
+					appearance: { inherit: false, background: "#101010", text: "#eeeeee", radius: 12, align: "center" },
+				}],
+				columnTypes: { Term: "text" },
+				appearance: { preset: "custom", cardBackground: "#121212", radius: 20 },
+				shuffleDefault: true,
+			}],
+			perDeck: { study: { index: 4, shuffle: true, seed: 99 } },
+		});
+
+		expect(settings.locale).toBe("ru");
+		expect(settings.appearance).toMatchObject({ preset: "monochrome", cardBackground: "#101010", radius: 18 });
+		expect(settings.decks[0]).toMatchObject({
+			id: "study",
+			name: "Study",
+			enabled: true,
+			columnTypes: { Term: "text" },
+			appearance: { preset: "custom", cardBackground: "#121212", radius: 20 },
+			shuffleDefault: true,
+			sources: [
+				{ id: "all", kind: "folder", path: "notes", tables: { mode: "all" } },
+				{ id: "one", kind: "file", path: "words.md", tables: { mode: "include", selectors: [{ headerSignature: "term\u001fru", occurrence: 2 }] } },
+			],
+		});
+		expect(settings.decks[0]?.blocks[0]).toMatchObject({
+			id: "term",
+			kind: "title",
+			columns: ["Term"],
+			visible: false,
+			showLabel: true,
+			label: "Prompt",
+			combine: "firstNonEmpty",
+			width: "half",
+			mobile: "compact",
+			height: { mode: "fixed", valuePx: 120 },
+			overflow: { mode: "ellipsis", minFontPx: 15, maxLines: 2 },
+			empty: { mode: "custom", customText: "—", emptyTokens: ["", "n/a"], required: true },
+			appearance: { inherit: false, background: "#101010", text: "#eeeeee", radius: 12, align: "center" },
+		});
+		expect(settings.perDeck.study).toMatchObject({ index: 4, shuffle: true, seed: 99, scope: { mode: "all" }, cardKey: null });
+	});
+
 	it("creates an empty first-run state only when persisted data is absent", () => {
 		const fresh = mergeSettings(null);
 		expect(fresh).toMatchObject({ schemaVersion: 3, setupVersion: 0, decks: [] });

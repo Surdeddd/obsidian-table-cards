@@ -94,6 +94,22 @@ describe("editor state", () => {
 		expect(next.baseline.blocks[0]?.label).toBe("");
 		expect(createEditorState(next.baseline).draft.blocks[0]?.label).toBe("");
 	});
+
+	it("keeps v3 source table selections in the editable draft", () => {
+		const persisted = createDeck({
+			sources: [{
+				id: "source",
+				kind: "file",
+				path: "cards.md",
+				tables: { mode: "include", selectors: [{ headerSignature: "term\u001fru", occurrence: 0 }] },
+			}],
+		});
+		const state = createEditorState(persisted);
+		expect(state.draft.sources[0]?.tables).toEqual({
+			mode: "include",
+			selectors: [{ headerSignature: "term\u001fru", occurrence: 0 }],
+		});
+	});
 });
 
 describe("representative preview rows", () => {

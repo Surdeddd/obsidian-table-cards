@@ -725,10 +725,10 @@ export const RU: Record<TranslationKey, string> = {
 	"deck.new": "Новая колода",
 };
 
-const CATALOGS: Record<UiLocale, Record<TranslationKey, string>> = { en: EN, ru: RU };
+const CATALOGS: Partial<Record<UiLocale, Record<TranslationKey, string>>> = { en: EN, ru: RU };
 
 export function resolveUiLocale(mode: LocaleMode, obsidianLanguage: string): UiLocale {
-	if (mode === "en" || mode === "ru") {
+	if (mode !== "auto") {
 		return mode;
 	}
 	return obsidianLanguage.toLowerCase().startsWith("ru") ? "ru" : "en";
@@ -737,6 +737,6 @@ export function resolveUiLocale(mode: LocaleMode, obsidianLanguage: string): UiL
 export type Translator = (key: TranslationKey) => string;
 
 export function createTranslator(locale: UiLocale): Translator {
-	const catalog = CATALOGS[locale];
+	const catalog = CATALOGS[locale] ?? EN;
 	return (key) => catalog[key];
 }

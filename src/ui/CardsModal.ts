@@ -92,6 +92,8 @@ export class CardsModal extends Modal {
 			index: 0,
 			shuffle: deck?.shuffleDefault ?? false,
 			seed: Date.now(),
+			scope: { mode: "all" },
+			cardKey: null,
 		};
 		this.host.settings.perDeck[deckId] = created;
 		return created;

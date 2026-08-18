@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ColumnDataType, ColumnProfile } from "../src/model";
-import { blocksForPreset, rankPresets, type PresetId } from "../src/setup/presets";
+import { blocksForPreset, rankPresets, scorePreset, type PresetId } from "../src/setup/presets";
 
 function profile(header: string, inferredType: ColumnDataType): ColumnProfile {
 	return {
@@ -71,5 +71,48 @@ describe("smart presets", () => {
 		const headers = blocksForPreset(presetId as PresetId, profiles).flatMap((block) => block.columns);
 		expect(headers).toHaveLength(profiles.length);
 		expect([...headers].sort()).toEqual(profiles.map((profile) => profile.header).sort());
+	});
+
+	it("does not explain a zero Q&A score with unrelated type or coverage evidence", () => {
+		expect(scorePreset("qa", [profile("Year", "number")])).toMatchObject({
+			score: 0,
+			reasons: [],
+		});
+	});
+
+	it("attributes an inferred image to type evidence instead of a header alias", () => {
+		expect(scorePreset("vocabulary", [profile("Unknown", "image")]).reasons).toEqual([
+			"preset.reason.type",
+			"preset.reason.image",
+			"preset.reason.coverage",
+		]);
+	});
+
+	it.each([
+		["Word — entry", 5],
+		["Word\u0301", 0],
+		["\u0301Word", 0],
+		["Word\u{10400}", 0],
+		["\u{10400}Word", 0],
+	] as const)("scores term aliases only at Unicode word boundaries: %s", (header, expected) => {
+		expect(scorePreset("vocabulary", [profile(header, "text")]).score).toBe(expected);
+	});
+
+	it("applies the fill multiplier, reference density, and universal threshold exactly", () => {
+		const sparseWord = { ...profile("Word", "text"), nonEmpty: 2, total: 4 };
+		expect(scorePreset("vocabulary", [sparseWord]).score).toBe(4.375);
+		expect(scorePreset("reference", [
+			profile("Title", "text"),
+			profile("One", "number"),
+			profile("Two", "number"),
+			profile("Three", "number"),
+			profile("Four", "number"),
+			profile("Five", "number"),
+		]).score).toBe(6);
+		expect(rankPresets([profile("Unknown", "mixed")])[0]).toMatchObject({
+			id: "universal",
+			score: 0.001,
+			reasons: [],
+		});
 	});
 });

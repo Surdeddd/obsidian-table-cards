@@ -54,32 +54,45 @@ export const PRESETS: readonly PresetDefinition[] = [
 	{ id: "universal", nameKey: "preset.universal", descriptionKey: "preset.universal.desc", icon: "layers-3", tieOrder: 0 },
 ] as const;
 
-function isWordCharacter(value: string): boolean {
-	return /[\p{L}\p{N}]/u.test(value);
+function isWordContinuation(value: string): boolean {
+	return /[\p{L}\p{N}\p{M}\p{Pc}]/u.test(value);
+}
+
+function neighboringCodePoint(source: string, index: number, direction: "before" | "after"): string {
+	if (direction === "before") return Array.from(source.slice(0, index)).at(-1) ?? "";
+	return Array.from(source.slice(index))[0] ?? "";
 }
 
 function matchesAlias(header: string, alias: string): boolean {
 	const normalizedAlias = normalizeHeader(alias);
 	let start = header.indexOf(normalizedAlias);
 	while (start >= 0) {
-		const before = header[start - 1] ?? "";
-		const after = header[start + normalizedAlias.length] ?? "";
-		if (!isWordCharacter(before) && !isWordCharacter(after)) {
+		const end = start + normalizedAlias.length;
+		const before = neighboringCodePoint(header, start, "before");
+		const after = neighboringCodePoint(header, end, "after");
+		if (!isWordContinuation(before) && !isWordContinuation(after)) {
 			return true;
 		}
-		start = header.indexOf(normalizedAlias, start + normalizedAlias.length);
+		start = header.indexOf(normalizedAlias, end);
 	}
 	return false;
 }
 
-function rolesFor(profile: ColumnProfile): Role[] {
+function headerRoles(profile: ColumnProfile): Role[] {
 	const header = normalizeHeader(profile.header);
-	const roles = (Object.keys(ROLE_ALIASES) as Role[]).filter((role) =>
+	return (Object.keys(ROLE_ALIASES) as Role[]).filter((role) =>
 		ROLE_ALIASES[role].some((alias) => matchesAlias(header, alias)),
 	);
-	if (profile.inferredType === "image" && !roles.includes("image")) roles.push("image");
-	if (profile.inferredType === "tags" && !roles.includes("tags")) roles.push("tags");
-	return roles;
+}
+
+function inferredRoles(profile: ColumnProfile): Role[] {
+	if (profile.inferredType === "image") return ["image"];
+	if (profile.inferredType === "tags") return ["tags"];
+	return [];
+}
+
+function rolesFor(profile: ColumnProfile): Role[] {
+	return Array.from(new Set([...headerRoles(profile), ...inferredRoles(profile)]));
 }
 
 function isUnused(profile: ColumnProfile, used: Set<string>): boolean {
@@ -123,38 +136,55 @@ function roundScore(score: number): number {
 	return Math.round(score * 1000) / 1000;
 }
 
-function scoreReasons(profiles: ColumnProfile[], roles: Set<Role>, meanFillRate: number): TranslationKey[] {
-	const reasons: TranslationKey[] = [];
-	if (roles.size > 0) reasons.push("preset.reason.header");
-	if (profiles.some((profile) => profile.inferredType !== "text" && profile.inferredType !== "mixed")) {
-		reasons.push("preset.reason.type");
+interface ScoreEvidence {
+	headerRoles: Set<Role>;
+	inferredRoles: Set<Role>;
+}
+
+function meanFillRate(profiles: ColumnProfile[]): number {
+	return profiles.length ? profiles.reduce((sum, profile) => sum + fillRate(profile), 0) / profiles.length : 0;
+}
+
+function scoreEvidence(
+	profiles: ColumnProfile[],
+	weights: Partial<Record<Role, number>>,
+): ScoreEvidence {
+	const evidence: ScoreEvidence = { headerRoles: new Set(), inferredRoles: new Set() };
+	for (const profile of profiles) {
+		for (const role of headerRoles(profile)) {
+			if (weights[role]) evidence.headerRoles.add(role);
+		}
+		for (const role of inferredRoles(profile)) {
+			if (weights[role]) evidence.inferredRoles.add(role);
+		}
 	}
-	if (roles.has("image")) reasons.push("preset.reason.image");
-	if (meanFillRate >= 0.75) reasons.push("preset.reason.coverage");
+	return evidence;
+}
+
+function scoreReasons(evidence: ScoreEvidence, rawScore: number, meanFill: number): TranslationKey[] {
+	const reasons: TranslationKey[] = [];
+	if (evidence.headerRoles.size > 0) reasons.push("preset.reason.header");
+	if (evidence.inferredRoles.size > 0) reasons.push("preset.reason.type");
+	if (evidence.inferredRoles.has("image")) reasons.push("preset.reason.image");
+	if (rawScore > 0 && meanFill >= 0.75) reasons.push("preset.reason.coverage");
 	return reasons;
 }
 
 export function scorePreset(id: PresetId, profiles: ColumnProfile[]): PresetScore {
 	if (id === "universal") {
-		return { id, score: 1, reasons: scoreReasons(profiles, new Set(), profiles.length ? profiles.reduce((sum, profile) => sum + fillRate(profile), 0) / profiles.length : 0) };
+		return { id, score: 1, reasons: [] };
 	}
 
 	const weights = PRESET_ROLE_WEIGHTS[id];
-	const matchedRoles = new Set<Role>();
-	for (const profile of profiles) {
-		for (const role of rolesFor(profile)) {
-			if (role in weights) matchedRoles.add(role);
-		}
-	}
+	const evidence = scoreEvidence(profiles, weights);
+	const matchedRoles = new Set([...evidence.headerRoles, ...evidence.inferredRoles]);
 	const rawScore = Array.from(matchedRoles).reduce((sum, role) => sum + (weights[role] ?? 0), 0)
 		+ (id === "reference" ? Math.min(4, Math.max(0, profiles.length - 2)) : 0);
-	const meanFillRate = profiles.length
-		? profiles.reduce((sum, profile) => sum + fillRate(profile), 0) / profiles.length
-		: 0;
+	const meanFill = meanFillRate(profiles);
 	return {
 		id,
-		score: roundScore(rawScore * (0.75 + 0.25 * meanFillRate)),
-		reasons: scoreReasons(profiles, matchedRoles, meanFillRate),
+		score: roundScore(rawScore * (0.75 + 0.25 * meanFill)),
+		reasons: scoreReasons(evidence, rawScore, meanFill),
 	};
 }
 

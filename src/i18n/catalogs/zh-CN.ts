@@ -21,6 +21,7 @@ export const ZH_CN = {
 	"settings.language.en": "English",
 	"settings.language.ru": "Русский",
 	"settings.defaults": "默认外观",
+	"settings.saveError": "无法保存 Table Cards 设置。",
 	"settings.appearance.preset": "配色方案",
 	"settings.appearance.preset.obsidian": "Obsidian主题",
 	"settings.appearance.preset.monochrome": "单色",

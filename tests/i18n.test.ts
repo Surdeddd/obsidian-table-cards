@@ -15,6 +15,24 @@ import { RIBBON_ICONS } from "../src/model";
 
 const TOKENS = /\{([a-zA-Z0-9_]+)\}/g;
 const SHARED_TERMS = ["Obsidian", "Markdown", "Table Cards"] as const;
+const SETTINGS_SAVE_ERRORS = {
+	en: "Could not save Table Cards settings.",
+	ru: "Не удалось сохранить настройки Table Cards.",
+	uk: "Не вдалося зберегти налаштування Table Cards.",
+	es: "No se pudo guardar la configuración de Table Cards.",
+	de: "Die Einstellungen von Table Cards konnten nicht gespeichert werden.",
+	fr: "Impossible d’enregistrer les réglages de Table Cards.",
+	"pt-BR": "Não foi possível salvar as configurações do Table Cards.",
+	it: "Impossibile salvare le impostazioni di Table Cards.",
+	pl: "Nie udało się zapisać ustawień Table Cards.",
+	tr: "Table Cards ayarları kaydedilemedi.",
+	"zh-CN": "无法保存 Table Cards 设置。",
+	"zh-TW": "無法儲存 Table Cards 設定。",
+	ja: "Table Cards の設定を保存できませんでした。",
+	ko: "Table Cards 설정을 저장할 수 없습니다.",
+	ar: "تعذر حفظ إعدادات Table Cards.",
+	hi: "Table Cards की सेटिंग सहेजी नहीं जा सकीं।",
+} as const;
 const TECHNICAL_IDENTICAL = new Set<TranslationKey>([
 	"editor.type.markdown",
 	"editor.color.aaa",
@@ -155,6 +173,12 @@ describe("localization", () => {
 		for (const locale of UI_LOCALES) {
 			expect(Object.keys(CATALOGS[locale]).sort()).toEqual(expected);
 			expect(Object.values(CATALOGS[locale]).every((value) => value.trim().length > 0)).toBe(true);
+		}
+	});
+
+	it("provides reviewed settings-save failure copy in every catalog", () => {
+		for (const locale of UI_LOCALES) {
+			expect(CATALOGS[locale]["settings.saveError"], locale).toBe(SETTINGS_SAVE_ERRORS[locale]);
 		}
 	});
 

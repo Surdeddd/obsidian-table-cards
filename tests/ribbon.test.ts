@@ -81,10 +81,8 @@ describe("deck ribbon buttons", () => {
 		Object.assign(plugin, {
 			settingsPersistence: new SettingsPersistence(previous, {
 				persist: (candidate) => saveData(candidate),
-				publish: (candidate) => {
-					plugin.settings = candidate;
-					sync(candidate.decks);
-				},
+				publish: (candidate) => { plugin.settings = candidate; },
+				reconcile: (candidate) => sync(candidate.decks),
 			}),
 		});
 
@@ -107,10 +105,8 @@ describe("deck ribbon buttons", () => {
 		Object.assign(plugin, {
 			settingsPersistence: new SettingsPersistence(previous, {
 				persist: async () => { throw new Error("disk full"); },
-				publish: (candidate) => {
-					plugin.settings = candidate;
-					sync(candidate.decks);
-				},
+				publish: (candidate) => { plugin.settings = candidate; },
+				reconcile: (candidate) => sync(candidate.decks),
 			}),
 		});
 
@@ -118,6 +114,31 @@ describe("deck ribbon buttons", () => {
 			.rejects.toThrow("disk full");
 		expect(plugin.settings).toBe(previous);
 		expect(sync).not.toHaveBeenCalled();
+	});
+
+	it("keeps disk and live plugin settings committed when ribbon reconciliation throws", async () => {
+		const previous = { decks: [deck("previous", { visible: true })] } as PluginSettings;
+		let disk = previous;
+		const sync = vi.fn(() => { throw new Error("ribbon render failed"); });
+		const plugin = Object.assign(Object.create(TableCardsPlugin.prototype), {
+			settings: previous,
+			ribbonDecks: { sync },
+		}) as TableCardsPlugin;
+		Object.assign(plugin, {
+			settingsPersistence: new SettingsPersistence(previous, {
+				persist: async (candidate) => { disk = cloneJson(candidate); },
+				publish: (candidate) => { plugin.settings = candidate; },
+				reconcile: (candidate) => sync(candidate.decks),
+			}),
+		});
+
+		await expect(plugin.updateSettings((settings) => {
+			settings.decks = [deck("next", { visible: true })];
+		})).resolves.toBeUndefined();
+
+		expect(plugin.settings).toEqual(disk);
+		expect(plugin.settings.decks[0]?.id).toBe("next");
+		expect(sync).toHaveBeenCalledOnce();
 	});
 
 	it("moves decks only within the persisted order boundaries", () => {

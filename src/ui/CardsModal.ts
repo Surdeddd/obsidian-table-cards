@@ -19,6 +19,7 @@ import type {
 } from "../model";
 import type { DeckOpenRequest } from "../session/launcher-state";
 import { ProgressSaveQueue } from "../session/progress-save-queue";
+import { requireEnabledDeck, saveDeckProgressIfEnabled } from "../session/settings-intents";
 import { findExactCardIndex, selectStudyCards } from "../session/study-state";
 import { applyAppearance, resolveDeckAppearance, shouldSplit } from "../settings/appearance";
 import { CardBrowser } from "./CardBrowser";
@@ -160,9 +161,10 @@ export class CardsModal extends Modal {
 	private prepareSession(
 		selection: SessionSelection,
 		settings: PluginSettings,
+		defaultsDeck: Deck = selection.deck,
 	): { cards: Card[]; progress: DeckProgress } {
 		const saved = settings.perDeck[selection.deck.id];
-		const progress = saved ? cloneProgress(saved) : this.defaultProgress(selection.deck);
+		const progress = saved ? cloneProgress(saved) : this.defaultProgress(defaultsDeck);
 		progress.scope = cloneScope(selection.scope);
 		const selected = selectStudyCards({
 			allCards: selection.result.cards,
@@ -181,7 +183,8 @@ export class CardsModal extends Modal {
 		let prepared: { cards: Card[]; progress: DeckProgress } | null = null;
 		if (this.request.persistProgress !== false) {
 			await this.host.updateSettings((settings) => {
-				prepared = this.prepareSession(selection, settings);
+				const latestDeck = requireEnabledDeck(settings, selection.deck.id);
+				prepared = this.prepareSession(selection, settings, latestDeck);
 				settings.lastDeckId = selection.deck.id;
 				settings.perDeck[selection.deck.id] = cloneProgress(prepared.progress);
 			});
@@ -207,7 +210,7 @@ export class CardsModal extends Modal {
 			: new ProgressSaveQueue<DeckProgress>({
 				clone: cloneProgress,
 				save: (snapshot) => this.host.updateSettings((settings) => {
-					settings.perDeck[selection.deck.id] = cloneProgress(snapshot);
+					saveDeckProgressIfEnabled(settings, selection.deck.id, snapshot);
 				}),
 				onErrorChange: (failed) => this.setSaveFailed(failed),
 			});

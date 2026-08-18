@@ -161,4 +161,82 @@ describe("settings persistence", () => {
 
 		expect(attempts[1]).toMatchObject({ locale: "ru", appearance: { size: "large" } });
 	});
+
+	it("keeps persistence successful when post-commit reconciliation throws and continues from that baseline", async () => {
+		const initial = mergeSettings({ schemaVersion: 3, setupVersion: 0, decks: [] });
+		let memory = initial;
+		let disk = initial;
+		const attempts: PluginSettings[] = [];
+		const reconcile = vi.fn()
+			.mockImplementationOnce(() => { throw new Error("ribbon render failed"); })
+			.mockImplementation(() => undefined);
+		const persistence = new SettingsPersistence(initial, {
+			persist: async (candidate) => {
+				attempts.push(cloneJson(candidate));
+				disk = cloneJson(candidate);
+			},
+			publish: (candidate) => { memory = candidate; },
+			reconcile: (candidate) => reconcile(candidate.decks),
+		});
+
+		const setup = persistence.update((settings) => {
+			settings.setupVersion = 1;
+			settings.decks.push(createDeck({ id: "setup-deck" }));
+		});
+		await expect(setup).resolves.toBeUndefined();
+		await expect(persistence.update((settings) => { settings.locale = "ru"; })).resolves.toBeUndefined();
+
+		expect(reconcile).toHaveBeenCalledTimes(2);
+		expect(attempts[1]).toMatchObject({
+			setupVersion: 1,
+			locale: "ru",
+			decks: [{ id: "setup-deck" }],
+		});
+		expect(memory.decks).toHaveLength(1);
+		expect(memory).toEqual(disk);
+	});
+
+	it("surfaces publication failure while retaining the successfully persisted baseline", async () => {
+		const initial = mergeSettings({ schemaVersion: 3, setupVersion: 1, locale: "en" });
+		let memory = initial;
+		const attempts: PluginSettings[] = [];
+		let publishCount = 0;
+		const persistence = new SettingsPersistence(initial, {
+			persist: async (candidate) => { attempts.push(cloneJson(candidate)); },
+			publish: (candidate) => {
+				publishCount += 1;
+				if (publishCount === 1) throw new Error("publish failed");
+				memory = candidate;
+			},
+		});
+
+		await expect(persistence.update((settings) => { settings.locale = "ru"; }))
+			.rejects.toThrow("publish failed");
+		await persistence.update((settings) => { settings.appearance.size = "large"; });
+
+		expect(attempts[1]).toMatchObject({ locale: "ru", appearance: { size: "large" } });
+		expect(memory).toMatchObject({ locale: "ru", appearance: { size: "large" } });
+	});
+
+	it("continues after a mutator throws without persisting or leaking its partial draft", async () => {
+		const initial = mergeSettings({ schemaVersion: 3, setupVersion: 1, locale: "en" });
+		let memory = initial;
+		const attempts: PluginSettings[] = [];
+		const persistence = new SettingsPersistence(initial, {
+			persist: async (candidate) => { attempts.push(cloneJson(candidate)); },
+			publish: (candidate) => { memory = candidate; },
+		});
+
+		const failed = persistence.update((settings) => {
+			settings.locale = "ar";
+			throw new Error("invalid mutation");
+		});
+		const recovered = persistence.update((settings) => { settings.appearance.size = "large"; });
+
+		await expect(failed).rejects.toThrow("invalid mutation");
+		await recovered;
+		expect(attempts).toHaveLength(1);
+		expect(attempts[0]).toMatchObject({ locale: "en", appearance: { size: "large" } });
+		expect(memory).toEqual(attempts[0]);
+	});
 });

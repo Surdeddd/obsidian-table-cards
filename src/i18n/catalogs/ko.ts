@@ -21,6 +21,7 @@ export const KO = {
 	"settings.language.en": "English",
 	"settings.language.ru": "Русский",
 	"settings.defaults": "기본 모양",
+	"settings.saveError": "Table Cards 설정을 저장할 수 없습니다.",
 	"settings.appearance.preset": "팔레트",
 	"settings.appearance.preset.obsidian": "Obsidian 테마",
 	"settings.appearance.preset.monochrome": "흑백",

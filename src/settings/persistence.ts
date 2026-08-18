@@ -5,6 +5,7 @@ export type SettingsMutation = (settings: PluginSettings) => void;
 export interface SettingsPersistenceOptions {
 	persist: (settings: PluginSettings) => Promise<void>;
 	publish: (settings: PluginSettings) => void;
+	reconcile?: (settings: PluginSettings) => void;
 }
 
 export class SettingsPersistence {
@@ -23,11 +24,20 @@ export class SettingsPersistence {
 			await this.options.persist(candidate);
 			this.committed = cloneJson(candidate);
 			this.options.publish(cloneJson(candidate));
+			this.reconcile(candidate);
 		});
 		this.tail = operation.then(
 			() => undefined,
 			() => undefined,
 		);
 		return operation;
+	}
+
+	private reconcile(settings: PluginSettings): void {
+		try {
+			this.options.reconcile?.(cloneJson(settings));
+		} catch {
+			// The settings are already durable and published; UI reconciliation is best-effort.
+		}
 	}
 }

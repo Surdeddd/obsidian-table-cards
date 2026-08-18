@@ -21,6 +21,7 @@ export const JA = {
 	"settings.language.en": "English",
 	"settings.language.ru": "Русский",
 	"settings.defaults": "デフォルトの外観",
+	"settings.saveError": "Table Cards の設定を保存できませんでした。",
 	"settings.appearance.preset": "パレット",
 	"settings.appearance.preset.obsidian": "Obsidian テーマ",
 	"settings.appearance.preset.monochrome": "モノクロ",

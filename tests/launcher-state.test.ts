@@ -106,6 +106,20 @@ describe("launcher state", () => {
 		});
 	});
 
+	it("returns a loaded launcher to deck-unavailable when the confirmed deck disappears", () => {
+		const state = loadedState({ mode: "tables", tableKeys: ["verbs"] });
+		const unavailable = reduceLauncherState(state, { type: "unavailable", deckId: "verbs" });
+
+		expect(unavailable).toMatchObject({
+			phase: "error",
+			deckId: "verbs",
+			deck: state.deck,
+			scope: { mode: "tables", tableKeys: ["verbs"] },
+			result: null,
+			error: { code: "deckUnavailable" },
+		});
+	});
+
 	it("uses an override deck even when settings do not contain it", () => {
 		const preview = createDeck({ id: "preview", name: "Preview", enabled: false });
 		const state = createLauncherState(decks, {

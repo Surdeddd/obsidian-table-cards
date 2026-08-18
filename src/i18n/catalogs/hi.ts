@@ -21,6 +21,7 @@ export const HI = {
 	"settings.language.en": "English",
 	"settings.language.ru": "Русский",
 	"settings.defaults": "डिफ़ॉल्ट उपस्थिति",
+	"settings.saveError": "Table Cards की सेटिंग सहेजी नहीं जा सकीं।",
 	"settings.appearance.preset": "पैलेट",
 	"settings.appearance.preset.obsidian": "Obsidian थीम",
 	"settings.appearance.preset.monochrome": "मोनोक्रोम",

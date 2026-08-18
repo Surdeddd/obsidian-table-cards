@@ -21,6 +21,7 @@ export const AR = {
 	"settings.language.en": "English",
 	"settings.language.ru": "Русский",
 	"settings.defaults": "المظهر الافتراضي",
+	"settings.saveError": "تعذر حفظ إعدادات Table Cards.",
 	"settings.appearance.preset": "لوحة",
 	"settings.appearance.preset.obsidian": "موضوع Obsidian",
 	"settings.appearance.preset.monochrome": "أحادية اللون",

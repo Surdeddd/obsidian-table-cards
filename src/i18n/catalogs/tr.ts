@@ -21,6 +21,7 @@ export const TR = {
 	"settings.language.en": "English",
 	"settings.language.ru": "Русский",
 	"settings.defaults": "Varsayılan görünüm",
+	"settings.saveError": "Table Cards ayarları kaydedilemedi.",
 	"settings.appearance.preset": "Palet",
 	"settings.appearance.preset.obsidian": "Obsidian teması",
 	"settings.appearance.preset.monochrome": "Tek renkli",

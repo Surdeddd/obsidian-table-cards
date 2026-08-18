@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { commitSetupSettings, SetupSaveLifecycle } from "../src/setup/save-lifecycle";
 import { cloneJson, type PluginSettings } from "../src/model";
-import { mergeSettings } from "../src/settings/defaults";
+import { createDeck, mergeSettings } from "../src/settings/defaults";
 import { SettingsPersistence, type SettingsMutation } from "../src/settings/persistence";
 
 function deferred(): {
@@ -87,6 +87,38 @@ describe("setup save lifecycle", () => {
 		await expect(commitSetupSettings(host, (settings) => { settings.setupVersion = 1; }, lifecycle))
 			.rejects.toThrow("disk full");
 		expect(host.settings).toBe(original);
+		expect(lifecycle.saving).toBe(false);
+	});
+
+	it("does not trigger a duplicate setup retry when post-commit reconciliation fails", async () => {
+		const lifecycle = new SetupSaveLifecycle();
+		const original = mergeSettings(null);
+		const host: { settings: PluginSettings; updateSettings: (mutate: SettingsMutation) => Promise<void> } = {
+			settings: original,
+			updateSettings: async () => undefined,
+		};
+		const persistence = new SettingsPersistence(original, {
+			persist: async () => undefined,
+			publish: (candidate) => { host.settings = candidate; },
+			reconcile: () => { throw new Error("ribbon render failed"); },
+		});
+		host.updateSettings = (mutate) => persistence.update(mutate);
+		let retries = 0;
+
+		try {
+			await commitSetupSettings(host, (settings) => {
+				settings.setupVersion = 1;
+				settings.decks.push(createDeck({ id: "created-once" }));
+			}, lifecycle);
+		} catch {
+			retries += 1;
+			await commitSetupSettings(host, (settings) => {
+				settings.decks.push(createDeck({ id: "created-once" }));
+			}, lifecycle);
+		}
+
+		expect(retries).toBe(0);
+		expect(host.settings.decks.map((deck) => deck.id)).toEqual(["created-once"]);
 		expect(lifecycle.saving).toBe(false);
 	});
 });

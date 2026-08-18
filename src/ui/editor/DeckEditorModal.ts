@@ -10,6 +10,7 @@ import { buildDeckDataFromScan, scanDeckSources } from "../../deck/load";
 import type { DeckScanResult } from "../../deck/catalog";
 import { autoLayout } from "../../layout";
 import { EditorScanCache, editorSourceTopologyKey } from "../../editor/scan-cache";
+import { mergeEditorDeck } from "../../editor/settings-save";
 import {
 	createEditorState,
 	isDirty,
@@ -285,7 +286,7 @@ export class DeckEditorModal extends Modal {
 			await this.host.updateSettings((settings) => {
 				const index = settings.decks.findIndex((deck) => deck.id === this.persistedId);
 				if (index < 0) throw new Error(missingMessage);
-				settings.decks[index] = cloneJson(saved);
+				settings.decks[index] = mergeEditorDeck(settings.decks[index]!, saved);
 			});
 			this.state = createEditorState(saved);
 		} catch (error) {

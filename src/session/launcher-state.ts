@@ -28,6 +28,7 @@ export type LauncherAction =
 	| { type: "loading"; deckId: string; requestId: number }
 	| { type: "loaded"; deckId: string; requestId: number; result: DeckLoadResult; savedScope: StudyScope }
 	| { type: "failed"; deckId: string; requestId: number; detail?: string }
+	| { type: "unavailable"; deckId: string }
 	| { type: "toggleTable"; tableKey: string }
 	| { type: "selectAllTables" }
 	| { type: "clearTables" }
@@ -153,6 +154,14 @@ export function reduceLauncherState(state: LauncherState, action: LauncherAction
 				phase: "error",
 				result: null,
 				error: { code: "loadFailed", detail: action.detail },
+			};
+		case "unavailable":
+			if (state.deckId !== action.deckId) return state;
+			return {
+				...state,
+				phase: "error",
+				result: null,
+				error: { code: "deckUnavailable" },
 			};
 		case "toggleTable": {
 			if (state.phase !== "choose" || !state.result || !catalogKeys(state.result.catalog).includes(action.tableKey)) {

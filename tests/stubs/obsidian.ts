@@ -35,6 +35,14 @@ export class Plugin {
 	addCommand(_command: { id: string; name: string; callback: () => void }): void {}
 }
 
+export class Notice {
+	static messages: string[] = [];
+
+	constructor(public message: string, _duration?: number) {
+		Notice.messages.push(message);
+	}
+}
+
 export class Modal {
 	open(): void {}
 	close(): void {}

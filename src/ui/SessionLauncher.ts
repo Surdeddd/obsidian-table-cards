@@ -12,6 +12,7 @@ import {
 	type DeckOpenRequest,
 	type LauncherState,
 } from "../session/launcher-state";
+import { isDeckUnavailableError } from "../session/settings-intents";
 import { Listbox } from "./editor/controls/Listbox";
 import { ScopePicker } from "./ScopePicker";
 
@@ -391,9 +392,17 @@ export class SessionLauncher {
 		this.updateSelectionSummary();
 		try {
 			await this.options.onStart({ deck: this.state.deck, result: this.state.result, scope: this.state.scope });
-		} catch {
+		} catch (error) {
 			if (this.destroyed) return;
 			this.starting = false;
+			if (isDeckUnavailableError(error)) {
+				this.saveFailed = false;
+				this.commitState(reduceLauncherState(this.state, {
+					type: "unavailable",
+					deckId: this.state.deck.id,
+				}));
+				return;
+			}
 			this.saveFailed = true;
 			this.updateSelectionSummary();
 		}

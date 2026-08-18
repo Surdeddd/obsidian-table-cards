@@ -21,6 +21,7 @@ export const RU = {
 	"settings.language.en": "English",
 	"settings.language.ru": "Русский",
 	"settings.defaults": "Вид по умолчанию",
+	"settings.saveError": "Не удалось сохранить настройки Table Cards.",
 	"settings.appearance.preset": "Палитра",
 	"settings.appearance.preset.obsidian": "Тема Obsidian",
 	"settings.appearance.preset.monochrome": "Монохром",

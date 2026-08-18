@@ -27,10 +27,8 @@ export default class TableCardsPlugin extends Plugin {
 		this.settings = mergeSettings(await this.loadData());
 		this.settingsPersistence = new SettingsPersistence(this.settings, {
 			persist: (candidate) => this.saveData(candidate),
-			publish: (candidate) => {
-				this.settings = candidate;
-				this.ribbonDecks?.sync(candidate.decks);
-			},
+			publish: (candidate) => { this.settings = candidate; },
+			reconcile: (candidate) => this.ribbonDecks?.sync(candidate.decks),
 		});
 		this.ribbonDecks = new RibbonDecks({
 			add: this.addRibbonIcon.bind(this),

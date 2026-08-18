@@ -27,6 +27,7 @@ import { createDeck } from "./defaults";
 import { loadDeckData } from "../deck/load";
 import { Listbox } from "../ui/editor/controls/Listbox";
 import type { SettingsMutation } from "./persistence";
+import { runSettingsUpdate } from "./update-feedback";
 
 const LANGUAGE_KEYS: Record<UiLocale, TranslationKey> = {
 	en: "settings.language.en",
@@ -233,13 +234,12 @@ export class TableCardsSettingTab extends PluginSettingTab {
 	}
 
 	private updateAndDisplay(mutate: SettingsMutation, onSuccess?: () => void): void {
-		void this.plugin.updateSettings(mutate).then(
-			() => {
-				this.display();
-				onSuccess?.();
-			},
-			() => this.display(),
-		);
+		void runSettingsUpdate({
+			update: () => this.plugin.updateSettings(mutate),
+			refresh: () => this.display(),
+			t: this.plugin.getTranslator(),
+			onSuccess,
+		}).catch(() => undefined);
 	}
 
 	private duplicate(deck: Deck): Deck {

@@ -213,7 +213,7 @@ export const UK = {
 	"editor.color.invalid": "Використовуйте шестизначний шістнадцятковий колір, наприклад #171717.",
 	"editor.color.contrast": "Контраст",
 	"editor.color.aaa": "AAA",
-	"editor.color.aa": "АА",
+	"editor.color.aa": "AA",
 	"editor.color.fail": "Нижче АА",
 	"editor.scan": "Зчитати стовпці",
 	"editor.filesHint": "Шляхи до нотаток з таблицями. Потім читайте стовпці та перетягуйте їх на блоки.",

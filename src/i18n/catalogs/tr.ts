@@ -146,7 +146,7 @@ export const TR = {
 	"editor.inspector.width": "Masaüstü genişliği",
 	"editor.inspector.visible": "Bloğu göster",
 	"editor.inspector.showLabel": "Etiketi göster",
-	"editor.inspector.mobile": "Telefon yoğunluğu",
+	"editor.inspector.mobile": "Mobil düzen yoğunluğu",
 	"editor.empty": "Hücre boş olduğunda",
 	"editor.empty.hide": "Bloğu gizle",
 	"editor.empty.dash": "Kısa çizgi göster",

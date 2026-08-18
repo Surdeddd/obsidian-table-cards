@@ -86,6 +86,47 @@ const SEMANTIC_KEYS = [
 	"editor.save",
 ] as const satisfies readonly TranslationKey[];
 
+const RESIDUAL_SEMANTICS = [
+	["ko", "editor.source.empty", "표와 열을 감지하려면 메모나 폴더를 추가하세요."],
+	["ko", "editor.table.none", "Markdown 표를 찾을 수 없습니다."],
+	["ko", "launcher.selectAtLeastOne", "표를 하나 이상 선택하세요."],
+	["ko", "launcher.loading", "선택한 표를 읽는 중…"],
+	["ko", "setup.dataDescription", "메모나 폴더를 추가한 다음 학습할 표를 선택하세요."],
+	["ko", "setup.noTables", "Markdown 표를 찾을 수 없습니다."],
+	["ko", "editor.table.missing", "선택한 표가 이동되었거나 헤더가 변경되었습니다."],
+	["ko", "scope.noMatches", "일치하는 표가 없습니다."],
+	["ko", "editor.source.summaryNone", "선택한 표가 없습니다."],
+	["es", "settings.appearance.twoColumnFrom", "Dos columnas a partir de este ancho"],
+	["es", "settings.deck.copySuffix", "copia"],
+	["es", "editor.inspector.mobile", "Densidad del diseño móvil"],
+	["es", "editor.overflow.minFont", "Tamaño mínimo de fuente, px"],
+	["es", "editor.source.pickFile", "Elegir una nota con una tabla"],
+	["es", "editor.source.empty", "Añadir una nota o carpeta para detectar tablas y columnas."],
+	["es", "editor.row.choose", "Elegir una fila de vista previa"],
+	["es", "editor.filesHint", "Rutas de notas con tablas. Después, leer las columnas y arrastrarlas a los bloques."],
+	["es", "editor.noColumns", "Primero, leer las columnas de la tabla."],
+	["es", "editor.pickBlock", "Seleccionar un bloque para cambiar su apariencia."],
+	["es", "launcher.title", "Elegir tarjetas"],
+	["es", "launcher.selectAtLeastOne", "Seleccionar al menos una tabla"],
+	["es", "setup.dataTitle", "Elegir los datos"],
+	["es", "setup.dataDescription", "Añadir notas o carpetas y elegir las tablas para estudiar."],
+	["es", "setup.presetTitle", "Elegir un diseño de tarjeta"],
+	["es", "setup.presetDescription", "La recomendación utiliza las columnas y los valores reales."],
+	["es", "setup.finishTitle", "Dar un nombre al mazo"],
+	["es", "setup.noSources", "Seleccionar al menos una nota o carpeta"],
+	["es", "setup.ribbonHint", "Fijar los mazos de uso frecuente."],
+	["hi", "preset.vocabulary.desc", "शब्द, अनुवाद, उदाहरण, नोट्स और चित्र।"],
+	["zh-CN", "settings.deck.copySuffix", "副本"],
+	["zh-CN", "editor.inspector.mobile", "移动端布局密度"],
+	["zh-TW", "settings.deck.copySuffix", "副本"],
+	["zh-TW", "editor.inspector.mobile", "行動版版面密度"],
+	["tr", "editor.inspector.mobile", "Mobil düzen yoğunluğu"],
+	["it", "browser.showing", "Mostrate {shown} carte su {total}"],
+	["it", "editor.source.summaryAll", "Tutte le {count} tabelle"],
+	["pl", "launcher.summary", "{cards} kart · {tables} tabel"],
+	["pl", "setup.scanSummary", "{cards} kart · {tables} tabel · {fields} pól"],
+] as const satisfies ReadonlyArray<readonly [Exclude<keyof typeof CATALOGS, "en">, TranslationKey, string]>;
+
 describe("localization", () => {
 	it.each([
 		["uk-UA", "uk"],
@@ -129,6 +170,25 @@ describe("localization", () => {
 				expect(CATALOGS[locale as keyof typeof SEMANTIC_GLOSSARY][key], `${locale}:${key}`).toBe(values[index]);
 			}
 		}
+	});
+
+	it.each(RESIDUAL_SEMANTICS)("uses the bounded residual wording for %s:%s", (locale, key, expected) => {
+		expect(CATALOGS[locale][key]).toBe(expected);
+	});
+
+	it("keeps canonical technical tokens byte-for-byte in every catalog", () => {
+		for (const locale of UI_LOCALES) {
+			for (const key of TECHNICAL_IDENTICAL) {
+				expect(CATALOGS[locale][key], `${locale}:${key}`).toBe(EN[key]);
+			}
+		}
+	});
+
+	it("uses Hindi sentence punctuation instead of ASCII sentence endings", () => {
+		const asciiEndings = (Object.entries(CATALOGS.hi) as Array<[TranslationKey, string]>)
+			.filter(([, value]) => /\.$/.test(value))
+			.map(([key]) => key);
+		expect(asciiEndings).toEqual([]);
 	});
 
 	it("preserves brand and technical terms without transport artifacts", () => {

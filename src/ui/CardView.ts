@@ -83,14 +83,14 @@ async function renderValue(
 		host.setText(value.text);
 		return;
 	}
-	await MarkdownRenderer.render(context.app, value.raw, host, card.card.sourcePath, context.component);
+	await MarkdownRenderer.render(context.app, value.raw, host, card.card.origin.sourcePath, context.component);
 }
 
 function imageSource(context: CardRenderContext, card: ResolvedCard, image: ImageRef): string | null {
 	if (image.external) {
 		return image.source;
 	}
-	const file = resolveImageFile(context.app, card.card.sourcePath, image);
+	const file = resolveImageFile(context.app, card.card.origin.sourcePath, image);
 	return file ? context.app.vault.getResourcePath(file) : null;
 }
 

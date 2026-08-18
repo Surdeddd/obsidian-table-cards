@@ -114,10 +114,18 @@ describe("editor state", () => {
 
 describe("representative preview rows", () => {
 	it("finds the longest and most-empty cards", () => {
+		const origin = (rowNumber: number) => ({
+			tableKey: "x.md\u0000x\u00000",
+			tableLabel: "Table 1",
+			tableNumber: 1,
+			sourcePath: "x.md",
+			rowNumber,
+			rowKey: `row-${rowNumber}`,
+		});
 		const cards: Card[] = [
-			{ cells: { A: parseCell("short"), B: parseCell("filled") }, headers: ["A", "B"], sourcePath: "x.md", tableSelector: { headerSignature: "x", occurrence: 0 }, rowIndex: 1 },
-			{ cells: { A: parseCell("a very long value"), B: parseCell("filled") }, headers: ["A", "B"], sourcePath: "x.md", tableSelector: { headerSignature: "x", occurrence: 0 }, rowIndex: 2 },
-			{ cells: { A: parseCell(""), B: parseCell("") }, headers: ["A", "B"], sourcePath: "x.md", tableSelector: { headerSignature: "x", occurrence: 0 }, rowIndex: 3 },
+			{ cells: { A: parseCell("short"), B: parseCell("filled") }, headers: ["A", "B"], origin: origin(1) },
+			{ cells: { A: parseCell("a very long value"), B: parseCell("filled") }, headers: ["A", "B"], origin: origin(2) },
+			{ cells: { A: parseCell(""), B: parseCell("") }, headers: ["A", "B"], origin: origin(3) },
 		];
 		expect(representativeRowIndexes(cards)).toEqual({ first: 0, longest: 1, mostEmpty: 2 });
 	});

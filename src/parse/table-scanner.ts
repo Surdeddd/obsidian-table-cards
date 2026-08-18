@@ -107,8 +107,30 @@ export function scanMarkdownTables(markdown: string, sourcePath = ""): ParsedTab
 	const lines = markdown.split(/\r?\n/);
 	const tables: ParsedTable[] = [];
 	const occurrences = new Map<string, number>();
+	const headingStack: string[] = [];
+	let fence: { marker: "`" | "~"; length: number } | null = null;
 	for (let lineIndex = 0; lineIndex < lines.length - 1; lineIndex += 1) {
-		const rawHeaders = splitTableRow(lines[lineIndex] ?? "");
+		const line = lines[lineIndex] ?? "";
+		if (fence) {
+			const closing = /^ {0,3}(`+|~+)\s*$/.exec(line);
+			if (closing?.[1]?.startsWith(fence.marker) && closing[1].length >= fence.length) {
+				fence = null;
+			}
+			continue;
+		}
+		const opening = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+		if (opening?.[1]) {
+			fence = { marker: opening[1][0] as "`" | "~", length: opening[1].length };
+			continue;
+		}
+		const heading = /^(#{1,6})\s+(.+?)\s*#*\s*$/.exec(line);
+		if (heading) {
+			const level = heading[1]?.length ?? 1;
+			headingStack[level - 1] = stripMarkdownText(heading[2] ?? "");
+			headingStack.length = level;
+			continue;
+		}
+		const rawHeaders = splitTableRow(line);
 		const separator = splitTableRow(lines[lineIndex + 1] ?? "");
 		if (!rawHeaders || !separator || rawHeaders.length !== separator.length || !isSeparatorRow(separator)) {
 			continue;
@@ -139,6 +161,7 @@ export function scanMarkdownTables(markdown: string, sourcePath = ""): ParsedTab
 		tables.push({
 			index: tables.length,
 			selector: { headerSignature: signature, occurrence },
+			headingPath: headingStack.filter(Boolean),
 			headers,
 			rawHeaders: rawHeaders.map((header) => stripMarkdownText(header)),
 			rows,

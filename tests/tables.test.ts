@@ -82,6 +82,23 @@ describe("table parsing", () => {
 		expect(tables[0]?.selector.headerSignature).toBe(headerSignature(["A", "B"]));
 	});
 
+	it("uses the nearest preceding heading as the table path", () => {
+		const tables = scanMarkdownTables(
+			"# English\n## Verbs\n\n| Term | RU |\n|---|---|\n|remain|оставаться|",
+			"words.md",
+		);
+		expect(tables[0]?.headingPath).toEqual(["English", "Verbs"]);
+	});
+
+	it("ignores headings and tables inside fenced code", () => {
+		const tables = scanMarkdownTables(
+			"```md\n# Fake\n| A |\n|---|\n|x|\n```\n\n## Real\n| B |\n|---|\n|y|",
+			"x.md",
+		);
+		expect(tables).toHaveLength(1);
+		expect(tables[0]?.headingPath).toEqual(["Real"]);
+	});
+
 	it("reads any number of headers", () => {
 		expect(listTableHeaders(DICT)).toEqual([
 			"Words",
@@ -100,7 +117,7 @@ describe("table parsing", () => {
 		expect(cards).toHaveLength(2);
 		expect(cards[0]?.cells.Words?.text).toBe("remain");
 		expect(cards[0]?.cells.Examples?.text).toBe("Remain careful.");
-		expect(cards[0]?.sourcePath).toBe("Dictionary.md");
+		expect(cards[0]?.origin.sourcePath).toBe("Dictionary.md");
 		expect(cellValues(cards[0]?.cells ?? {}, ["Words", "word"])).toEqual(["remain"]);
 	});
 

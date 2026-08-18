@@ -170,11 +170,33 @@ export interface CellValue {
 export interface ParsedTable {
 	index: number;
 	selector: TableSelector;
+	headingPath: string[];
 	headers: string[];
 	rawHeaders: string[];
 	rows: Array<Record<string, CellValue>>;
 	rowNumbers: number[];
 	sourcePath: string;
+}
+
+export interface TableCatalogItem {
+	key: string;
+	selector: TableSelector;
+	sourcePath: string;
+	sourceIds: string[];
+	label: string;
+	tableNumber: number;
+	headingPath: string[];
+	headers: string[];
+	rowCount: number;
+}
+
+export interface CardOrigin {
+	tableKey: string;
+	tableLabel: string;
+	tableNumber: number;
+	sourcePath: string;
+	rowNumber: number;
+	rowKey: string;
 }
 
 export type ColumnProfileWarning = "mixed" | "mostlyEmpty" | "brokenImage";
@@ -193,9 +215,7 @@ export interface ColumnProfile {
 export interface Card {
 	cells: Record<string, CellValue>;
 	headers: string[];
-	sourcePath: string;
-	tableSelector: TableSelector;
-	rowIndex: number;
+	origin: CardOrigin;
 }
 
 export type DeckDiagnosticCode =
@@ -217,6 +237,7 @@ export interface DeckDiagnostic {
 export interface DeckLoadResult {
 	cards: Card[];
 	tables: ParsedTable[];
+	catalog: TableCatalogItem[];
 	profiles: ColumnProfile[];
 	diagnostics: DeckDiagnostic[];
 }

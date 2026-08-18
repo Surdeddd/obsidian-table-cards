@@ -25,7 +25,7 @@ export interface EditorHost {
 	onDeckSaved?: () => void;
 }
 
-const EMPTY_DATA: DeckLoadResult = { cards: [], tables: [], profiles: [], diagnostics: [] };
+const EMPTY_DATA: DeckLoadResult = { cards: [], tables: [], catalog: [], profiles: [], diagnostics: [] };
 
 function isTextEditing(event: KeyboardEvent): boolean {
 	const target = event.target;

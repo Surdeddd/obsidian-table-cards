@@ -8,9 +8,14 @@ function card(values: Record<string, string>): Card {
 	return {
 		cells: Object.fromEntries(Object.entries(values).map(([header, value]) => [header, parseCell(value)])),
 		headers: Object.keys(values),
-		sourcePath: "fixture.md",
-		tableSelector: { headerSignature: headerSignature(Object.keys(values)), occurrence: 0 },
-		rowIndex: 3,
+		origin: {
+			tableKey: `fixture.md\u0000${headerSignature(Object.keys(values))}\u00000`,
+			tableLabel: "Table 1",
+			tableNumber: 1,
+			sourcePath: "fixture.md",
+			rowNumber: 3,
+			rowKey: "fixture-row",
+		},
 	};
 }
 

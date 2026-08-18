@@ -11,15 +11,27 @@ import { shouldAutoOpenSetup, shouldOpenSetupForCards } from "./setup/state";
 import { SetupSavedCallbacks } from "./setup/session";
 import type { DeckOpenRequest } from "./session/launcher-state";
 import { exactTableOpenRequest } from "./editor/draft-session";
+import {
+	SettingsPersistence,
+	type SettingsMutation,
+} from "./settings/persistence";
 
 export default class TableCardsPlugin extends Plugin {
 	settings: PluginSettings = DEFAULT_SETTINGS;
 	private setupWizard: SetupWizard | null = null;
 	private readonly setupSavedCallbacks = new SetupSavedCallbacks();
 	private ribbonDecks: RibbonDecks | null = null;
+	private settingsPersistence: SettingsPersistence | null = null;
 
 	async onload(): Promise<void> {
 		this.settings = mergeSettings(await this.loadData());
+		this.settingsPersistence = new SettingsPersistence(this.settings, {
+			persist: (candidate) => this.saveData(candidate),
+			publish: (candidate) => {
+				this.settings = candidate;
+				this.ribbonDecks?.sync(candidate.decks);
+			},
+		});
 		this.ribbonDecks = new RibbonDecks({
 			add: this.addRibbonIcon.bind(this),
 			openDeck: (deckId) => this.openCards({ deckId, lockedDeck: true }),
@@ -99,10 +111,9 @@ export default class TableCardsPlugin extends Plugin {
 		new DeckEditorModal(this.app, this, deck).open();
 	}
 
-	async saveSettings(settings: PluginSettings = this.settings): Promise<void> {
-		await this.saveData(settings);
-		this.settings = settings;
-		this.ribbonDecks?.sync(settings.decks);
+	updateSettings(mutate: SettingsMutation): Promise<void> {
+		if (!this.settingsPersistence) return Promise.reject(new Error("Settings persistence is not ready"));
+		return this.settingsPersistence.update(mutate);
 	}
 
 	getTranslator(): Translator {

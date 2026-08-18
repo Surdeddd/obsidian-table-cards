@@ -28,10 +28,11 @@ import { buildCardImageCache, type CardImageCache } from "./card-image-cache";
 import { attachSwipe } from "./gestures";
 import { ScopeSheet } from "./ScopeSheet";
 import { SessionLauncher } from "./SessionLauncher";
+import type { SettingsMutation } from "../settings/persistence";
 
 export interface CardsModalHost {
 	settings: PluginSettings;
-	saveSettings: () => Promise<void>;
+	updateSettings: (mutate: SettingsMutation) => Promise<void>;
 	getTranslator: () => Translator;
 	getLocale: () => UiLocale;
 }
@@ -156,8 +157,11 @@ export class CardsModal extends Modal {
 		};
 	}
 
-	private prepareSession(selection: SessionSelection): { cards: Card[]; progress: DeckProgress } {
-		const saved = this.host.settings.perDeck[selection.deck.id];
+	private prepareSession(
+		selection: SessionSelection,
+		settings: PluginSettings,
+	): { cards: Card[]; progress: DeckProgress } {
+		const saved = settings.perDeck[selection.deck.id];
 		const progress = saved ? cloneProgress(saved) : this.defaultProgress(selection.deck);
 		progress.scope = cloneScope(selection.scope);
 		const selected = selectStudyCards({
@@ -174,11 +178,17 @@ export class CardsModal extends Modal {
 	}
 
 	private async startStudy(selection: SessionSelection): Promise<void> {
-		const prepared = this.prepareSession(selection);
+		let prepared: { cards: Card[]; progress: DeckProgress } | null = null;
 		if (this.request.persistProgress !== false) {
-			await this.persistConfirmedSession(selection.deck.id, prepared.progress);
+			await this.host.updateSettings((settings) => {
+				prepared = this.prepareSession(selection, settings);
+				settings.lastDeckId = selection.deck.id;
+				settings.perDeck[selection.deck.id] = cloneProgress(prepared.progress);
+			});
+		} else {
+			prepared = this.prepareSession(selection, this.host.settings);
 		}
-		if (!this.component) return;
+		if (!this.component || !prepared) return;
 		this.deck = selection.deck;
 		this.allCards = selection.result.cards.slice();
 		this.cards = prepared.cards;
@@ -196,10 +206,9 @@ export class CardsModal extends Modal {
 			? null
 			: new ProgressSaveQueue<DeckProgress>({
 				clone: cloneProgress,
-				save: async (snapshot) => {
-					this.host.settings.perDeck[selection.deck.id] = cloneProgress(snapshot);
-					await this.host.saveSettings();
-				},
+				save: (snapshot) => this.host.updateSettings((settings) => {
+					settings.perDeck[selection.deck.id] = cloneProgress(snapshot);
+				}),
 				onErrorChange: (failed) => this.setSaveFailed(failed),
 			});
 		this.launcher?.destroy();
@@ -214,22 +223,6 @@ export class CardsModal extends Modal {
 			onPrev: () => void this.step(-1),
 		});
 		this.render();
-	}
-
-	private async persistConfirmedSession(deckId: string, progress: DeckProgress): Promise<void> {
-		const previousDeckId = this.host.settings.lastDeckId;
-		const hadProgress = Object.prototype.hasOwnProperty.call(this.host.settings.perDeck, deckId);
-		const previousProgress = this.host.settings.perDeck[deckId];
-		this.host.settings.lastDeckId = deckId;
-		this.host.settings.perDeck[deckId] = cloneProgress(progress);
-		try {
-			await this.host.saveSettings();
-		} catch (error) {
-			this.host.settings.lastDeckId = previousDeckId;
-			if (hadProgress && previousProgress) this.host.settings.perDeck[deckId] = previousProgress;
-			else delete this.host.settings.perDeck[deckId];
-			throw error;
-		}
 	}
 
 	private buildChrome(): void {

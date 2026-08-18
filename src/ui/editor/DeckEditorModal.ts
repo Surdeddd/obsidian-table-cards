@@ -23,10 +23,11 @@ import { EditorShell, type PreviewDevice } from "./EditorShell";
 import { FieldsSheet } from "./FieldsSheet";
 import { renderReorderSheet } from "./ReorderSheet";
 import { renderInspectorSheet } from "./InspectorSheet";
+import type { SettingsMutation } from "../../settings/persistence";
 
 export interface EditorHost {
 	settings: PluginSettings;
-	saveSettings: () => Promise<void>;
+	updateSettings: (mutate: SettingsMutation) => Promise<void>;
 	getTranslator: () => Translator;
 	getLocale: () => UiLocale;
 	onDeckSaved?: () => void;
@@ -274,19 +275,20 @@ export class DeckEditorModal extends Modal {
 
 	private async save(): Promise<void> {
 		if (this.saving || !isDirty(this.state)) return;
-		const index = this.host.settings.decks.findIndex((deck) => deck.id === this.persistedId);
-		if (index < 0) return;
+		if (!this.host.settings.decks.some((deck) => deck.id === this.persistedId)) return;
 		this.saving = true;
 		this.error = null;
 		this.render();
-		const previous = this.host.settings.decks[index];
 		try {
 			const saved = cloneJson(this.state.draft);
-			this.host.settings.decks[index] = saved;
-			await this.host.saveSettings();
+			const missingMessage = this.host.getTranslator()("editor.saveError");
+			await this.host.updateSettings((settings) => {
+				const index = settings.decks.findIndex((deck) => deck.id === this.persistedId);
+				if (index < 0) throw new Error(missingMessage);
+				settings.decks[index] = cloneJson(saved);
+			});
 			this.state = createEditorState(saved);
 		} catch (error) {
-			if (previous) this.host.settings.decks[index] = previous;
 			this.error = error instanceof Error ? error.message : this.host.getTranslator()("editor.saveError");
 			throw error;
 		} finally {

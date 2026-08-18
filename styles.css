@@ -3444,6 +3444,7 @@
 	.tc-sheet button,
 	.tc-sheet input:not([type="checkbox"]):not([type="radio"]),
 	.tc-sheet select,
+	.table-cards-settings select,
 	.tc-settings-defaults > summary {
 		min-height: 44px;
 	}

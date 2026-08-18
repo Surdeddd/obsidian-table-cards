@@ -17,7 +17,13 @@ export class ProgressSaveQueue<T> {
 	enqueue(value: T): void {
 		if (this.closed) return;
 		const snapshot = this.options.clone(value);
-		this.tail = this.tail.then(() => this.save(snapshot));
+		const scheduled = this.options.save(snapshot).then(
+			() => true,
+			() => false,
+		);
+		this.tail = this.tail.then(async () => {
+			this.setFailed(!(await scheduled));
+		});
 	}
 
 	close(): void {
@@ -26,15 +32,6 @@ export class ProgressSaveQueue<T> {
 
 	whenIdle(): Promise<void> {
 		return this.tail;
-	}
-
-	private async save(snapshot: T): Promise<void> {
-		try {
-			await this.options.save(snapshot);
-			this.setFailed(false);
-		} catch {
-			this.setFailed(true);
-		}
 	}
 
 	private setFailed(failed: boolean): void {

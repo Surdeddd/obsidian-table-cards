@@ -26,6 +26,7 @@ import { applySizePreset } from "./appearance";
 import { createDeck } from "./defaults";
 import { loadDeckData } from "../deck/load";
 import { Listbox } from "../ui/editor/controls/Listbox";
+import type { SettingsMutation } from "./persistence";
 
 const LANGUAGE_KEYS: Record<UiLocale, TranslationKey> = {
 	en: "settings.language.en",
@@ -48,7 +49,7 @@ const LANGUAGE_KEYS: Record<UiLocale, TranslationKey> = {
 
 export interface SettingsHost {
 	settings: PluginSettings;
-	saveSettings: (settings?: PluginSettings) => Promise<void>;
+	updateSettings: (mutate: SettingsMutation) => Promise<void>;
 	getTranslator: () => Translator;
 	getLocale: () => UiLocale;
 	openSetup: (onSaved?: () => void) => void;
@@ -65,25 +66,23 @@ export function moveDeck(decks: Deck[], deckId: string, offset: -1 | 1): boolean
 	return true;
 }
 
-export function updateDeckRibbon(
+export function mutateDeckRibbon(
 	settings: PluginSettings,
 	deckId: string,
 	patch: Partial<Deck["ribbon"]>,
-): PluginSettings | null {
-	const next = cloneJson(settings);
-	const deck = next.decks.find((item) => item.id === deckId);
-	if (!deck) return null;
+): boolean {
+	const deck = settings.decks.find((item) => item.id === deckId);
+	if (!deck) return false;
 	deck.ribbon = { ...deck.ribbon, ...patch };
-	return next;
+	return true;
 }
 
-export function reorderDeckSettings(
+export function mutateDeckOrder(
 	settings: PluginSettings,
 	deckId: string,
 	offset: -1 | 1,
-): PluginSettings | null {
-	const next = cloneJson(settings);
-	return moveDeck(next.decks, deckId, offset) ? next : null;
+): boolean {
+	return moveDeck(settings.decks, deckId, offset);
 }
 
 class DeleteDeckModal extends Modal {
@@ -150,8 +149,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			],
 			searchable: true,
 			onChange: (value) => {
-				this.plugin.settings.locale = value;
-				void this.plugin.saveSettings().then(() => this.display());
+				this.updateAndDisplay((settings) => { settings.locale = value; });
 			},
 		});
 		languageSetting.controlEl.querySelector<HTMLElement>(".tc-listbox > label")?.addClass("tc-visually-hidden");
@@ -168,11 +166,14 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			})
 			.addButton((button) => {
 				button.setButtonText(t("settings.decks.add")).onClick(() => {
-					const deck = createDeck({ name: t("deck.new"), blocks: [] });
-					this.plugin.settings.decks.push(deck);
-					void this.plugin.saveSettings().then(() => {
-						this.display();
-						this.openEditor(deck);
+					let createdId: string | null = null;
+					this.updateAndDisplay((settings) => {
+						const deck = createDeck({ name: t("deck.new"), blocks: [] });
+						createdId = deck.id;
+						settings.decks.push(deck);
+					}, () => {
+						const deck = this.plugin.settings.decks.find((item) => item.id === createdId);
+						if (deck) this.openEditor(deck);
 					});
 				});
 			});
@@ -193,8 +194,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 				.setValue(look.preset)
 				.onChange((value) => {
 					if (value !== "obsidian" && value !== "monochrome" && value !== "custom") return;
-					look.preset = value;
-					void this.plugin.saveSettings();
+					this.updateAndDisplay((settings) => { settings.appearance.preset = value; });
 				});
 		});
 		new Setting(body).setName(t("settings.appearance.size")).addDropdown((dropdown) => {
@@ -205,8 +205,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 				.setValue(look.size)
 				.onChange((value) => {
 					if (value !== "compact" && value !== "comfort" && value !== "large") return;
-					applySizePreset(look, value);
-					void this.plugin.saveSettings();
+					this.updateAndDisplay((settings) => applySizePreset(settings.appearance, value));
 				});
 		});
 		new Setting(body).setName(t("settings.appearance.overlay")).addDropdown((dropdown) => {
@@ -217,8 +216,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 				.setValue(look.overlay)
 				.onChange((value) => {
 					if (value !== "auto" && value !== "center" && value !== "full") return;
-					look.overlay = value;
-					void this.plugin.saveSettings();
+					this.updateAndDisplay((settings) => { settings.appearance.overlay = value; });
 				});
 		});
 	}
@@ -226,7 +224,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 	private openEditor(deck: Deck): void {
 		new DeckEditorModal(this.app, {
 			settings: this.plugin.settings,
-			saveSettings: () => this.plugin.saveSettings(),
+			updateSettings: (mutate) => this.plugin.updateSettings(mutate),
 			getTranslator: () => this.plugin.getTranslator(),
 			getLocale: () => this.plugin.getLocale(),
 			onDeckSaved: () => this.display(),
@@ -234,9 +232,12 @@ export class TableCardsSettingTab extends PluginSettingTab {
 		}, deck).open();
 	}
 
-	private saveDeckCandidate(candidate: PluginSettings): void {
-		void this.plugin.saveSettings(candidate).then(
-			() => this.display(),
+	private updateAndDisplay(mutate: SettingsMutation, onSuccess?: () => void): void {
+		void this.plugin.updateSettings(mutate).then(
+			() => {
+				this.display();
+				onSuccess?.();
+			},
 			() => this.display(),
 		);
 	}
@@ -260,8 +261,10 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			.setDesc(description)
 			.addToggle((toggle) => {
 				toggle.setValue(deck.enabled).onChange((value) => {
-					deck.enabled = value;
-					void this.plugin.saveSettings();
+					this.updateAndDisplay((settings) => {
+						const current = settings.decks.find((item) => item.id === deck.id);
+						if (current) current.enabled = value;
+					});
 				});
 			})
 			.addButton((button) => {
@@ -269,19 +272,22 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			})
 			.addButton((button) => {
 				button.setButtonText(t("settings.deck.duplicate")).onClick(() => {
-					this.plugin.settings.decks.push(this.duplicate(deck));
-					void this.plugin.saveSettings().then(() => this.display());
+					this.updateAndDisplay((settings) => {
+						const current = settings.decks.find((item) => item.id === deck.id);
+						if (current) settings.decks.push(this.duplicate(current));
+					});
 				});
 			})
 			.addButton((button) => {
 				button.setIcon("trash-2").setTooltip(t("settings.deck.delete")).setWarning().onClick(() => {
 					new DeleteDeckModal(this.app, deck, t, locale, () => {
-						this.plugin.settings.decks = this.plugin.settings.decks.filter((item) => item.id !== deck.id);
-						delete this.plugin.settings.perDeck[deck.id];
-						if (this.plugin.settings.lastDeckId === deck.id) {
-							this.plugin.settings.lastDeckId = this.plugin.settings.decks[0]?.id ?? null;
-						}
-						void this.plugin.saveSettings().then(() => this.display());
+						this.updateAndDisplay((settings) => {
+							settings.decks = settings.decks.filter((item) => item.id !== deck.id);
+							delete settings.perDeck[deck.id];
+							if (settings.lastDeckId === deck.id) {
+								settings.lastDeckId = settings.decks[0]?.id ?? null;
+							}
+						});
 					}).open();
 				});
 			})
@@ -292,8 +298,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 					.setTooltip(t("ribbon.moveUp"))
 					.setDisabled(index <= 0)
 					.onClick(() => {
-						const candidate = reorderDeckSettings(this.plugin.settings, deck.id, -1);
-						if (candidate) this.saveDeckCandidate(candidate);
+						this.updateAndDisplay((settings) => { mutateDeckOrder(settings, deck.id, -1); });
 					});
 			})
 			.addExtraButton((button) => {
@@ -303,8 +308,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 					.setTooltip(t("ribbon.moveDown"))
 					.setDisabled(index < 0 || index >= this.plugin.settings.decks.length - 1)
 					.onClick(() => {
-						const candidate = reorderDeckSettings(this.plugin.settings, deck.id, 1);
-						if (candidate) this.saveDeckCandidate(candidate);
+						this.updateAndDisplay((settings) => { mutateDeckOrder(settings, deck.id, 1); });
 					});
 			});
 		new Setting(wrap)
@@ -312,8 +316,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			.setDesc(t("ribbon.pinHint"))
 			.addToggle((toggle) => {
 				toggle.setValue(deck.ribbon.visible).setDisabled(!deck.enabled).onChange((value) => {
-					const candidate = updateDeckRibbon(this.plugin.settings, deck.id, { visible: value });
-					if (candidate) this.saveDeckCandidate(candidate);
+					this.updateAndDisplay((settings) => { mutateDeckRibbon(settings, deck.id, { visible: value }); });
 				});
 			});
 		const iconSetting = new Setting(wrap).setName(t("ribbon.icon"));
@@ -323,8 +326,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			value: deck.ribbon.icon,
 			options: RIBBON_ICONS.map((icon) => ({ value: icon, label: ribbonIconLabel(t, icon) })),
 			onChange: (icon) => {
-				const candidate = updateDeckRibbon(this.plugin.settings, deck.id, { icon });
-				if (candidate) this.saveDeckCandidate(candidate);
+				this.updateAndDisplay((settings) => { mutateDeckRibbon(settings, deck.id, { icon }); });
 			},
 		});
 		iconSetting.controlEl.querySelector<HTMLElement>(".tc-listbox > label")?.addClass("tc-visually-hidden");

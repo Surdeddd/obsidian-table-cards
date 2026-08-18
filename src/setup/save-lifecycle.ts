@@ -1,4 +1,5 @@
 import type { PluginSettings } from "../model";
+import type { SettingsMutation } from "../settings/persistence";
 
 export class SetupSaveLifecycle {
 	private active = false;
@@ -26,14 +27,13 @@ export class SetupSaveLifecycle {
 
 export interface SetupSettingsHost {
 	settings: PluginSettings;
-	saveSettings: (settings?: PluginSettings) => Promise<void>;
+	updateSettings: (mutate: SettingsMutation) => Promise<void>;
 }
 
 export async function commitSetupSettings(
 	host: SetupSettingsHost,
-	next: PluginSettings,
+	mutate: SettingsMutation,
 	lifecycle: SetupSaveLifecycle,
 ): Promise<void> {
-	await lifecycle.run(() => host.saveSettings(next));
-	host.settings = next;
+	await lifecycle.run(() => host.updateSettings(mutate));
 }

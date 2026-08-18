@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import TableCardsPlugin from "../src/main";
-import { RIBBON_ICONS, type Deck, type PluginSettings, type RibbonIcon } from "../src/model";
+import { cloneJson, RIBBON_ICONS, type Deck, type PluginSettings, type RibbonIcon } from "../src/model";
 import { RIBBON_ICON_KEYS } from "../src/i18n/ribbon-icons";
 import { createDeck, mergeDeck } from "../src/settings/defaults";
-import { moveDeck, reorderDeckSettings, updateDeckRibbon } from "../src/settings/settings-tab";
+import { moveDeck, mutateDeckOrder, mutateDeckRibbon } from "../src/settings/settings-tab";
+import { SettingsPersistence } from "../src/settings/persistence";
 import { RibbonDecks, ribbonSpecs } from "../src/ui/RibbonDecks";
 
 function deck(
@@ -77,11 +78,20 @@ describe("deck ribbon buttons", () => {
 			saveData,
 			ribbonDecks: { sync },
 		}) as TableCardsPlugin;
+		Object.assign(plugin, {
+			settingsPersistence: new SettingsPersistence(previous, {
+				persist: (candidate) => saveData(candidate),
+				publish: (candidate) => {
+					plugin.settings = candidate;
+					sync(candidate.decks);
+				},
+			}),
+		});
 
-		await plugin.saveSettings(next);
+		await plugin.updateSettings((settings) => { settings.decks = cloneJson(next.decks); });
 
-		expect(saveData).toHaveBeenCalledWith(next);
-		expect(plugin.settings).toBe(next);
+		expect(saveData).toHaveBeenCalledWith(plugin.settings);
+		expect(plugin.settings).toEqual(next);
 		expect(sync).toHaveBeenCalledWith(next.decks);
 	});
 
@@ -94,8 +104,18 @@ describe("deck ribbon buttons", () => {
 			saveData: vi.fn(async () => { throw new Error("disk full"); }),
 			ribbonDecks: { sync },
 		}) as TableCardsPlugin;
+		Object.assign(plugin, {
+			settingsPersistence: new SettingsPersistence(previous, {
+				persist: async () => { throw new Error("disk full"); },
+				publish: (candidate) => {
+					plugin.settings = candidate;
+					sync(candidate.decks);
+				},
+			}),
+		});
 
-		await expect(plugin.saveSettings(next)).rejects.toThrow("disk full");
+		await expect(plugin.updateSettings((settings) => { settings.decks = cloneJson(next.decks); }))
+			.rejects.toThrow("disk full");
 		expect(plugin.settings).toBe(previous);
 		expect(sync).not.toHaveBeenCalled();
 	});
@@ -117,39 +137,23 @@ describe("deck ribbon buttons", () => {
 
 	it("builds independent ribbon candidates for visibility and icon changes", () => {
 		const settings = { decks: [deck("verbs", { visible: false, icon: "layers-3" })] } as PluginSettings;
-		const visible = updateDeckRibbon(settings, "verbs", { visible: true });
-		const icon = updateDeckRibbon(settings, "verbs", { icon: "languages" });
+		const visible = cloneJson(settings);
+		const icon = cloneJson(settings);
+		mutateDeckRibbon(visible, "verbs", { visible: true });
+		mutateDeckRibbon(icon, "verbs", { icon: "languages" });
 
 		expect(settings.decks[0]?.ribbon).toEqual({ visible: false, icon: "layers-3" });
-		expect(visible?.decks[0]?.ribbon).toEqual({ visible: true, icon: "layers-3" });
-		expect(icon?.decks[0]?.ribbon).toEqual({ visible: false, icon: "languages" });
+		expect(visible.decks[0]?.ribbon).toEqual({ visible: true, icon: "layers-3" });
+		expect(icon.decks[0]?.ribbon).toEqual({ visible: false, icon: "languages" });
 	});
 
-	it("does not leak a failed ribbon toggle or reorder into a later save", async () => {
-		const previous = { decks: [deck("first"), deck("second", { visible: false })] } as PluginSettings;
-		const failedToggle = updateDeckRibbon(previous, "second", { visible: true });
-		const failedReorder = reorderDeckSettings(previous, "second", -1);
-		const saveData = vi
-			.fn<() => Promise<void>>()
-			.mockRejectedValueOnce(new Error("disk full"))
-			.mockRejectedValueOnce(new Error("disk full"))
-			.mockResolvedValueOnce(undefined);
-		const sync = vi.fn();
-		const plugin = Object.assign(Object.create(TableCardsPlugin.prototype), {
-			settings: previous,
-			saveData,
-			ribbonDecks: { sync },
-		}) as TableCardsPlugin;
+	it("applies reorder intent only to the supplied draft", () => {
+		const settings = { decks: [deck("first"), deck("second")] } as PluginSettings;
+		const draft = cloneJson(settings);
 
-		await expect(plugin.saveSettings(failedToggle!)).rejects.toThrow("disk full");
-		await expect(plugin.saveSettings(failedReorder!)).rejects.toThrow("disk full");
-		await plugin.saveSettings(previous);
-
-		expect(plugin.settings).toBe(previous);
-		expect(plugin.settings.decks.map((item) => [item.id, item.ribbon.visible]))
-			.toEqual([["first", false], ["second", false]]);
-		expect(saveData.mock.calls[2]?.[0]).toBe(previous);
-		expect(sync).toHaveBeenCalledTimes(1);
+		expect(mutateDeckOrder(draft, "second", -1)).toBe(true);
+		expect(draft.decks.map((item) => item.id)).toEqual(["second", "first"]);
+		expect(settings.decks.map((item) => item.id)).toEqual(["first", "second"]);
 	});
 
 	it("maps every curated icon to a typed translation key", () => {

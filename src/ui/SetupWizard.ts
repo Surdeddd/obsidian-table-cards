@@ -33,10 +33,11 @@ import { renderPresetChooser } from "./setup/PresetChooser";
 import { SetupCloseConfirm } from "./setup/SetupCloseConfirm";
 import { applySetupDirection } from "./setup/setup-a11y";
 import { tableSelectedBySource } from "../deck/selectors";
+import type { SettingsMutation } from "../settings/persistence";
 
 export interface SetupWizardHost {
 	settings: PluginSettings;
-	saveSettings: (settings?: PluginSettings) => Promise<void>;
+	updateSettings: (mutate: SettingsMutation) => Promise<void>;
 	getTranslator: () => Translator;
 	getLocale: () => UiLocale;
 	onSetupSaved?: () => void;
@@ -534,12 +535,19 @@ export class SetupWizard extends Modal {
 	private async finish(): Promise<void> {
 		if (this.saveLifecycle.saving || this.confirmOpen || !canFinishSetup(this.state)) return;
 		this.error = null;
-		const previous = this.host.settings;
-		const next = finishSetup(previous, this.state, this.state.result?.profiles ?? [], {
+		const state = this.state;
+		const profiles = state.result?.profiles ?? [];
+		const finishOptions = {
 			deckId: newId("deck"),
 			seed: Date.now(),
-		});
-		const saving = commitSetupSettings(this.host, next, this.saveLifecycle);
+		};
+		const saving = commitSetupSettings(this.host, (settings) => {
+			const next = finishSetup(settings, state, profiles, finishOptions);
+			settings.setupVersion = next.setupVersion;
+			settings.lastDeckId = next.lastDeckId;
+			settings.decks = next.decks;
+			settings.perDeck = next.perDeck;
+		}, this.saveLifecycle);
 		this.render();
 		try {
 			await saving;
@@ -547,7 +555,6 @@ export class SetupWizard extends Modal {
 			this.state = createSetupState(this.host.settings.decks.length);
 			this.closeImmediately();
 		} catch {
-			this.host.settings = previous;
 			this.error = this.t("setup.saveError");
 			this.render();
 		}

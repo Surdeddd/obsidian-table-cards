@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { commitSetupSettings, SetupSaveLifecycle } from "../src/setup/save-lifecycle";
+import { cloneJson, type PluginSettings } from "../src/model";
 import { mergeSettings } from "../src/settings/defaults";
+import { SettingsPersistence, type SettingsMutation } from "../src/settings/persistence";
 
 function deferred(): {
 	promise: Promise<void>;
@@ -50,26 +52,40 @@ describe("setup save lifecycle", () => {
 		const gate = deferred();
 		const original = mergeSettings(null);
 		const next = mergeSettings({ schemaVersion: 3, setupVersion: 1, decks: [{ id: "new", name: "New" }] });
-		const host = { settings: original, saveSettings: vi.fn(() => gate.promise) };
-		const saving = commitSetupSettings(host, next, lifecycle);
+		const persist = vi.fn(() => gate.promise);
+		const host: { settings: PluginSettings; updateSettings: (mutate: SettingsMutation) => Promise<void> } = {
+			settings: original,
+			updateSettings: async () => undefined,
+		};
+		const persistence = new SettingsPersistence(original, {
+			persist,
+			publish: (candidate) => { host.settings = candidate; },
+		});
+		host.updateSettings = vi.fn((mutate) => persistence.update(mutate));
+		const saving = commitSetupSettings(host, (settings) => {
+			settings.setupVersion = next.setupVersion;
+			settings.decks = cloneJson(next.decks);
+		}, lifecycle);
 
 		expect(host.settings).toBe(original);
 		expect(host.settings.setupVersion).toBe(0);
-		expect(host.saveSettings).toHaveBeenCalledOnce();
-		expect(host.saveSettings).toHaveBeenCalledWith(next);
+		expect(host.updateSettings).toHaveBeenCalledOnce();
 		gate.resolve();
 		await saving;
-		expect(host.settings).toBe(next);
+		expect(host.settings).toEqual(next);
 		expect(host.settings.setupVersion).toBe(1);
 	});
 
 	it("keeps the original settings and draft-close eligibility after persistence fails", async () => {
 		const lifecycle = new SetupSaveLifecycle();
 		const original = mergeSettings(null);
-		const next = { ...original, setupVersion: 1 as const };
-		const host = { settings: original, saveSettings: vi.fn(async () => { throw new Error("disk full"); }) };
+		const host = {
+			settings: original,
+			updateSettings: vi.fn(async (_mutate: SettingsMutation) => { throw new Error("disk full"); }),
+		};
 
-		await expect(commitSetupSettings(host, next, lifecycle)).rejects.toThrow("disk full");
+		await expect(commitSetupSettings(host, (settings) => { settings.setupVersion = 1; }, lifecycle))
+			.rejects.toThrow("disk full");
 		expect(host.settings).toBe(original);
 		expect(lifecycle.saving).toBe(false);
 	});

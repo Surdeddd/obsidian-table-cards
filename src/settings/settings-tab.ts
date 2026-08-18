@@ -1,10 +1,30 @@
-import { Modal, Plugin, PluginSettingTab, Setting, type App } from "obsidian";
-import { cloneJson, createBlock, newId, type Deck, type PluginSettings } from "../model";
-import type { Translator } from "../i18n";
+import { Modal, Plugin, PluginSettingTab, Setting, getLanguage, type App } from "obsidian";
+import { cloneJson, createBlock, newId, UI_LOCALES, type Deck, type LocaleMode, type PluginSettings, type UiLocale } from "../model";
+import { formatUiNumber, resolveUiLocale, uiDirection, type TranslationKey, type Translator } from "../i18n";
 import { DeckEditorModal } from "../ui/DeckEditorModal";
 import { applySizePreset } from "./appearance";
 import { createDeck } from "./defaults";
 import { loadDeckData } from "../deck/load";
+import { Listbox } from "../ui/editor/controls/Listbox";
+
+const LANGUAGE_KEYS: Record<UiLocale, TranslationKey> = {
+	en: "settings.language.en",
+	ru: "settings.language.ru",
+	uk: "settings.language.uk",
+	es: "settings.language.es",
+	de: "settings.language.de",
+	fr: "settings.language.fr",
+	"pt-BR": "settings.language.pt-BR",
+	it: "settings.language.it",
+	pl: "settings.language.pl",
+	tr: "settings.language.tr",
+	"zh-CN": "settings.language.zh-CN",
+	"zh-TW": "settings.language.zh-TW",
+	ja: "settings.language.ja",
+	ko: "settings.language.ko",
+	ar: "settings.language.ar",
+	hi: "settings.language.hi",
+};
 
 export interface SettingsHost {
 	settings: PluginSettings;
@@ -54,24 +74,30 @@ export class TableCardsSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		const t = this.plugin.getTranslator();
+		const locale = resolveUiLocale(this.plugin.settings.locale, getLanguage() || "en");
 		containerEl.empty();
 		containerEl.addClass("table-cards-settings");
+		containerEl.setAttr("lang", locale);
+		containerEl.setAttr("dir", uiDirection(locale));
 
-		new Setting(containerEl)
+		const languageSetting = new Setting(containerEl)
 			.setName(t("settings.language.name"))
-			.setDesc(t("settings.language.desc"))
-			.addDropdown((dropdown) => {
-				dropdown
-					.addOption("auto", t("settings.language.auto"))
-					.addOption("en", t("settings.language.en"))
-					.addOption("ru", t("settings.language.ru"))
-					.setValue(this.plugin.settings.locale)
-					.onChange((value) => {
-						if (value !== "auto" && value !== "en" && value !== "ru") return;
-						this.plugin.settings.locale = value;
-						void this.plugin.saveSettings().then(() => this.display());
-					});
-			});
+			.setDesc(t("settings.language.desc"));
+		new Listbox<LocaleMode>(languageSetting.controlEl, {
+			id: "table-cards-language",
+			label: t("settings.language.name"),
+			value: this.plugin.settings.locale,
+			options: [
+				{ value: "auto", label: t("settings.language.auto") },
+				...UI_LOCALES.map((value) => ({ value, label: t(LANGUAGE_KEYS[value]) })),
+			],
+			searchable: true,
+			onChange: (value) => {
+				this.plugin.settings.locale = value;
+				void this.plugin.saveSettings().then(() => this.display());
+			},
+		});
+		languageSetting.controlEl.querySelector<HTMLElement>(".tc-listbox > label")?.addClass("tc-visually-hidden");
 
 		this.renderDefaults(containerEl, t);
 
@@ -89,7 +115,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 				});
 			});
 
-		for (const deck of this.plugin.settings.decks) this.renderDeck(containerEl, deck, t);
+		for (const deck of this.plugin.settings.decks) this.renderDeck(containerEl, deck, t, locale);
 	}
 
 	private renderDefaults(containerEl: HTMLElement, t: Translator): void {
@@ -155,9 +181,9 @@ export class TableCardsSettingTab extends PluginSettingTab {
 		});
 	}
 
-	private renderDeck(containerEl: HTMLElement, deck: Deck, t: Translator): void {
+	private renderDeck(containerEl: HTMLElement, deck: Deck, t: Translator, locale: UiLocale): void {
 		const wrap = containerEl.createDiv({ cls: "table-cards-deck-settings" });
-		const description = `${deck.sources.length} ${t("settings.deck.sources")} · ${deck.blocks.length} ${t("settings.deck.blocks")}`;
+		const description = `${formatUiNumber(deck.sources.length, locale)} ${t("settings.deck.sources")} · ${formatUiNumber(deck.blocks.length, locale)} ${t("settings.deck.blocks")}`;
 		const setting = new Setting(wrap)
 			.setName(deck.name)
 			.setDesc(description)
@@ -196,7 +222,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 					result.profiles.reduce((total, profile) => total + profile.warnings.length, 0);
 				setting.setDesc(
 					warnings > 0
-						? `${description} · ${warnings} ${t("settings.deck.warnings")}`
+						? `${description} · ${formatUiNumber(warnings, locale)} ${t("settings.deck.warnings")}`
 						: description,
 				);
 			})

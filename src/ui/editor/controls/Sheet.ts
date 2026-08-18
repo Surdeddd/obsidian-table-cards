@@ -14,6 +14,20 @@ export interface SheetOptions {
 	renderFooter?: (footer: HTMLElement) => void;
 }
 
+interface EscapeEvent {
+	key: string;
+	preventDefault: () => void;
+	stopPropagation: () => void;
+}
+
+export function consumeSheetEscape(event: EscapeEvent, onClose: () => void): boolean {
+	if (event.key !== "Escape") return false;
+	event.preventDefault();
+	event.stopPropagation();
+	onClose();
+	return true;
+}
+
 function focusableElements(root: HTMLElement): HTMLElement[] {
 	return Array.from(
 		root.querySelectorAll<HTMLElement>(
@@ -90,11 +104,7 @@ export class Sheet {
 	}
 
 	private readonly onKeyDown = (event: KeyboardEvent): void => {
-		if (event.key === "Escape") {
-			event.preventDefault();
-			this.close();
-			return;
-		}
+		if (consumeSheetEscape(event, () => this.close())) return;
 		if (event.key !== "Tab" || !this.dialog) return;
 		const items = focusableElements(this.dialog);
 		if (items.length === 0) {

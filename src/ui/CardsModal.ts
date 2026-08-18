@@ -1,6 +1,10 @@
 import { Component, Modal, Platform, setIcon, type App } from "obsidian";
-import { filterCardsByScope, restoreCardIndex } from "../deck/filter";
-import { clampCardIndex, loadDeckData, orderCards } from "../deck/load";
+import {
+	buildSearchIndex,
+	normalizeScope,
+	type SearchEntry,
+} from "../deck/filter";
+import { clampCardIndex, loadDeckData } from "../deck/load";
 import { applyUiChromeDirection, formatUiNumber, type Translator } from "../i18n";
 import { resolveCard } from "../layout/resolve";
 import type {
@@ -10,12 +14,17 @@ import type {
 	DeckProgress,
 	PluginSettings,
 	StudyScope,
+	TableCatalogItem,
 	UiLocale,
 } from "../model";
 import type { DeckOpenRequest } from "../session/launcher-state";
+import { findExactCardIndex, selectStudyCards } from "../session/study-state";
 import { applyAppearance, resolveDeckAppearance, shouldSplit } from "../settings/appearance";
+import { CardBrowser } from "./CardBrowser";
 import { renderCard } from "./CardView";
+import { buildTableDisplayLabels } from "./card-browser-state";
 import { attachSwipe } from "./gestures";
+import { ScopeSheet } from "./ScopeSheet";
 import { SessionLauncher } from "./SessionLauncher";
 
 export interface CardsModalHost {
@@ -45,13 +54,18 @@ function cloneProgress(progress: DeckProgress): DeckProgress {
 export class CardsModal extends Modal {
 	private readonly host: CardsModalHost;
 	private readonly request: DeckOpenRequest;
+	private allCards: Card[] = [];
 	private cards: Card[] = [];
+	private catalog: TableCatalogItem[] = [];
+	private searchIndex: SearchEntry[] = [];
+	private tableLabels = new Map<string, string>();
 	private deck: Deck | null = null;
-	private result: DeckLoadResult | null = null;
 	private progress: DeckProgress | null = null;
 	private t!: Translator;
 	private locale!: UiLocale;
 	private launcher: SessionLauncher | null = null;
+	private browser: CardBrowser | null = null;
+	private scopeSheet: ScopeSheet | null = null;
 	private detachSwipe: (() => void) | null = null;
 	private renderVersion = 0;
 	private headerEl!: HTMLElement;
@@ -60,6 +74,8 @@ export class CardsModal extends Modal {
 	private counterEl!: HTMLElement;
 	private progressEl!: HTMLElement;
 	private shuffleBtn!: HTMLButtonElement;
+	private scopeBtn!: HTMLButtonElement;
+	private searchBtn!: HTMLButtonElement;
 	private component: Component | null = null;
 	private stageObserver: ResizeObserver | null = null;
 	private studyKeysRegistered = false;
@@ -101,6 +117,8 @@ export class CardsModal extends Modal {
 
 	onClose(): void {
 		this.renderVersion += 1;
+		this.closeBrowser(false);
+		this.closeScopePicker(false);
 		this.launcher?.destroy();
 		this.launcher = null;
 		this.stageObserver?.disconnect();
@@ -134,11 +152,17 @@ export class CardsModal extends Modal {
 		const saved = this.host.settings.perDeck[selection.deck.id];
 		const progress = saved ? cloneProgress(saved) : this.defaultProgress(selection.deck);
 		progress.scope = cloneScope(selection.scope);
-		const scopedCards = filterCardsByScope(selection.result.cards, selection.scope);
-		const cards = orderCards(scopedCards, progress.shuffle, progress.seed);
-		progress.index = restoreCardIndex(cards, progress.cardKey, progress.index);
-		progress.cardKey = cards[progress.index]?.origin.rowKey ?? null;
-		return { cards, progress };
+		const selected = selectStudyCards({
+			allCards: selection.result.cards,
+			scope: progress.scope,
+			shuffle: progress.shuffle,
+			seed: progress.seed,
+			cardKey: progress.cardKey,
+			fallbackIndex: progress.index,
+		});
+		progress.index = selected.index;
+		progress.cardKey = selected.cardKey;
+		return { cards: selected.cards, progress };
 	}
 
 	private async startStudy(selection: SessionSelection): Promise<void> {
@@ -148,8 +172,13 @@ export class CardsModal extends Modal {
 		}
 		if (!this.component) return;
 		this.deck = selection.deck;
-		this.result = selection.result;
+		this.allCards = selection.result.cards.slice();
 		this.cards = prepared.cards;
+		this.catalog = selection.result.catalog.slice();
+		this.searchIndex = buildSearchIndex(this.allCards);
+		this.tableLabels = buildTableDisplayLabels(this.catalog, (number) => this.t("table.untitled", {
+			number: formatUiNumber(number, this.locale),
+		}));
 		this.progress = prepared.progress;
 		this.launcher?.destroy();
 		this.launcher = null;
@@ -170,7 +199,7 @@ export class CardsModal extends Modal {
 		const hadProgress = Object.prototype.hasOwnProperty.call(this.host.settings.perDeck, deckId);
 		const previousProgress = this.host.settings.perDeck[deckId];
 		this.host.settings.lastDeckId = deckId;
-		this.host.settings.perDeck[deckId] = progress;
+		this.host.settings.perDeck[deckId] = cloneProgress(progress);
 		try {
 			await this.host.saveSettings();
 		} catch (error) {
@@ -184,8 +213,27 @@ export class CardsModal extends Modal {
 	private buildChrome(): void {
 		this.headerEl = this.contentEl.createDiv({ cls: "table-cards-header" });
 		const lead = this.headerEl.createDiv({ cls: "table-cards-header-lead" });
-		lead.createDiv({ cls: "table-cards-kicker", text: this.t("modal.kicker") });
-		lead.createDiv({ cls: "table-cards-study-deck", text: this.deck?.name ?? "", attr: { dir: "auto" } });
+		const identity = lead.createDiv({ cls: "table-cards-study-identity" });
+		identity.createDiv({ cls: "table-cards-kicker", text: this.t("modal.kicker") });
+		identity.createDiv({ cls: "table-cards-study-deck", text: this.deck?.name ?? "", attr: { dir: "auto" } });
+		const tools = lead.createDiv({ cls: "table-cards-study-tools" });
+		this.scopeBtn = tools.createEl("button", {
+			cls: "table-cards-scope-btn",
+			attr: { type: "button", "aria-haspopup": "dialog", "aria-expanded": "false" },
+		});
+		this.scopeBtn.addEventListener("click", () => this.toggleScopePicker());
+		this.searchBtn = tools.createEl("button", {
+			cls: "table-cards-icon-btn table-cards-search-btn",
+			attr: {
+				type: "button",
+				"aria-label": this.t("study.search"),
+				"aria-haspopup": "dialog",
+				"aria-expanded": "false",
+			},
+		});
+		setIcon(this.searchBtn, "search");
+		this.searchBtn.addEventListener("click", () => this.toggleBrowser());
+		this.updateScopeButton();
 		this.counterEl = this.headerEl.createDiv({
 			cls: "table-cards-counter",
 			attr: { "aria-live": "polite", "aria-label": this.t("modal.progress") },
@@ -229,19 +277,136 @@ export class CardsModal extends Modal {
 		next.addEventListener("click", () => void this.step(1));
 	}
 
+	private scopeSummary(): string {
+		if (!this.progress || this.progress.scope.mode === "all") return this.t("scope.all");
+		const tables = this.catalog.filter((table) =>
+			this.progress?.scope.mode === "tables" && this.progress.scope.tableKeys.includes(table.key));
+		if (tables.length === 1) return this.tableLabels.get(tables[0]!.key) ?? tables[0]!.label;
+		return this.t("scope.count", { count: formatUiNumber(tables.length, this.locale) });
+	}
+
+	private updateScopeButton(): void {
+		if (!this.scopeBtn) return;
+		const summary = this.scopeSummary();
+		this.scopeBtn.empty();
+		this.scopeBtn.createSpan({ text: summary, attr: { dir: "auto" } });
+		this.scopeBtn.createSpan({ cls: "table-cards-scope-mark", text: "⌄", attr: { "aria-hidden": "true" } });
+		this.scopeBtn.setAttr("aria-label", `${this.t("scope.label")}: ${summary}`);
+	}
+
+	private toggleScopePicker(): void {
+		if (this.scopeSheet) {
+			this.closeScopePicker(true);
+			return;
+		}
+		if (!this.progress) return;
+		this.closeBrowser(false);
+		const opener = this.scopeBtn;
+		this.scopeBtn.setAttr("aria-expanded", "true");
+		this.scopeSheet = new ScopeSheet(this.contentEl, {
+			catalog: this.catalog,
+			scope: this.progress.scope,
+			t: this.t,
+			opener,
+			onChange: (scope) => void this.applyScope(scope),
+			onClose: () => {
+				this.scopeSheet = null;
+				this.scopeBtn.setAttr("aria-expanded", "false");
+			},
+		});
+	}
+
+	private closeScopePicker(restoreFocus: boolean): void {
+		this.scopeSheet?.destroy(restoreFocus);
+		this.scopeSheet = null;
+		if (this.scopeBtn) this.scopeBtn.setAttr("aria-expanded", "false");
+	}
+
+	private toggleBrowser(): void {
+		if (this.browser) {
+			this.closeBrowser(true);
+			return;
+		}
+		if (!this.progress) return;
+		this.closeScopePicker(false);
+		this.searchBtn.setAttr("aria-expanded", "true");
+		this.browser = new CardBrowser(this.contentEl, {
+			index: this.searchIndex,
+			catalog: this.catalog,
+			scope: this.progress.scope,
+			t: this.t,
+			onScopeChange: (scope) => void this.applyScope(scope),
+			onOpenCard: (rowKey) => void this.openCard(rowKey),
+			onClose: () => this.closeBrowser(false),
+		});
+	}
+
+	private closeBrowser(restoreFocus: boolean): void {
+		const browser = this.browser;
+		this.browser = null;
+		browser?.destroy();
+		if (this.searchBtn) this.searchBtn.setAttr("aria-expanded", "false");
+		if (restoreFocus && this.searchBtn) this.searchBtn.focus();
+	}
+
+	private async applyScope(nextScope: StudyScope): Promise<void> {
+		if (!this.progress) return;
+		const currentKey = this.currentCard()?.origin.rowKey ?? this.progress.cardKey;
+		const previousIndex = this.progress.index;
+		this.progress.scope = normalizeScope(nextScope, this.catalog);
+		const selected = selectStudyCards({
+			allCards: this.allCards,
+			scope: this.progress.scope,
+			shuffle: this.progress.shuffle,
+			seed: this.progress.seed,
+			cardKey: currentKey,
+			fallbackIndex: previousIndex,
+		});
+		this.cards = selected.cards;
+		this.progress.index = selected.index;
+		this.progress.cardKey = selected.cardKey;
+		this.updateScopeButton();
+		this.render();
+		await this.saveProgress();
+	}
+
+	private async openCard(rowKey: string): Promise<void> {
+		if (!this.progress) return;
+		const index = findExactCardIndex(this.cards, rowKey);
+		if (index < 0) {
+			this.browser?.refresh();
+			return;
+		}
+		this.progress.index = index;
+		this.progress.cardKey = rowKey;
+		this.render();
+		this.closeBrowser(true);
+		await this.saveProgress();
+	}
+
 	private registerKeys(): void {
 		if (this.studyKeysRegistered) return;
 		this.studyKeysRegistered = true;
 		this.scope.register([], "ArrowRight", () => {
+			if (this.browser || this.scopeSheet) return true;
 			void this.step(1);
 			return false;
 		});
 		this.scope.register([], "ArrowLeft", () => {
+			if (this.browser || this.scopeSheet) return true;
 			void this.step(-1);
 			return false;
 		});
 		this.scope.register([], "s", () => {
+			if (this.browser || this.scopeSheet) return true;
 			void this.toggleShuffle();
+			return false;
+		});
+		this.scope.register([], "Escape", () => {
+			if (this.browser?.closeNestedLayer()) return false;
+			if (this.scopeSheet) this.closeScopePicker(true);
+			else if (this.browser) this.closeBrowser(true);
+			else this.close();
 			return false;
 		});
 	}
@@ -253,6 +418,7 @@ export class CardsModal extends Modal {
 
 	private render(): void {
 		this.applyLook();
+		this.updateScopeButton();
 		const version = ++this.renderVersion;
 		const total = this.cards.length;
 		const index = !this.progress || total === 0 ? 0 : clampCardIndex(this.progress.index, total) + 1;
@@ -273,6 +439,7 @@ export class CardsModal extends Modal {
 			component: this.component,
 			appearance: resolveDeckAppearance(this.host.settings.appearance, this.deck?.appearance),
 			t: this.t,
+			sourceLabel: current ? this.tableLabels.get(current.origin.tableKey) ?? current.origin.tableLabel : undefined,
 			isCurrent: () => version === this.renderVersion,
 			options: { interactiveImages: true },
 		}).then(() => {
@@ -307,23 +474,29 @@ export class CardsModal extends Modal {
 	}
 
 	private async toggleShuffle(): Promise<void> {
-		if (!this.progress || !this.result) return;
+		if (!this.progress) return;
+		const currentKey = this.currentCard()?.origin.rowKey ?? this.progress.cardKey;
+		const previousIndex = this.progress.index;
 		this.progress.shuffle = !this.progress.shuffle;
 		this.progress.seed = Date.now();
-		this.cards = orderCards(
-			filterCardsByScope(this.result.cards, this.progress.scope),
-			this.progress.shuffle,
-			this.progress.seed,
-		);
-		this.progress.index = 0;
-		this.progress.cardKey = this.cards[0]?.origin.rowKey ?? null;
+		const selected = selectStudyCards({
+			allCards: this.allCards,
+			scope: this.progress.scope,
+			shuffle: this.progress.shuffle,
+			seed: this.progress.seed,
+			cardKey: currentKey,
+			fallbackIndex: previousIndex,
+		});
+		this.cards = selected.cards;
+		this.progress.index = selected.index;
+		this.progress.cardKey = selected.cardKey;
 		this.render();
 		await this.saveProgress();
 	}
 
 	private async saveProgress(): Promise<void> {
 		if (this.request.persistProgress === false || !this.deck || !this.progress) return;
-		this.host.settings.perDeck[this.deck.id] = this.progress;
+		this.host.settings.perDeck[this.deck.id] = cloneProgress(this.progress);
 		await this.host.saveSettings();
 	}
 }

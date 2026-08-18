@@ -16,6 +16,7 @@ export interface CardRenderContext {
 	component: Component;
 	appearance: AppearanceSettings;
 	t: Translator;
+	sourceLabel?: string;
 	isCurrent?: () => boolean;
 	options?: CardRenderOptions;
 }
@@ -78,7 +79,7 @@ async function renderValue(
 	context: CardRenderContext,
 	className: string,
 ): Promise<void> {
-	const host = parent.createDiv({ cls: className });
+	const host = parent.createDiv({ cls: className, attr: { dir: "auto" } });
 	if (!shouldRenderMarkdown(value)) {
 		host.setText(value.text);
 		return;
@@ -97,7 +98,9 @@ function imageSource(context: CardRenderContext, card: ResolvedCard, image: Imag
 function renderMissingImage(parent: HTMLElement, image: ImageRef, context: CardRenderContext): void {
 	const missing = parent.createDiv({ cls: "table-cards-image-missing" });
 	missing.createSpan({ cls: "table-cards-image-missing-icon", text: "□", attr: { "aria-hidden": "true" } });
-	missing.createSpan({ text: `${context.t("modal.imageMissing")}: ${image.source}` });
+	const text = missing.createSpan({ cls: "table-cards-image-missing-text" });
+	text.createSpan({ text: `${context.t("modal.imageMissing")}: ` });
+	text.createSpan({ text: image.source, attr: { dir: "auto" } });
 }
 
 function renderImage(
@@ -159,6 +162,7 @@ function renderImage(
 					? labelOf(block) || ref.alt || context.t("modal.image")
 					: ref.alt || context.t("modal.image"),
 			cls: "table-cards-image-caption",
+			attr: { dir: "auto" },
 		});
 	}
 }
@@ -173,7 +177,7 @@ async function renderTextBlock(
 	if (block.kind === "chips") {
 		const row = box.createDiv({ cls: "table-cards-pron" });
 		for (const value of values) {
-			row.createSpan({ cls: "table-cards-chip", text: value.text });
+			row.createSpan({ cls: "table-cards-chip", text: value.text, attr: { dir: "auto" } });
 		}
 		return;
 	}
@@ -199,6 +203,25 @@ async function renderTextBlock(
 	}
 }
 
+function fileBasename(path: string): string {
+	return (path.split("/").at(-1) ?? path).replace(/\.md$/i, "");
+}
+
+function renderSource(root: HTMLElement, card: ResolvedCard, context: CardRenderContext): void {
+	const source = root.createDiv({ cls: "table-cards-source-meta" });
+	source.createSpan({
+		cls: "table-cards-source-table",
+		text: context.sourceLabel ?? card.card.origin.tableLabel,
+		attr: { dir: "auto" },
+	});
+	source.createSpan({ cls: "table-cards-source-separator", text: "·", attr: { "aria-hidden": "true" } });
+	source.createSpan({
+		cls: "table-cards-source-file",
+		text: fileBasename(card.card.origin.sourcePath),
+		attr: { dir: "auto" },
+	});
+}
+
 export async function renderCard(
 	root: HTMLElement,
 	card: ResolvedCard | null,
@@ -222,7 +245,7 @@ export async function renderCard(
 		makeSelectable(box, block, context);
 		const label = labelOf(block);
 		if (block.showLabel && label) {
-			box.createDiv({ cls: "table-cards-label", text: label });
+			box.createDiv({ cls: "table-cards-label", text: label, attr: { dir: "auto" } });
 		}
 		if (block.kind === "image") {
 			const refs = resolved.values.flatMap((value) => value.images);
@@ -240,4 +263,5 @@ export async function renderCard(
 			return;
 		}
 	}
+	renderSource(root, card, context);
 }

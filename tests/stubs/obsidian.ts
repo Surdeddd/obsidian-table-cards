@@ -25,8 +25,45 @@ export class TFolder {
 		this.name = path.split("/").pop() ?? path;
 	}
 }
-export class Plugin {}
-export class Modal {}
+export class Workspace {
+	onLayoutReady(callback: () => void): void {
+		callback();
+	}
+}
+
+export class Plugin {
+	addCommand(_command: { id: string; name: string; callback: () => void }): void {}
+}
+
+export class Modal {
+	open(): void {}
+	close(): void {}
+	onOpen(): void {}
+	onClose(): void {}
+}
+
+export class FuzzySuggestModal<T> extends Modal {
+	app: unknown;
+
+	constructor(app: unknown) {
+		super();
+		this.app = app;
+	}
+
+	setPlaceholder(_placeholder: string): this {
+		return this;
+	}
+
+	getItems(): T[] {
+		return [];
+	}
+
+	getItemText(_item: T): string {
+		return "";
+	}
+
+	onChooseItem(_item: T): void {}
+}
 export class PluginSettingTab {}
 export class Setting {}
 export function getLanguage(): string {

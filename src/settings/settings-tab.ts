@@ -37,6 +37,7 @@ export interface SettingsHost {
 	settings: PluginSettings;
 	saveSettings: () => Promise<void>;
 	getTranslator: () => Translator;
+	openSetup: () => void;
 }
 
 class DeleteDeckModal extends Modal {
@@ -115,7 +116,12 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			.setName(t("settings.decks.heading"))
 			.setHeading()
 			.addButton((button) => {
-				button.setButtonText(t("settings.decks.add")).setCta().onClick(() => {
+				button.setButtonText(t("command.createWithSetup")).setCta().onClick(() => {
+					this.plugin.openSetup();
+				});
+			})
+			.addButton((button) => {
+				button.setButtonText(t("settings.decks.add")).onClick(() => {
 					const deck = createDeck({ name: t("deck.new"), blocks: [] });
 					this.plugin.settings.decks.push(deck);
 					void this.plugin.saveSettings().then(() => {

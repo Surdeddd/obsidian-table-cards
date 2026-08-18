@@ -1,4 +1,4 @@
-import { FuzzySuggestModal, TFile, TFolder, setIcon, type App } from "obsidian";
+import { setIcon, type App } from "obsidian";
 import { autoLayout } from "../../layout";
 import {
 	newId,
@@ -11,6 +11,7 @@ import { normalizeHeader } from "../../parse/tables";
 import type { Translator } from "../../i18n";
 import type { EditorAction, EditorState } from "../../editor/state";
 import { Listbox } from "./controls/Listbox";
+import { FolderPicker, MarkdownFilePicker } from "../sources/SourcePickers";
 
 const DATA_TYPES: ColumnDataType[] = [
 	"text",
@@ -34,54 +35,6 @@ export interface FieldsSheetContext {
 	loading: boolean;
 	t: Translator;
 	dispatch: (action: EditorAction) => void;
-}
-
-class MarkdownFilePicker extends FuzzySuggestModal<TFile> {
-	constructor(
-		app: App,
-		private readonly placeholder: string,
-		private readonly choose: (file: TFile) => void,
-	) {
-		super(app);
-		this.setPlaceholder(placeholder);
-	}
-
-	getItems(): TFile[] {
-		return this.app.vault.getMarkdownFiles();
-	}
-
-	getItemText(file: TFile): string {
-		return file.path;
-	}
-
-	onChooseItem(file: TFile): void {
-		this.choose(file);
-	}
-}
-
-class FolderPicker extends FuzzySuggestModal<TFolder> {
-	constructor(
-		app: App,
-		private readonly placeholder: string,
-		private readonly choose: (folder: TFolder) => void,
-	) {
-		super(app);
-		this.setPlaceholder(placeholder);
-	}
-
-	getItems(): TFolder[] {
-		return this.app.vault
-			.getAllLoadedFiles()
-			.filter((entry): entry is TFolder => entry instanceof TFolder && entry.path.length > 0);
-	}
-
-	getItemText(folder: TFolder): string {
-		return folder.path;
-	}
-
-	onChooseItem(folder: TFolder): void {
-		this.choose(folder);
-	}
 }
 
 function sourceTables(source: DeckSource, tables: ParsedTable[]): ParsedTable[] {

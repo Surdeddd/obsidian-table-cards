@@ -1,9 +1,12 @@
 export type SheetMode = "responsive" | "side" | "bottom";
+export type SheetVariant = "default" | "full";
 
 export interface SheetOptions {
 	id: string;
 	title: string;
 	mode: SheetMode;
+	variant?: SheetVariant;
+	ariaLabelledBy?: string;
 	opener: HTMLElement | null;
 	closeLabel: string;
 	onClose: () => void;
@@ -49,8 +52,9 @@ export class Sheet {
 				role: "dialog",
 				tabindex: "-1",
 				"aria-modal": "true",
-				"aria-labelledby": `${this.options.id}-title`,
+				"aria-labelledby": this.options.ariaLabelledBy ?? `${this.options.id}-title`,
 				"data-mode": this.options.mode,
+				"data-variant": this.options.variant ?? "default",
 			},
 		});
 		this.dialog.addEventListener("keydown", this.onKeyDown);

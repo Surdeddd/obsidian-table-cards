@@ -2,7 +2,7 @@ import { Plugin, getLanguage } from "obsidian";
 import { createTranslator, resolveUiLocale, type Translator } from "./i18n";
 import { DEFAULT_SETTINGS, mergeSettings } from "./settings/defaults";
 import { TableCardsSettingTab } from "./settings/settings-tab";
-import type { PluginSettings } from "./model";
+import type { PluginSettings, UiLocale } from "./model";
 import { CardsModal } from "./ui/CardsModal";
 import { DeckEditorModal } from "./ui/DeckEditorModal";
 
@@ -32,11 +32,7 @@ export default class TableCardsPlugin extends Plugin {
 	}
 
 	openCards(): void {
-		new CardsModal(this.app, {
-			settings: this.settings,
-			saveSettings: () => this.saveSettings(),
-			t: this.getTranslator(),
-		}).open();
+		new CardsModal(this.app, this).open();
 	}
 
 	openEditor(): void {
@@ -54,7 +50,10 @@ export default class TableCardsPlugin extends Plugin {
 	}
 
 	getTranslator(): Translator {
-		const locale = resolveUiLocale(this.settings.locale, getLanguage() || "en");
-		return createTranslator(locale);
+		return createTranslator(this.getLocale());
+	}
+
+	getLocale(): UiLocale {
+		return resolveUiLocale(this.settings.locale, getLanguage() || "en");
 	}
 }

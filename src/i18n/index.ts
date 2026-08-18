@@ -5,6 +5,7 @@ import type { Translator } from "./keys";
 export * from "./catalogs";
 export * from "./keys";
 export * from "./locale";
+export * from "./ribbon-icons";
 export { UI_LOCALES } from "../model";
 
 const TOKEN = /\{([a-zA-Z0-9_]+)\}/g;

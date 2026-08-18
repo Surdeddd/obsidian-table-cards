@@ -5,11 +5,13 @@ import {
 	UI_LOCALES,
 	createTranslator,
 	formatUiNumber,
+	RIBBON_ICON_KEYS,
 	resolveUiLocale,
 	uiDirection,
 	type TranslationKey,
 } from "../src/i18n";
 import * as i18nApi from "../src/i18n";
+import { RIBBON_ICONS } from "../src/model";
 
 const TOKENS = /\{([a-zA-Z0-9_]+)\}/g;
 const SHARED_TERMS = ["Obsidian", "Markdown", "Table Cards"] as const;
@@ -153,6 +155,15 @@ describe("localization", () => {
 		for (const locale of UI_LOCALES) {
 			expect(Object.keys(CATALOGS[locale]).sort()).toEqual(expected);
 			expect(Object.values(CATALOGS[locale]).every((value) => value.trim().length > 0)).toBe(true);
+		}
+	});
+
+	it("provides a localized typed label for every curated ribbon icon", () => {
+		expect(Object.keys(RIBBON_ICON_KEYS).sort()).toEqual([...RIBBON_ICONS].sort());
+		for (const locale of UI_LOCALES) {
+			for (const icon of RIBBON_ICONS) {
+				expect(createTranslator(locale)(RIBBON_ICON_KEYS[icon]).trim(), `${locale}:${icon}`).not.toBe("");
+			}
 		}
 	});
 

@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import TableCardsPlugin from "../src/main";
-import type { Deck, PluginSettings, RibbonIcon } from "../src/model";
+import { RIBBON_ICONS, type Deck, type PluginSettings, type RibbonIcon } from "../src/model";
+import { RIBBON_ICON_KEYS } from "../src/i18n/ribbon-icons";
 import { createDeck, mergeDeck } from "../src/settings/defaults";
-import { moveDeck } from "../src/settings/settings-tab";
+import { moveDeck, reorderDeckSettings, updateDeckRibbon } from "../src/settings/settings-tab";
 import { RibbonDecks, ribbonSpecs } from "../src/ui/RibbonDecks";
 
 function deck(
@@ -112,5 +113,46 @@ describe("deck ribbon buttons", () => {
 
 		expect(disabled.ribbon.visible).toBe(true);
 		expect(ribbonSpecs([disabled])).toEqual([]);
+	});
+
+	it("builds independent ribbon candidates for visibility and icon changes", () => {
+		const settings = { decks: [deck("verbs", { visible: false, icon: "layers-3" })] } as PluginSettings;
+		const visible = updateDeckRibbon(settings, "verbs", { visible: true });
+		const icon = updateDeckRibbon(settings, "verbs", { icon: "languages" });
+
+		expect(settings.decks[0]?.ribbon).toEqual({ visible: false, icon: "layers-3" });
+		expect(visible?.decks[0]?.ribbon).toEqual({ visible: true, icon: "layers-3" });
+		expect(icon?.decks[0]?.ribbon).toEqual({ visible: false, icon: "languages" });
+	});
+
+	it("does not leak a failed ribbon toggle or reorder into a later save", async () => {
+		const previous = { decks: [deck("first"), deck("second", { visible: false })] } as PluginSettings;
+		const failedToggle = updateDeckRibbon(previous, "second", { visible: true });
+		const failedReorder = reorderDeckSettings(previous, "second", -1);
+		const saveData = vi
+			.fn<() => Promise<void>>()
+			.mockRejectedValueOnce(new Error("disk full"))
+			.mockRejectedValueOnce(new Error("disk full"))
+			.mockResolvedValueOnce(undefined);
+		const sync = vi.fn();
+		const plugin = Object.assign(Object.create(TableCardsPlugin.prototype), {
+			settings: previous,
+			saveData,
+			ribbonDecks: { sync },
+		}) as TableCardsPlugin;
+
+		await expect(plugin.saveSettings(failedToggle!)).rejects.toThrow("disk full");
+		await expect(plugin.saveSettings(failedReorder!)).rejects.toThrow("disk full");
+		await plugin.saveSettings(previous);
+
+		expect(plugin.settings).toBe(previous);
+		expect(plugin.settings.decks.map((item) => [item.id, item.ribbon.visible]))
+			.toEqual([["first", false], ["second", false]]);
+		expect(saveData.mock.calls[2]?.[0]).toBe(previous);
+		expect(sync).toHaveBeenCalledTimes(1);
+	});
+
+	it("maps every curated icon to a typed translation key", () => {
+		expect(Object.keys(RIBBON_ICON_KEYS).sort()).toEqual([...RIBBON_ICONS].sort());
 	});
 });

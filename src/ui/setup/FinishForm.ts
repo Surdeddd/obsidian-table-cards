@@ -1,5 +1,5 @@
 import { setIcon } from "obsidian";
-import { formatUiNumber, type Translator } from "../../i18n";
+import { ribbonIconLabel, type Translator } from "../../i18n";
 import { RIBBON_ICONS, type RibbonIcon, type UiLocale } from "../../model";
 import type { SetupState } from "../../setup/state";
 import { setupDirectionAttributes } from "./setup-a11y";
@@ -30,11 +30,11 @@ export function renderFinishForm(parent: HTMLElement, options: FinishFormOptions
 		cls: "tc-setup-icons",
 		attr: { role: "group", "aria-label": options.t("ribbon.icon") },
 	});
-	for (const [index, iconName] of RIBBON_ICONS.entries()) {
+	for (const iconName of RIBBON_ICONS) {
 		const icon = icons.createEl("button", {
 			attr: {
 				type: "button",
-				"aria-label": `${options.t("ribbon.icon")} ${formatUiNumber(index + 1, options.locale)}`,
+				"aria-label": ribbonIconLabel(options.t, iconName),
 				"aria-pressed": String(options.state.ribbonIcon === iconName),
 			},
 		});

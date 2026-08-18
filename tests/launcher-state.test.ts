@@ -212,6 +212,41 @@ describe("launcher state", () => {
 		})).toBe(current);
 	});
 
+	it("invalidates a load when an unlocked launcher leaves and returns to its deck", () => {
+		const loadingA = reduceLauncherState(initialState(), { type: "loading", deckId: "verbs", requestId: 1 });
+		const loadingB = reduceLauncherState(loadingA, { type: "selectDeck", deckId: "phrases" });
+		const returnedToA = reduceLauncherState(loadingB, { type: "selectDeck", deckId: "verbs" });
+
+		expect(returnedToA.requestId).not.toBe(1);
+		expect(reduceLauncherState(returnedToA, {
+			type: "loaded",
+			deckId: "verbs",
+			requestId: 1,
+			result,
+			savedScope: { mode: "all" },
+		})).toBe(returnedToA);
+		expect(reduceLauncherState(returnedToA, {
+			type: "failed",
+			deckId: "verbs",
+			requestId: 1,
+			detail: "old request",
+		})).toBe(returnedToA);
+
+		const fresh = reduceLauncherState(returnedToA, {
+			type: "loading",
+			deckId: "verbs",
+			requestId: returnedToA.requestId + 1,
+		});
+		const loaded = reduceLauncherState(fresh, {
+			type: "loaded",
+			deckId: "verbs",
+			requestId: fresh.requestId,
+			result,
+			savedScope: { mode: "all" },
+		});
+		expect(loaded.phase).toBe("choose");
+	});
+
 	it("keeps object identity for ignored selections and table actions", () => {
 		const loading = initialState();
 		expect(reduceLauncherState(loading, { type: "selectDeck", deckId: "verbs" })).toBe(loading);

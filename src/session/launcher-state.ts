@@ -107,6 +107,7 @@ export function reduceLauncherState(state: LauncherState, action: LauncherAction
 				phase: "loading",
 				deckId: deck.id,
 				deck,
+				requestId: state.requestId + 1,
 				initialScope: null,
 				scope: { ...ALL_SCOPE },
 				result: null,

@@ -18,7 +18,7 @@ export function splitTableRow(line: string): string[] | null {
 	let cell = "";
 	let wikiDepth = 0;
 	let destinationDepth = 0;
-	let inCode = false;
+	let codeDelimiterLength: number | null = null;
 	let delimiterCount = 0;
 
 	for (let index = 0; index < source.length; index += 1) {
@@ -29,9 +29,19 @@ export function splitTableRow(line: string): string[] | null {
 			index += 1;
 			continue;
 		}
+		const inCode = codeDelimiterLength !== null;
 		if (char === "`" && !isEscaped(source, index)) {
-			inCode = !inCode;
-			cell += char;
+			let runLength = 1;
+			while (source[index + runLength] === "`") {
+				runLength += 1;
+			}
+			if (!inCode) {
+				codeDelimiterLength = runLength;
+			} else if (runLength === codeDelimiterLength) {
+				codeDelimiterLength = null;
+			}
+			cell += source.slice(index, index + runLength);
+			index += runLength - 1;
 			continue;
 		}
 		if (!inCode && char === "[" && next === "[") {

@@ -51,6 +51,13 @@ describe("table parsing", () => {
 		]);
 	});
 
+	it("respects matching backtick runs for inline code spans", () => {
+		expect(splitTableRow("| `a|b` | c |")).toEqual(["`a|b`", "c"]);
+		expect(splitTableRow("| ``a|b``| c |")).toEqual(["``a|b``", "c"]);
+		expect(splitTableRow("| ``a`|b```|c`` | d |")).toEqual(["``a`|b```|c``", "d"]);
+		expect(splitTableRow("| ``a|b`` | c |")).toEqual(["``a|b``", "c"]);
+	});
+
 	it("parses Obsidian and Markdown images without losing raw text", () => {
 		expect(parseCell("![[assets/cat.png|300x200]]")).toMatchObject({
 			raw: "![[assets/cat.png|300x200]]",

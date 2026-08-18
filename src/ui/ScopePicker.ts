@@ -26,11 +26,78 @@ function localeAt(element: HTMLElement): UiLocale {
 	return (UI_LOCALES as readonly string[]).includes(value) ? value as UiLocale : "en";
 }
 
-function pathParts(path: string): { file: string; parent: string; compact: string } {
+function pathParts(path: string): { file: string; parent: string } {
 	const parts = path.split("/").filter(Boolean);
 	const file = parts.at(-1) ?? path;
 	const parent = parts.slice(-3, -1).join("/");
-	return { file, parent, compact: parts.slice(-2).join("/") || path };
+	return { file, parent };
+}
+
+function pathSuffixes(paths: string[]): Map<string, string> {
+	const distinctPaths = Array.from(new Set(paths));
+	const parts = new Map(distinctPaths.map((path) => [path, path.split("/").filter(Boolean)]));
+	const widths = new Map(distinctPaths.map((path) => [path, 1]));
+	while (true) {
+		const collisions = new Map<string, string[]>();
+		for (const path of distinctPaths) {
+			const pathParts = parts.get(path) ?? [path];
+			const suffix = pathParts.slice(-(widths.get(path) ?? 1)).join("/") || path;
+			const group = collisions.get(suffix) ?? [];
+			group.push(path);
+			collisions.set(suffix, group);
+		}
+		let changed = false;
+		for (const group of collisions.values()) {
+			if (group.length < 2) continue;
+			for (const path of group) {
+				const width = widths.get(path) ?? 1;
+				const length = parts.get(path)?.length ?? 1;
+				if (width >= length) continue;
+				widths.set(path, width + 1);
+				changed = true;
+			}
+		}
+		if (!changed) break;
+	}
+	return new Map(distinctPaths.map((path) => {
+		const pathParts = parts.get(path) ?? [path];
+		return [path, pathParts.slice(-(widths.get(path) ?? 1)).join("/") || path];
+	}));
+}
+
+export function disambiguateTableLabels(
+	catalog: TableCatalogItem[],
+	t: Translator,
+	locale: UiLocale,
+): Map<string, string> {
+	const byLabel = new Map<string, TableCatalogItem[]>();
+	for (const table of catalog) {
+		const label = normalizeSearchText(table.label);
+		const tables = byLabel.get(label) ?? [];
+		tables.push(table);
+		byLabel.set(label, tables);
+	}
+	const labels = new Map<string, string>();
+	for (const tables of byLabel.values()) {
+		if (tables.length === 1) {
+			const only = tables[0];
+			if (only) labels.set(only.key, only.label);
+			continue;
+		}
+		const suffixes = pathSuffixes(tables.map((table) => table.sourcePath));
+		const fileCounts = new Map<string, number>();
+		for (const table of tables) {
+			fileCounts.set(table.sourcePath, (fileCounts.get(table.sourcePath) ?? 0) + 1);
+		}
+		for (const table of tables) {
+			const parts = [table.label, suffixes.get(table.sourcePath) ?? table.sourcePath];
+			if ((fileCounts.get(table.sourcePath) ?? 0) > 1) {
+				parts.push(t("table.untitled", { number: formatUiNumber(table.tableNumber, locale) }));
+			}
+			labels.set(table.key, parts.join(" · "));
+		}
+	}
+	return labels;
 }
 
 function selectedKeys(scope: StudyScope, catalog: TableCatalogItem[]): Set<string> {
@@ -61,8 +128,7 @@ export class ScopePicker {
 	private readonly parent: HTMLElement;
 	private readonly options: ScopePickerOptions;
 	private readonly locale: UiLocale;
-	private readonly labels = new Map<string, number>();
-	private readonly labelsByFile = new Map<string, number>();
+	private readonly tableLabels: Map<string, string>;
 	private scope: StudyScope;
 	private query = "";
 	private root: HTMLElement | null = null;
@@ -75,12 +141,7 @@ export class ScopePicker {
 		this.options = options;
 		this.locale = localeAt(parent);
 		this.scope = cloneScope(options.scope);
-		for (const table of options.catalog) {
-			const label = normalizeSearchText(table.label);
-			this.labels.set(label, (this.labels.get(label) ?? 0) + 1);
-			const fileLabel = `${table.sourcePath}\u0000${label}`;
-			this.labelsByFile.set(fileLabel, (this.labelsByFile.get(fileLabel) ?? 0) + 1);
-		}
+		this.tableLabels = disambiguateTableLabels(options.catalog, options.t, this.locale);
 		this.open();
 	}
 
@@ -251,13 +312,7 @@ export class ScopePicker {
 	}
 
 	private tableLabel(table: TableCatalogItem): string {
-		const normalized = normalizeSearchText(table.label);
-		if ((this.labels.get(normalized) ?? 0) < 2) return table.label;
-		const parts = [table.label, pathParts(table.sourcePath).compact];
-		if ((this.labelsByFile.get(`${table.sourcePath}\u0000${normalized}`) ?? 0) > 1) {
-			parts.push(this.options.t("table.untitled", { number: formatUiNumber(table.tableNumber, this.locale) }));
-		}
-		return parts.join(" · ");
+		return this.tableLabels.get(table.key) ?? table.label;
 	}
 
 	private toggleTable(key: string): void {

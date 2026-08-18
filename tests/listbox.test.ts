@@ -16,6 +16,7 @@ interface ListboxHarness {
 		label: string;
 		value: string;
 		options: Array<{ value: string; label: string }>;
+		optionDirection?: "auto";
 	};
 	popover: FakePopover;
 	renderOptions: (filter: string) => void;
@@ -23,16 +24,19 @@ interface ListboxHarness {
 
 class FakeList {
 	readonly buttons: FakeButton[] = [];
+	readonly spans: Array<{ text?: string; attr?: Record<string, string> }> = [];
 
 	createEl(_tag: string, options: { attr: Record<string, string> }): FakeButton & {
-		createSpan: () => void;
+		createSpan: (options: { text?: string; attr?: Record<string, string> }) => void;
 		addEventListener: () => void;
 	} {
 		const button = {
 			dataset: { index: options.attr["data-index"] ?? "" },
 			tabIndex: Number(options.attr.tabindex),
 			focus: () => undefined,
-			createSpan: () => undefined,
+			createSpan: (spanOptions) => {
+				this.spans.push(spanOptions);
+			},
 			addEventListener: () => undefined,
 		};
 		this.buttons.push(button);
@@ -50,6 +54,32 @@ class FakePopover {
 	createDiv(): FakeList {
 		this.list = new FakeList();
 		return this.list;
+	}
+}
+
+class FakeTrigger {
+	readonly spans: Array<{ text?: string; attr?: Record<string, string> }> = [];
+
+	createSpan(options: { text?: string; attr?: Record<string, string> }): void {
+		this.spans.push(options);
+	}
+
+	addEventListener(): void {}
+}
+
+class FakeConstructorRoot {
+	readonly trigger = new FakeTrigger();
+
+	createEl(): FakeTrigger {
+		return this.trigger;
+	}
+}
+
+class FakeParent {
+	readonly root = new FakeConstructorRoot();
+
+	createDiv(): FakeConstructorRoot {
+		return this.root;
 	}
 }
 
@@ -97,5 +127,37 @@ describe("Listbox keyboard state", () => {
 
 		expect(listbox.activeIndex).toBe(2);
 		expect(listbox.popover.list?.buttons.map((button) => button.tabIndex)).toEqual([0]);
+	});
+
+	it("marks user-authored option labels with automatic bidi direction", () => {
+		const listbox = Object.create(Listbox.prototype) as ListboxHarness;
+		listbox.activeIndex = 0;
+		listbox.options = {
+			id: "decks",
+			label: "Deck",
+			value: "arabic",
+			onChange: () => undefined,
+			optionDirection: "auto",
+			options: [{ value: "arabic", label: "English العربية" }],
+		} as ListboxHarness["options"];
+		listbox.popover = new FakePopover();
+
+		listbox.renderOptions("");
+
+		expect(listbox.popover.list?.spans[0]?.attr?.dir).toBe("auto");
+	});
+
+	it("marks the current user-authored value without changing the listbox label", () => {
+		const parent = new FakeParent();
+		new Listbox(parent as unknown as HTMLElement, {
+			id: "decks",
+			label: "Deck",
+			value: "arabic",
+			optionDirection: "auto",
+			options: [{ value: "arabic", label: "English العربية" }],
+			onChange: () => undefined,
+		});
+
+		expect(parent.root.trigger.spans[0]?.attr).toEqual({ id: "decks-value", dir: "auto" });
 	});
 });

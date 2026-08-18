@@ -2072,7 +2072,7 @@
 	background: var(--background-primary);
 	box-shadow: none;
 	color: var(--text-normal);
-	text-align: left;
+	text-align: start;
 }
 
 .tc-listbox-chevron {
@@ -2111,11 +2111,12 @@
 	display: grid;
 	gap: 2px;
 	border: 0;
+	border-inline-start: 3px solid transparent;
 	border-radius: 8px;
 	background: transparent;
 	box-shadow: none;
 	color: var(--text-normal);
-	text-align: left;
+	text-align: start;
 }
 
 .tc-listbox-option:hover,
@@ -2125,7 +2126,8 @@
 }
 
 .tc-listbox-option[aria-selected="true"] {
-	box-shadow: inset 3px 0 0 var(--interactive-accent);
+	border-inline-start-color: var(--interactive-accent);
+	box-shadow: none;
 }
 
 .tc-listbox-description {

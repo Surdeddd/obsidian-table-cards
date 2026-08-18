@@ -26,6 +26,41 @@ export interface SessionLauncherOptions {
 	onClose: () => void;
 }
 
+export type LauncherFocusTarget = "deck" | "retry" | "close" | "scope" | "primary" | "status";
+
+const FOCUS_FALLBACKS: Record<LauncherState["phase"], LauncherFocusTarget[]> = {
+	loading: ["status", "deck", "close"],
+	choose: ["primary", "scope", "deck", "close"],
+	error: ["retry", "status", "deck", "close"],
+};
+
+const FOCUS_SELECTORS: Record<LauncherFocusTarget, string> = {
+	deck: ".tc-launcher-deck .tc-listbox-trigger",
+	retry: ".tc-launcher-state.is-error button:not([disabled])",
+	close: ".tc-launcher-close",
+	scope: ".tc-scope-trigger",
+	primary: ".tc-launcher-start:not([disabled])",
+	status: '.tc-launcher-state[tabindex="-1"]',
+};
+
+export function launcherFocusOrder(
+	intent: LauncherFocusTarget,
+	phase: LauncherState["phase"],
+): LauncherFocusTarget[] {
+	return Array.from(new Set([intent, ...FOCUS_FALLBACKS[phase]]));
+}
+
+export function launcherFocusIntent(
+	current: LauncherFocusTarget | null,
+	pending: LauncherFocusTarget | null,
+): LauncherFocusTarget | null {
+	return current ?? pending;
+}
+
+export function scopeForLauncherContext(state: LauncherState, settings: PluginSettings): StudyScope {
+	return state.initialScope ?? (state.deckId ? settings.perDeck[state.deckId]?.scope : null) ?? { mode: "all" };
+}
+
 export class SessionLauncher {
 	private readonly options: SessionLauncherOptions;
 	private state: LauncherState;
@@ -40,6 +75,8 @@ export class SessionLauncher {
 	private starting = false;
 	private saveFailed = false;
 	private destroyed = false;
+	private focusVersion = 0;
+	private pendingFocusIntent: LauncherFocusTarget | null = null;
 
 	constructor(parent: HTMLElement, options: SessionLauncherOptions) {
 		this.options = options;
@@ -54,6 +91,8 @@ export class SessionLauncher {
 
 	destroy(): void {
 		this.destroyed = true;
+		this.focusVersion += 1;
+		this.pendingFocusIntent = null;
 		this.deckPicker?.destroy();
 		this.deckPicker = null;
 		this.scopePicker?.destroy();
@@ -62,6 +101,7 @@ export class SessionLauncher {
 	}
 
 	private render(): void {
+		const focusIntent = launcherFocusIntent(this.currentFocusTarget(), this.pendingFocusIntent);
 		this.deckPicker?.destroy();
 		this.deckPicker = null;
 		this.scopePicker?.destroy();
@@ -88,6 +128,7 @@ export class SessionLauncher {
 		if (this.state.phase === "loading") this.renderLoading(body);
 		else if (this.state.phase === "error") this.renderError(body);
 		else this.renderChoice(body);
+		this.restoreFocus(focusIntent);
 	}
 
 	private renderDeck(parent: HTMLElement): void {
@@ -108,6 +149,7 @@ export class SessionLauncher {
 			value: this.state.deck.id,
 			options: this.state.decks.map((deck) => ({ value: deck.id, label: deck.name })),
 			searchable: this.state.decks.length > 8,
+			optionDirection: "auto",
 			onChange: (deckId) => this.selectDeck(deckId),
 		});
 	}
@@ -115,7 +157,7 @@ export class SessionLauncher {
 	private renderLoading(parent: HTMLElement): void {
 		const loading = parent.createDiv({
 			cls: "tc-launcher-state is-loading",
-			attr: { "aria-live": "polite", "aria-busy": "true" },
+			attr: { "aria-live": "polite", "aria-busy": "true", tabindex: "-1" },
 		});
 		loading.createDiv({ cls: "tc-launcher-state-title", text: this.options.t("launcher.loading") });
 		const skeleton = loading.createDiv({ cls: "tc-launcher-skeleton", attr: { "aria-hidden": "true" } });
@@ -128,20 +170,21 @@ export class SessionLauncher {
 	}
 
 	private renderError(parent: HTMLElement): void {
-		const error = parent.createDiv({ cls: "tc-launcher-state is-error", attr: { role: "alert" } });
+		const error = parent.createDiv({
+			cls: "tc-launcher-state is-error",
+			attr: { role: "alert", tabindex: "-1" },
+		});
 		const key = this.state.error?.code === "deckUnavailable" ? "launcher.deckUnavailable" : "launcher.loadFailed";
 		error.createDiv({ cls: "tc-launcher-state-title", text: this.options.t(key) });
-		const savedScope = this.state.deckId ? this.options.settings.perDeck[this.state.deckId]?.scope : null;
-		if (savedScope) {
-			error.createDiv({
-				cls: "tc-launcher-error-scope",
-				text: savedScope.mode === "all"
-					? this.options.t("scope.all")
-					: this.options.t("scope.count", {
-						count: formatUiNumber(savedScope.tableKeys.length, this.options.locale),
-					}),
-			});
-		}
+		const contextScope = scopeForLauncherContext(this.state, this.options.settings);
+		error.createDiv({
+			cls: "tc-launcher-error-scope",
+			text: contextScope.mode === "all"
+				? this.options.t("scope.all")
+				: this.options.t("scope.count", {
+					count: formatUiNumber(contextScope.tableKeys.length, this.options.locale),
+				}),
+		});
 		const retry = error.createEl("button", {
 			text: this.options.t("launcher.retry"),
 			attr: { type: "button", disabled: this.state.deck ? null : "true" },
@@ -263,10 +306,9 @@ export class SessionLauncher {
 	private selectDeck(deckId: string): void {
 		const next = reduceLauncherState(this.state, { type: "selectDeck", deckId });
 		if (next === this.state) return;
-		this.state = next;
 		this.missingScopeCount = 0;
 		this.saveFailed = false;
-		this.render();
+		this.state = next;
 		void this.loadSelectedDeck();
 	}
 
@@ -274,36 +316,72 @@ export class SessionLauncher {
 		const deck = this.state.deck;
 		if (!deck || this.destroyed) return;
 		const requestId = this.state.requestId + 1;
-		this.state = reduceLauncherState(this.state, { type: "loading", deckId: deck.id, requestId });
+		const loading = reduceLauncherState(this.state, { type: "loading", deckId: deck.id, requestId });
 		this.saveFailed = false;
-		this.render();
+		if (!this.commitState(loading)) return;
 		try {
 			const result = await this.options.loadDeck(deck);
 			if (this.destroyed) return;
 			const savedScope = this.options.settings.perDeck[deck.id]?.scope ?? { mode: "all" };
-			const requestedScope = this.state.initialScope ?? savedScope;
 			if (this.state.phase === "loading" && this.state.deckId === deck.id && this.state.requestId === requestId) {
+				const requestedScope = scopeForLauncherContext(this.state, this.options.settings);
 				const liveKeys = new Set(result.catalog.map((table) => table.key));
 				this.missingScopeCount = requestedScope.mode === "tables"
 					? new Set(requestedScope.tableKeys.filter((key) => !liveKeys.has(key))).size
 					: 0;
 			}
-			this.state = reduceLauncherState(this.state, {
+			const next = reduceLauncherState(this.state, {
 				type: "loaded",
 				deckId: deck.id,
 				requestId,
 				result,
 				savedScope,
 			});
+			if (!this.commitState(next)) return;
 		} catch (error) {
-			this.state = reduceLauncherState(this.state, {
+			const next = reduceLauncherState(this.state, {
 				type: "failed",
 				deckId: deck.id,
 				requestId,
 				detail: error instanceof Error ? error.message : undefined,
 			});
+			if (!this.commitState(next)) return;
 		}
-		if (!this.destroyed) this.render();
+	}
+
+	private commitState(next: LauncherState): boolean {
+		if (next === this.state) return false;
+		this.state = next;
+		this.render();
+		return true;
+	}
+
+	private currentFocusTarget(): LauncherFocusTarget | null {
+		if (typeof document === "undefined" || !(document.activeElement instanceof HTMLElement)) return null;
+		const active = document.activeElement;
+		if (!this.root.contains(active)) return null;
+		if (active.closest(".tc-launcher-deck")) return "deck";
+		if (active.closest(".tc-launcher-state.is-error button")) return "retry";
+		if (active.closest(".tc-launcher-close")) return "close";
+		if (active.closest(".tc-scope-trigger, .tc-scope-picker, .tc-sheet")) return "scope";
+		if (active.closest(".tc-launcher-start")) return "primary";
+		return "status";
+	}
+
+	private restoreFocus(intent: LauncherFocusTarget | null): void {
+		const version = ++this.focusVersion;
+		this.pendingFocusIntent = intent;
+		if (!intent) return;
+		window.setTimeout(() => {
+			if (this.destroyed || version !== this.focusVersion) return;
+			for (const target of launcherFocusOrder(intent, this.state.phase)) {
+				const element = this.root.querySelector<HTMLElement>(FOCUS_SELECTORS[target]);
+				if (!element) continue;
+				element.focus();
+				this.pendingFocusIntent = null;
+				return;
+			}
+		}, 0);
 	}
 
 	private async start(): Promise<void> {

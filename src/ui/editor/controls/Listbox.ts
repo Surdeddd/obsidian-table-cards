@@ -10,6 +10,7 @@ export interface ListboxOptions<T extends string> {
 	value: T;
 	options: Array<ListboxOption<T>>;
 	searchable?: boolean;
+	optionDirection?: "auto";
 	onChange: (value: T) => void;
 }
 
@@ -38,7 +39,10 @@ export class Listbox<T extends string> {
 		});
 		this.trigger.createSpan({
 			text: options.options.find((option) => option.value === options.value)?.label ?? options.value,
-			attr: { id: `${options.id}-value` },
+			attr: {
+				id: `${options.id}-value`,
+				...(options.optionDirection ? { dir: options.optionDirection } : {}),
+			},
 		});
 		this.trigger.createSpan({ cls: "tc-listbox-chevron", text: "⌄", attr: { "aria-hidden": "true" } });
 		this.trigger.addEventListener("click", () => (this.popover ? this.close() : this.open()));
@@ -101,7 +105,10 @@ export class Listbox<T extends string> {
 					tabindex: index === this.activeIndex ? "0" : "-1",
 				},
 			});
-			item.createSpan({ text: option.label });
+			item.createSpan({
+				text: option.label,
+				attr: this.options.optionDirection ? { dir: this.options.optionDirection } : undefined,
+			});
 			if (option.description) item.createSpan({ cls: "tc-listbox-description", text: option.description });
 			item.addEventListener("click", () => this.select(option.value));
 		}

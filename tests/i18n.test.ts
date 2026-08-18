@@ -184,6 +184,15 @@ describe("localization", () => {
 		}
 	});
 
+	it("preserves the Latin WCAG token inside the Ukrainian contrast status", () => {
+		expect(createTranslator("uk")("editor.color.fail")).toBe("Нижче AA");
+	});
+
+	it("preserves Hindi punctuation inside the editor file hint", () => {
+		expect(createTranslator("hi")("editor.filesHint"))
+			.toBe("तालिकाओं के साथ नोट्स के पथ। फिर कॉलम पढ़ें और उन्हें ब्लॉक पर खींचें।");
+	});
+
 	it("uses Hindi sentence punctuation instead of ASCII sentence endings", () => {
 		const asciiEndings = (Object.entries(CATALOGS.hi) as Array<[TranslationKey, string]>)
 			.filter(([, value]) => /\.$/.test(value))

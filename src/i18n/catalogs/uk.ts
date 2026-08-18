@@ -214,7 +214,7 @@ export const UK = {
 	"editor.color.contrast": "Контраст",
 	"editor.color.aaa": "AAA",
 	"editor.color.aa": "AA",
-	"editor.color.fail": "Нижче АА",
+	"editor.color.fail": "Нижче AA",
 	"editor.scan": "Зчитати стовпці",
 	"editor.filesHint": "Шляхи до нотаток з таблицями. Потім читайте стовпці та перетягуйте їх на блоки.",
 	"editor.columns": "Стовпці таблиці",

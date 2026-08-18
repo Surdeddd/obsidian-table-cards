@@ -9,6 +9,27 @@ function isEscaped(source: string, index: number): boolean {
 	return slashes % 2 === 1;
 }
 
+function backtickRunLength(source: string, index: number): number {
+	let length = 1;
+	while (source[index + length] === "`") {
+		length += 1;
+	}
+	return length;
+}
+
+function countBacktickRuns(source: string): Map<number, number> {
+	const counts = new Map<number, number>();
+	for (let index = 0; index < source.length; index += 1) {
+		if (source[index] !== "`") {
+			continue;
+		}
+		const length = backtickRunLength(source, index);
+		counts.set(length, (counts.get(length) ?? 0) + 1);
+		index += length - 1;
+	}
+	return counts;
+}
+
 export function splitTableRow(line: string): string[] | null {
 	const source = line.trim();
 	if (!source) {
@@ -20,25 +41,29 @@ export function splitTableRow(line: string): string[] | null {
 	let destinationDepth = 0;
 	let codeDelimiterLength: number | null = null;
 	let delimiterCount = 0;
+	const remainingBacktickRuns = countBacktickRuns(source);
 
 	for (let index = 0; index < source.length; index += 1) {
 		const char = source[index] ?? "";
 		const next = source[index + 1] ?? "";
-		if (char === "\\" && next === "|") {
+		const inCode = codeDelimiterLength !== null;
+		if (!inCode && char === "\\" && next === "|") {
 			cell += "|";
 			index += 1;
 			continue;
 		}
-		const inCode = codeDelimiterLength !== null;
-		if (char === "`" && !isEscaped(source, index)) {
-			let runLength = 1;
-			while (source[index + runLength] === "`") {
-				runLength += 1;
+		if (char === "`") {
+			const runLength = backtickRunLength(source, index);
+			const remaining = (remainingBacktickRuns.get(runLength) ?? 0) - 1;
+			if (remaining === 0) {
+				remainingBacktickRuns.delete(runLength);
+			} else {
+				remainingBacktickRuns.set(runLength, remaining);
 			}
-			if (!inCode) {
-				codeDelimiterLength = runLength;
-			} else if (runLength === codeDelimiterLength) {
+			if (inCode && runLength === codeDelimiterLength) {
 				codeDelimiterLength = null;
+			} else if (!inCode && !isEscaped(source, index) && remaining > 0) {
+				codeDelimiterLength = runLength;
 			}
 			cell += source.slice(index, index + runLength);
 			index += runLength - 1;

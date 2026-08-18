@@ -56,6 +56,10 @@ describe("table parsing", () => {
 		expect(splitTableRow("| ``a|b``| c |")).toEqual(["``a|b``", "c"]);
 		expect(splitTableRow("| ``a`|b```|c`` | d |")).toEqual(["``a`|b```|c``", "d"]);
 		expect(splitTableRow("| ``a|b`` | c |")).toEqual(["``a|b``", "c"]);
+		expect(splitTableRow("| ``a\\`` | b | c |")).toEqual(["``a\\``", "b", "c"]);
+		expect(splitTableRow("| `a\\|b` | c |")).toEqual(["`a\\|b`", "c"]);
+		expect(splitTableRow("| a `x | b | c |")).toEqual(["a `x", "b", "c"]);
+		expect(splitTableRow("| \\`a\\` | b |")).toEqual(["\\`a\\`", "b"]);
 	});
 
 	it("parses Obsidian and Markdown images without losing raw text", () => {

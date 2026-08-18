@@ -53,16 +53,35 @@ function inScope(entry: SearchEntry, scope: StudyScope): boolean {
 	return scope.mode === "all" || scope.tableKeys.includes(entry.card.origin.tableKey);
 }
 
+function normalizedSourceMap(value: string): { normalized: string; sourceIndexes: number[] } {
+	let normalized = "";
+	const sourceIndexes: number[] = [];
+	for (const [sourceIndex, character] of Array.from(value).entries()) {
+		const unit = character.normalize("NFKD").replace(/\p{M}+/gu, "").toLowerCase();
+		for (const normalizedCharacter of Array.from(unit)) {
+			normalized += normalizedCharacter;
+			sourceIndexes.push(sourceIndex);
+		}
+	}
+	return { normalized, sourceIndexes };
+}
+
 export function matchingSnippet(entry: SearchEntry, query: string, limit = 160): string {
 	const needle = normalizeSearchText(query);
 	const values = Object.values(entry.card.cells).map((cell) => cell.text).filter((value) => value.trim());
-	const value = (needle
+	const matchingValue = needle
 		? values.find((value) => normalizeSearchText(value).includes(needle))
-		: entry.primary || values[0])?.replace(/\s+/g, " ").trim() ?? "";
+			?? (entry.normalized.includes(needle) ? values.join(" ") : entry.primary || values[0])
+		: entry.primary || values[0];
+	const value = matchingValue?.replace(/\s+/g, " ").trim() ?? "";
 	const characters = Array.from(value);
 	if (characters.length <= limit) return value;
-	const hit = needle ? normalizeSearchText(value).indexOf(needle) : 0;
-	const start = Math.min(Math.max(0, hit - Math.floor(limit * 0.38)), characters.length - limit);
+	const mapped = normalizedSourceMap(value);
+	const hit = needle ? mapped.normalized.indexOf(needle) : 0;
+	const sourceStart = hit >= 0 ? mapped.sourceIndexes[hit] ?? 0 : 0;
+	const sourceEnd = hit >= 0 ? (mapped.sourceIndexes[hit + needle.length - 1] ?? sourceStart) + 1 : sourceStart;
+	let start = Math.min(Math.max(0, sourceStart - Math.floor(limit * 0.38)), characters.length - limit);
+	if (sourceEnd > start + limit) start = Math.min(sourceEnd - limit, characters.length - limit);
 	const excerpt = characters.slice(start, start + limit).join("").trim();
 	return `${start > 0 ? "…" : ""}${excerpt}${start + limit < characters.length ? "…" : ""}`;
 }

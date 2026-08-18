@@ -99,6 +99,35 @@ describe("card browser state", () => {
 		expect(Array.from(snippet).length).toBeLessThanOrEqual(162);
 	});
 
+	it("returns a joined fallback when the normalized match crosses cell boundaries", () => {
+		const candidate = card("phrases", 0, "unused");
+		candidate.cells = { First: parseCell("Hello"), Second: parseCell("world") };
+		const entry = buildSearchIndex([candidate])[0]!;
+
+		expect(entry.normalized).toContain("hello world");
+		expect(matchingSnippet(entry, "hello world")).toBe("Hello world");
+	});
+
+	it("keeps matches after long collapsed whitespace", () => {
+		const value = `prefix${" \n\t ".repeat(100)}Needle target`;
+		const entry = buildSearchIndex([card("phrases", 0, value)])[0]!;
+
+		expect(matchingSnippet(entry, "needle")).toContain("Needle target");
+	});
+
+	it("maps NFKD offsets back to the original text before clipping", () => {
+		const value = `${"e\u0301".repeat(120)} Café target`;
+		const entry = buildSearchIndex([card("phrases", 0, value)])[0]!;
+
+		expect(matchingSnippet(entry, "cafe")).toContain("Café target");
+	});
+
+	it("falls back to the primary value when the requested query is no longer present", () => {
+		const entry = buildSearchIndex([card("phrases", 0, "Primary value")])[0]!;
+
+		expect(matchingSnippet(entry, "stale query")).toBe("Primary value");
+	});
+
 	it("ignores a result click captured by an older render", () => {
 		const opened: string[] = [];
 

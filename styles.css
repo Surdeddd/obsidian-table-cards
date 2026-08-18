@@ -237,6 +237,18 @@
 	transition: width 160ms ease;
 }
 
+.table-cards-save-error {
+	flex: 0 0 auto;
+	padding: 6px var(--tc-pad) 0;
+	color: var(--text-error);
+	font-size: 0.82rem;
+	line-height: 1.35;
+}
+
+.table-cards-save-error:empty {
+	display: none;
+}
+
 .table-cards-icon-btn,
 .table-cards-nav-btn,
 .table-cards-shuffle-btn {
@@ -1770,6 +1782,12 @@
 	padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
 	border-top: 1px solid var(--background-modifier-border);
 	background: var(--background-primary);
+}
+
+.tc-scope-sheet-actions {
+	position: sticky;
+	inset-block-end: 0;
+	padding-block-end: calc(12px + env(safe-area-inset-bottom));
 }
 
 .tc-sheet-footer:empty {

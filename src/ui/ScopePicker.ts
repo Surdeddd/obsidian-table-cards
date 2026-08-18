@@ -8,6 +8,7 @@ export interface ScopePickerOptions {
 	scope: StudyScope;
 	t: Translator;
 	mobile: boolean;
+	embeddedActions?: boolean;
 	onChange: (scope: StudyScope) => void;
 	onClose: () => void;
 }
@@ -159,7 +160,7 @@ export class ScopePicker {
 		if (!this.options.mobile) {
 			this.root = this.parent.createDiv({ cls: "tc-scope-picker" });
 			this.root.addEventListener("keydown", this.onKeyDown);
-			this.renderPicker(this.root);
+			this.renderPicker(this.root, !this.options.embeddedActions);
 			return;
 		}
 		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -178,6 +179,10 @@ export class ScopePicker {
 			renderFooter: (footer) => this.renderActions(footer, true),
 		});
 		this.sheet.open();
+	}
+
+	renderEmbeddedActions(parent: HTMLElement): void {
+		this.renderActions(parent, false);
 	}
 
 	private renderPicker(root: HTMLElement, withActions = true): void {

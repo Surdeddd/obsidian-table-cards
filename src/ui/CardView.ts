@@ -17,6 +17,7 @@ export interface CardRenderContext {
 	appearance: AppearanceSettings;
 	t: Translator;
 	sourceLabel?: string;
+	resolveImageSource?: (sourcePath: string, image: ImageRef) => string | null;
 	isCurrent?: () => boolean;
 	options?: CardRenderOptions;
 }
@@ -87,11 +88,18 @@ async function renderValue(
 	await MarkdownRenderer.render(context.app, value.raw, host, card.card.origin.sourcePath, context.component);
 }
 
-function imageSource(context: CardRenderContext, card: ResolvedCard, image: ImageRef): string | null {
+export function resolveCardImageSource(
+	context: CardRenderContext,
+	sourcePath: string,
+	image: ImageRef,
+): string | null {
+	if (context.resolveImageSource) {
+		return context.resolveImageSource(sourcePath, image);
+	}
 	if (image.external) {
 		return image.source;
 	}
-	const file = resolveImageFile(context.app, card.card.origin.sourcePath, image);
+	const file = resolveImageFile(context.app, sourcePath, image);
 	return file ? context.app.vault.getResourcePath(file) : null;
 }
 
@@ -110,7 +118,7 @@ function renderImage(
 	ref: ImageRef,
 	context: CardRenderContext,
 ): void {
-	const source = imageSource(context, card, ref);
+	const source = resolveCardImageSource(context, card.card.origin.sourcePath, ref);
 	if (!source) {
 		renderMissingImage(parent, ref, context);
 		return;

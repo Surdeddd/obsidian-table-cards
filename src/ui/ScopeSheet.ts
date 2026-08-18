@@ -13,6 +13,32 @@ export interface ScopeSheetOptions {
 	onClose: () => void;
 }
 
+export type ScopeSheetPresentation = {
+	variant: "full";
+	pickerMobile: false;
+	embeddedActions: true;
+	actionClass: "tc-scope-sheet-actions";
+} | {
+	variant: "default";
+	pickerMobile: false;
+	embeddedActions: false;
+	actionClass: null;
+};
+
+export function scopeSheetPresentation(mobile: boolean): ScopeSheetPresentation {
+	return mobile ? {
+		variant: "full",
+		pickerMobile: false,
+		embeddedActions: true,
+		actionClass: "tc-scope-sheet-actions",
+	} : {
+		variant: "default",
+		pickerMobile: false,
+		embeddedActions: false,
+		actionClass: null,
+	};
+}
+
 export class ScopeSheet {
 	private readonly options: ScopeSheetOptions;
 	private sheet: Sheet | null = null;
@@ -21,11 +47,12 @@ export class ScopeSheet {
 
 	constructor(parent: HTMLElement, options: ScopeSheetOptions) {
 		this.options = options;
+		const presentation = scopeSheetPresentation(Platform.isMobile);
 		this.sheet = new Sheet(parent, {
 			id: "tc-scope-sheet",
 			title: options.t("scope.label"),
 			mode: "side",
-			variant: Platform.isMobile ? "full" : "default",
+			variant: presentation.variant,
 			opener: options.opener,
 			closeLabel: options.t("modal.close"),
 			onClose: () => this.dismiss(false),
@@ -34,11 +61,18 @@ export class ScopeSheet {
 					catalog: options.catalog,
 					scope: options.scope,
 					t: options.t,
-					mobile: false,
+					mobile: presentation.pickerMobile,
+					embeddedActions: presentation.embeddedActions,
 					onChange: options.onChange,
 					onClose: () => this.dismiss(true),
 				});
 			},
+			renderFooter: presentation.embeddedActions
+				? (footer) => {
+					footer.addClass(presentation.actionClass);
+					this.picker?.renderEmbeddedActions(footer);
+				}
+				: undefined,
 		});
 		this.sheet.open();
 	}

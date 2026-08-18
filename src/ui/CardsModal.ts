@@ -4,7 +4,7 @@ import {
 	normalizeScope,
 	type SearchEntry,
 } from "../deck/filter";
-import { clampCardIndex, loadDeckData } from "../deck/load";
+import { clampCardIndex, loadDeckData, resolveImageFile } from "../deck/load";
 import { applyUiChromeDirection, formatUiNumber, type Translator } from "../i18n";
 import { resolveCard } from "../layout/resolve";
 import type {
@@ -18,11 +18,13 @@ import type {
 	UiLocale,
 } from "../model";
 import type { DeckOpenRequest } from "../session/launcher-state";
+import { ProgressSaveQueue } from "../session/progress-save-queue";
 import { findExactCardIndex, selectStudyCards } from "../session/study-state";
 import { applyAppearance, resolveDeckAppearance, shouldSplit } from "../settings/appearance";
 import { CardBrowser } from "./CardBrowser";
 import { renderCard } from "./CardView";
 import { buildTableDisplayLabels } from "./card-browser-state";
+import { buildCardImageCache, type CardImageCache } from "./card-image-cache";
 import { attachSwipe } from "./gestures";
 import { ScopeSheet } from "./ScopeSheet";
 import { SessionLauncher } from "./SessionLauncher";
@@ -66,6 +68,8 @@ export class CardsModal extends Modal {
 	private launcher: SessionLauncher | null = null;
 	private browser: CardBrowser | null = null;
 	private scopeSheet: ScopeSheet | null = null;
+	private imageCache: CardImageCache | null = null;
+	private progressSaves: ProgressSaveQueue<DeckProgress> | null = null;
 	private detachSwipe: (() => void) | null = null;
 	private renderVersion = 0;
 	private headerEl!: HTMLElement;
@@ -73,6 +77,7 @@ export class CardsModal extends Modal {
 	private footerEl!: HTMLElement;
 	private counterEl!: HTMLElement;
 	private progressEl!: HTMLElement;
+	private saveErrorEl!: HTMLElement;
 	private shuffleBtn!: HTMLButtonElement;
 	private scopeBtn!: HTMLButtonElement;
 	private searchBtn!: HTMLButtonElement;
@@ -117,6 +122,9 @@ export class CardsModal extends Modal {
 
 	onClose(): void {
 		this.renderVersion += 1;
+		this.progressSaves?.close();
+		this.progressSaves = null;
+		this.imageCache = null;
 		this.closeBrowser(false);
 		this.closeScopePicker(false);
 		this.launcher?.destroy();
@@ -176,10 +184,24 @@ export class CardsModal extends Modal {
 		this.cards = prepared.cards;
 		this.catalog = selection.result.catalog.slice();
 		this.searchIndex = buildSearchIndex(this.allCards);
+		this.imageCache = buildCardImageCache(this.allCards, selection.deck.blocks, (sourcePath, image) => {
+			const file = resolveImageFile(this.app, sourcePath, image);
+			return file ? this.app.vault.getResourcePath(file) : null;
+		});
 		this.tableLabels = buildTableDisplayLabels(this.catalog, (number) => this.t("table.untitled", {
 			number: formatUiNumber(number, this.locale),
 		}));
 		this.progress = prepared.progress;
+		this.progressSaves = this.request.persistProgress === false
+			? null
+			: new ProgressSaveQueue<DeckProgress>({
+				clone: cloneProgress,
+				save: async (snapshot) => {
+					this.host.settings.perDeck[selection.deck.id] = cloneProgress(snapshot);
+					await this.host.saveSettings();
+				},
+				onErrorChange: (failed) => this.setSaveFailed(failed),
+			});
 		this.launcher?.destroy();
 		this.launcher = null;
 		this.contentEl.empty();
@@ -250,6 +272,10 @@ export class CardsModal extends Modal {
 			attr: { role: "progressbar", "aria-label": this.t("modal.progress") },
 		});
 		this.progressEl = track.createDiv({ cls: "table-cards-progress-bar" });
+		this.saveErrorEl = this.contentEl.createDiv({
+			cls: "table-cards-save-error",
+			attr: { role: "status", "aria-live": "polite" },
+		});
 		this.stageEl = this.contentEl.createDiv({ cls: "table-cards-stage", attr: { dir: "auto" } });
 
 		this.footerEl = this.contentEl.createDiv({ cls: "table-cards-footer" });
@@ -349,7 +375,7 @@ export class CardsModal extends Modal {
 		if (restoreFocus && this.searchBtn) this.searchBtn.focus();
 	}
 
-	private async applyScope(nextScope: StudyScope): Promise<void> {
+	private applyScope(nextScope: StudyScope): void {
 		if (!this.progress) return;
 		const currentKey = this.currentCard()?.origin.rowKey ?? this.progress.cardKey;
 		const previousIndex = this.progress.index;
@@ -367,10 +393,10 @@ export class CardsModal extends Modal {
 		this.progress.cardKey = selected.cardKey;
 		this.updateScopeButton();
 		this.render();
-		await this.saveProgress();
+		this.saveProgress();
 	}
 
-	private async openCard(rowKey: string): Promise<void> {
+	private openCard(rowKey: string): void {
 		if (!this.progress) return;
 		const index = findExactCardIndex(this.cards, rowKey);
 		if (index < 0) {
@@ -381,7 +407,7 @@ export class CardsModal extends Modal {
 		this.progress.cardKey = rowKey;
 		this.render();
 		this.closeBrowser(true);
-		await this.saveProgress();
+		this.saveProgress();
 	}
 
 	private registerKeys(): void {
@@ -440,6 +466,7 @@ export class CardsModal extends Modal {
 			appearance: resolveDeckAppearance(this.host.settings.appearance, this.deck?.appearance),
 			t: this.t,
 			sourceLabel: current ? this.tableLabels.get(current.origin.tableKey) ?? current.origin.tableLabel : undefined,
+			resolveImageSource: (sourcePath, image) => this.imageCache?.resolve(sourcePath, image) ?? null,
 			isCurrent: () => version === this.renderVersion,
 			options: { interactiveImages: true },
 		}).then(() => {
@@ -465,15 +492,15 @@ export class CardsModal extends Modal {
 		}
 	}
 
-	private async step(delta: number): Promise<void> {
+	private step(delta: number): void {
 		if (!this.progress || this.cards.length === 0) return;
 		this.progress.index = clampCardIndex(this.progress.index + delta, this.cards.length);
 		this.progress.cardKey = this.cards[this.progress.index]?.origin.rowKey ?? null;
 		this.render();
-		await this.saveProgress();
+		this.saveProgress();
 	}
 
-	private async toggleShuffle(): Promise<void> {
+	private toggleShuffle(): void {
 		if (!this.progress) return;
 		const currentKey = this.currentCard()?.origin.rowKey ?? this.progress.cardKey;
 		const previousIndex = this.progress.index;
@@ -491,12 +518,16 @@ export class CardsModal extends Modal {
 		this.progress.index = selected.index;
 		this.progress.cardKey = selected.cardKey;
 		this.render();
-		await this.saveProgress();
+		this.saveProgress();
 	}
 
-	private async saveProgress(): Promise<void> {
-		if (this.request.persistProgress === false || !this.deck || !this.progress) return;
-		this.host.settings.perDeck[this.deck.id] = cloneProgress(this.progress);
-		await this.host.saveSettings();
+	private saveProgress(): void {
+		if (!this.progress) return;
+		this.progressSaves?.enqueue(this.progress);
+	}
+
+	private setSaveFailed(failed: boolean): void {
+		if (!this.saveErrorEl) return;
+		this.saveErrorEl.setText(failed ? this.t("launcher.saveFailed") : "");
 	}
 }

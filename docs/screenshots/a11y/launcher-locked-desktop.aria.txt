@@ -1,0 +1,9 @@
+- main:
+  - dialog "Open Table Cards":
+    - text: Table Cards
+    - heading "Choose a study session" [level=1]
+    - button "Close"
+    - text: Deck English · Dictionary
+    - button "Tables 1 table"
+    - text: 412 cards · 1 table
+    - 'button "Open cards: 412"'

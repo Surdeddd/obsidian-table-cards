@@ -22,6 +22,11 @@ function clonePicker(name, mount) {
 	if (!(clone instanceof HTMLElement)) throw new Error(`Could not clone selector: ${name}`);
 	clone.hidden = false;
 	clone.classList.remove('preview-desktop-scope');
+	if (name === 'locked') {
+		const checkboxes = Array.from(clone.querySelectorAll('input[type="checkbox"]'))
+			.filter((input) => input instanceof HTMLInputElement);
+		for (const [index, checkbox] of checkboxes.entries()) checkbox.checked = index === 0;
+	}
 	if (name === 'mobile') {
 		clone.classList.add('is-mobile');
 		clone.removeAttribute('data-selector-root');
@@ -43,11 +48,12 @@ function clonePicker(name, mount) {
 }
 
 const generalPicker = clonePicker('general', document.querySelector('[data-selector-mount="general"]'));
+const lockedPicker = clonePicker('locked', document.querySelector('[data-selector-mount="locked"]'));
 const mobilePicker = clonePicker('mobile', document.querySelector('[data-selector-mount="mobile"]'));
 
 /** @param {HTMLElement} root */
 function selectorLayer(root) {
-	if (root.dataset.selectorRoot === 'general') return root.parentElement;
+	if (root.dataset.selectorRoot === 'general' || root.dataset.selectorRoot === 'locked') return root.parentElement;
 	if (root.dataset.selectorRoot === 'mobile') return root.closest('.preview-mobile-scope');
 	return root;
 }
@@ -58,7 +64,9 @@ function installSelector(root) {
 	if (!(section instanceof HTMLElement)) throw new Error('Selector state is missing');
 	const checkboxes = Array.from(root.querySelectorAll('input[type="checkbox"]'))
 		.filter((input) => input instanceof HTMLInputElement);
-	const scopeName = root.dataset.selectorRoot === 'general' ? 'general' : 'selector';
+	const scopeName = root.dataset.selectorRoot === 'general' || root.dataset.selectorRoot === 'locked'
+		? root.dataset.selectorRoot
+		: 'selector';
 	const opener = section.querySelector(`[data-scope-open="${scopeName}"]`);
 	if (!(opener instanceof HTMLElement)) throw new Error(`Selector opener is missing: ${scopeName}`);
 
@@ -108,14 +116,16 @@ function installSelector(root) {
 	update();
 }
 
-for (const root of [desktopPicker, generalPicker, mobilePicker]) installSelector(root);
+for (const root of [desktopPicker, generalPicker, lockedPicker, mobilePicker]) installSelector(root);
 
-/** @param {'general' | 'selector'} name */
+/** @param {'general' | 'locked' | 'selector'} name */
 function openScope(name) {
 	const opener = document.querySelector(`[data-state="${name}"] [data-scope-open="${name}"]`);
 	const mobile = name === 'selector' && matchMedia('(max-width: 700px)').matches;
 	const layer = name === 'general'
 		? document.querySelector('[data-selector-mount="general"]')
+		: name === 'locked'
+			? document.querySelector('[data-selector-mount="locked"]')
 		: mobile
 			? document.querySelector('.preview-mobile-scope')
 			: desktopPicker;
@@ -126,7 +136,10 @@ function openScope(name) {
 
 for (const opener of document.querySelectorAll('[data-scope-open]')) {
 	if (!(opener instanceof HTMLElement)) continue;
-	opener.addEventListener('click', () => openScope(opener.dataset.scopeOpen === 'general' ? 'general' : 'selector'));
+	opener.addEventListener('click', () => {
+		const scope = opener.dataset.scopeOpen;
+		openScope(scope === 'general' || scope === 'locked' ? scope : 'selector');
+	});
 }
 
 for (const opener of document.querySelectorAll('[data-open-layer]')) {

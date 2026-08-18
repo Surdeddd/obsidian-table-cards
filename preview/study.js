@@ -34,7 +34,7 @@ const layers = layerController();
 const cards = Array.from(document.querySelectorAll('[data-card]'))
 	.filter((card) => card instanceof HTMLElement);
 const knownStates = new Set(['launcher', 'normal', 'long', 'empty', 'image', 'browser', 'rtl']);
-let currentState = 'launcher';
+let locale = 'en';
 let index = 18;
 
 /** @param {number} value */
@@ -59,12 +59,25 @@ function updateLocalization(rtl) {
 }
 
 function updateCounter() {
-	const rtl = currentState === 'rtl';
+	const rtl = locale === 'ar';
 	counter.textContent = rtl ? `${arabicDigits(index)} / ${arabicDigits(583)}` : `${index} / 583`;
 	counter.setAttribute('aria-label', rtl ? 'التقدم' : 'Progress');
 	progress.setAttribute('aria-valuenow', String(index));
 	progress.setAttribute('aria-valuetext', rtl ? `${arabicDigits(index)} من ${arabicDigits(583)}` : `${index} of 583`);
 	progressBar.style.width = `${(index / 583) * 100}%`;
+}
+
+/** @param {string} cardState */
+function renderStudy(cardState) {
+	launcher.hidden = true;
+	study.hidden = false;
+	for (const card of cards) card.hidden = card.dataset.card !== cardState;
+	const rtl = locale === 'ar';
+	modal.classList.toggle('is-rtl', rtl);
+	modal.dir = rtl ? 'rtl' : 'ltr';
+	modal.lang = locale;
+	updateLocalization(rtl);
+	updateCounter();
 }
 
 /** @param {string} name @param {HTMLElement | null} opener */
@@ -76,19 +89,13 @@ function openLayer(name, opener) {
 /** @param {string | undefined} requested */
 function show(requested) {
 	const state = requested && knownStates.has(requested) ? requested : 'launcher';
-	currentState = state;
+	locale = state === 'rtl' ? 'ar' : 'en';
 	setPressed(toolbarButtons, toolbarButtons.find((button) => button.dataset.state === state));
 	const inStudy = state !== 'launcher';
 	launcher.hidden = inStudy;
 	study.hidden = !inStudy;
 	const cardState = ['long', 'empty', 'image', 'rtl'].includes(state) ? state : 'normal';
-	for (const card of cards) card.hidden = card.dataset.card !== cardState;
-	const rtl = state === 'rtl';
-	modal.classList.toggle('is-rtl', rtl);
-	modal.dir = rtl ? 'rtl' : 'ltr';
-	modal.lang = rtl ? 'ar' : 'en';
-	updateLocalization(rtl);
-	updateCounter();
+	if (inStudy) renderStudy(cardState);
 	if (state === 'browser') requestAnimationFrame(() => {
 		const opener = document.querySelector('[data-open-browser]');
 		openLayer('browser', opener instanceof HTMLElement ? opener : null);
@@ -134,7 +141,8 @@ document.querySelector('[data-exact-result]')?.addEventListener('click', (event)
 	index = Number(result.dataset.index ?? 1);
 	const browser = document.querySelector('[data-layer="browser"]');
 	if (browser instanceof HTMLElement) layers.close(browser);
-	show('normal');
+	setPressed(toolbarButtons, toolbarButtons.find((button) => button.dataset.state === 'normal'));
+	renderStudy('normal');
 	normal.scrollTop = 0;
 });
 

@@ -152,10 +152,31 @@ async function expectFaintTextContrast(page: Page): Promise<void> {
 	expect(result.failures, "faint text must reach 4.5:1 on every sampled background").toEqual([]);
 }
 
-async function capture(page: Page, name: string, withAccessibility = false): Promise<void> {
-	await page.screenshot({ path: join(screenshotRoot, `${name}.png`), animations: "disabled" });
-	if (!withAccessibility) return;
+async function expectSelectorRowsUnclipped(page: Page, rootSelector: string): Promise<void> {
+	const clipped = await page.locator(rootSelector).evaluate((root) => {
+		const viewport = root.querySelector(".tc-scope-groups")?.getBoundingClientRect();
+		if (!viewport) return [{ text: "missing groups viewport", top: 0, bottom: 0 }];
+		return Array.from(root.querySelectorAll<HTMLElement>(".tc-scope-group-header, .tc-scope-row")).flatMap((element) => {
+			const rect = element.getBoundingClientRect();
+			return rect.top + 0.5 < viewport.top || rect.bottom > viewport.bottom + 0.5
+				? [{ text: element.textContent?.trim().slice(0, 80) ?? "", top: rect.top, bottom: rect.bottom }]
+				: [];
+		});
+	});
+	expect(clipped, "retained selector capture must not contain partially clipped headers or rows").toEqual([]);
+}
+
+async function capture(page: Page, name: string, ariaContains?: string, verifyStable = false): Promise<void> {
+	const first = await page.screenshot({ animations: "disabled" });
+	if (verifyStable) {
+		const second = await page.screenshot({ animations: "disabled" });
+		expect(second.equals(first), `${name} must be pixel-stable across consecutive captures`).toBe(true);
+	}
+	await writeFile(join(screenshotRoot, `${name}.png`), first);
+	if (!ariaContains) return;
 	const snapshot = await page.locator("main").ariaSnapshot();
+	expect(snapshot.trim().length, `${name} accessibility snapshot is nonblank`).toBeGreaterThan(20);
+	expect(snapshot, `${name} accessibility snapshot describes the captured state`).toContain(ariaContains);
 	await writeFile(join(accessibilityRoot, `${name}.aria.txt`), `${snapshot}\n`, "utf8");
 }
 
@@ -170,26 +191,27 @@ test("preview server identifies this worktree", async ({ request }) => {
 
 test("desktop release fixtures and accessibility snapshots", async ({ browser }) => {
 	const cases = [
-		["/preview/launcher.html?state=general&capture=1", "launcher-desktop", true],
-		["/preview/launcher.html?state=locked&capture=1", "launcher-locked-desktop", false],
-		["/preview/launcher.html?state=selector&capture=1", "launcher-selector-desktop", true],
-		["/preview/setup.html?state=data&capture=1", "setup-data-desktop", false],
-		["/preview/setup.html?state=preset&capture=1", "setup-presets-desktop", true],
-		["/preview/setup.html?state=finish&capture=1", "setup-finish-desktop", false],
-		["/preview/v2.html?state=normal&capture=1", "study-desktop", true],
-		["/preview/v2.html?state=browser&capture=1", "browser-desktop", true],
-		["/preview/editor.html?panel=fields&capture=1", "editor-sources-desktop", false],
-		["/preview/editor.html?panel=fields&route=tables&capture=1", "editor-tables-desktop", true],
+		["/preview/launcher.html?state=general&capture=1", "launcher-desktop", "Choose a study session"],
+		["/preview/launcher.html?state=locked&capture=1", "launcher-locked-desktop", "412 cards · 1 table"],
+		["/preview/launcher.html?state=selector&capture=1", "launcher-selector-desktop", "Search tables"],
+		["/preview/setup.html?state=data&capture=1", "setup-data-desktop", "Choose your data"],
+		["/preview/setup.html?state=preset&capture=1", "setup-presets-desktop", "Card layouts"],
+		["/preview/setup.html?state=finish&capture=1", "setup-finish-desktop", "Deck name"],
+		["/preview/v2.html?state=normal&capture=1", "study-desktop", "Progress"],
+		["/preview/v2.html?state=browser&capture=1", "browser-desktop", "Browse cards"],
+		["/preview/editor.html?panel=fields&capture=1", "editor-sources-desktop", "Источники данных"],
+		["/preview/editor.html?panel=fields&route=tables&capture=1", "editor-tables-desktop", "Поиск таблиц"],
 	] as const;
-	for (const [path, name, withAccessibility] of cases) {
+	for (const [path, name, ariaContains] of cases) {
 		const fixture = await openFixture(browser, path, { width: 1440, height: 1000 });
 		await expectFixtureClean(fixture);
 		await expectFooterSafe(fixture.page);
 		if (name === "launcher-selector-desktop") {
 			await fixture.page.locator('[data-selector-root="desktop"] .tc-scope-search').focus();
 			await expect(fixture.page.locator('[data-selector-root="desktop"] .tc-scope-search')).toBeFocused();
+			await expectSelectorRowsUnclipped(fixture.page, '[data-selector-root="desktop"]');
 		}
-		await capture(fixture.page, name, withAccessibility);
+		await capture(fixture.page, name, ariaContains);
 		await fixture.context.close();
 	}
 });
@@ -215,8 +237,8 @@ test("responsive matrix has no overflow and keeps coarse targets", async ({ brow
 		await expectFixtureClean(fixture);
 		await expectFooterSafe(fixture.page);
 		if (coarse) await expectCoarseTargets(fixture.page);
-		if (path.includes("launcher.html?state=selector")) await capture(fixture.page, "launcher-mobile", true);
-		if (width === 320) await capture(fixture.page, "study-long-320", false);
+		if (path.includes("launcher.html?state=selector")) await capture(fixture.page, "launcher-mobile", "Choose tables");
+		if (width === 320) await capture(fixture.page, "study-long-320");
 		await fixture.context.close();
 	}
 });
@@ -228,7 +250,7 @@ test("RTL chrome uses Arabic numbers while English content stays natural", async
 	await expect(rtlLauncher).toHaveAttribute("dir", "rtl");
 	await expect(rtlLauncher.locator(".tc-launcher-summary")).toContainText("٥٨٣");
 	await expect(rtlLauncher.locator(".tc-launcher-deck-name")).toHaveAttribute("dir", "auto");
-	await capture(launcher.page, "launcher-rtl-desktop", true);
+	await capture(launcher.page, "launcher-rtl-desktop", "اختيار جلسة دراسة");
 	await launcher.context.close();
 
 	const study = await openFixture(browser, "/preview/v2.html?state=rtl&capture=1", { width: 390, height: 844 }, true);
@@ -249,10 +271,34 @@ test("RTL chrome uses Arabic numbers while English content stays natural", async
 	await expect(study.page.getByRole("searchbox", { name: "البحث في البطاقات" })).toBeVisible();
 	await expect(study.page.getByRole("dialog", { name: "تصفح البطاقات" }).getByRole("button", { name: "إغلاق المتصفح" })).toBeVisible();
 	const rtlBrowserSnapshot = await study.page.locator("main").ariaSnapshot();
+	expect(rtlBrowserSnapshot.trim().length, "Arabic browser accessibility snapshot is nonblank").toBeGreaterThan(20);
+	expect(rtlBrowserSnapshot, "Arabic browser accessibility snapshot describes localized search").toContain("البحث في البطاقات");
 	await writeFile(join(accessibilityRoot, "study-rtl-browser-mobile.aria.txt"), `${rtlBrowserSnapshot}\n`, "utf8");
 	await study.page.keyboard.press("Escape");
-	await capture(study.page, "study-rtl-mobile", true);
+	await expect(study.page.getByRole("button", { name: "البحث في البطاقات" })).toBeFocused();
+	await capture(study.page, "study-rtl-mobile", "التقدم", true);
 	await study.context.close();
+});
+
+test("locked launcher edits canonical grouped scope and restores its opener", async ({ browser }) => {
+	const launcher = await openFixture(browser, "/preview/launcher.html?state=locked&capture=1", { width: 1440, height: 1000 });
+	const panel = launcher.page.locator('[data-state="locked"]');
+	const opener = panel.locator('[data-scope-open="locked"]');
+	await opener.click();
+	const picker = panel.locator('[data-selector-root="locked"]');
+	await expect(picker).toBeVisible();
+	await expect(picker.locator(".tc-scope-search")).toBeFocused();
+	await expect(picker.locator('.tc-scope-row input[type="checkbox"]')).toHaveCount(4);
+	await expect(picker.locator(".tc-scope-group-count").first()).toHaveText("1 / 2");
+	await expect(picker.locator(".tc-scope-group-count").last()).toHaveText("0 / 2");
+	await picker.locator(".tc-scope-group").first().locator("[data-group-toggle]").click();
+	await expect(panel.locator("[data-live-summary]")).toHaveText("508 cards · 2 tables");
+	await expect(panel.locator("[data-live-start]")).toHaveText("Open cards: 508");
+	await picker.locator("[data-apply]").click();
+	await expect(picker).toBeHidden();
+	await expect(opener).toHaveAttribute("aria-expanded", "false");
+	await expect(opener).toBeFocused();
+	await launcher.context.close();
 });
 
 test("general and desktop grouped selectors update exact counts and restore their opener", async ({ browser }) => {
@@ -333,6 +379,68 @@ test("exact browser result opens a different row with matching source context", 
 	await expect(search).toBeFocused();
 	await expectFixtureClean(study);
 	await study.context.close();
+});
+
+test("Arabic locale survives exact browser selection independently of card state", async ({ browser }) => {
+	const study = await openFixture(browser, "/preview/v2.html?state=rtl&capture=1", { width: 390, height: 844 }, true);
+	const modal = study.page.locator(".preview-study-modal");
+	const search = study.page.getByRole("button", { name: "البحث في البطاقات" });
+	await search.click();
+	await study.page.locator("[data-exact-result]").click();
+	await expect(study.page.locator('[data-layer="browser"]')).toBeHidden();
+	await expect(modal).toHaveAttribute("lang", "ar");
+	await expect(modal).toHaveAttribute("dir", "rtl");
+	await expect(study.page.locator('[data-card="normal"]')).toBeVisible();
+	await expect(study.page.locator('[data-card="normal"] .table-cards-word')).toHaveText("Please remain seated");
+	await expect(study.page.locator(".table-cards-counter")).toHaveText("٤١ / ٥٨٣");
+	await expect(study.page.locator(".table-cards-counter")).toHaveAttribute("aria-label", "التقدم");
+	await expect(study.page.locator(".table-cards-progress")).toHaveAttribute("aria-valuetext", "٤١ من ٥٨٣");
+	await expect(study.page.locator('[data-card="normal"] .table-cards-source-table')).toHaveText("Phrases for travel");
+	await expect(study.page.locator('[data-card="normal"] .table-cards-source-file')).toHaveText("Travel.md");
+	await expect(study.page.getByRole("button", { name: "خلط البطاقات" })).toBeVisible();
+	await expect(search).toBeFocused();
+	await study.context.close();
+});
+
+test("setup Back preserves the draft and dirty close layers confirm, continue, and discard", async ({ browser }) => {
+	const setup = await openFixture(browser, "/preview/setup.html?state=data", { width: 1440, height: 1000 });
+	const data = setup.page.locator('.preview-root > [data-state="data"]');
+	const preset = setup.page.locator('.preview-root > [data-state="preset"]');
+	await data.locator('[data-next="preset"]').click();
+	const gallery = preset.getByRole("button", { name: /Gallery/ });
+	await gallery.click();
+	await preset.getByRole("button", { name: "Back" }).click();
+	await expect(data).toBeVisible();
+	await expect(preset).toBeHidden();
+	await data.locator('[data-next="preset"]').click();
+	await expect(gallery).toHaveAttribute("aria-pressed", "true");
+	await expect(setup.page.locator("[data-preview-title]")).toHaveText("lighthouse");
+
+	const close = preset.getByRole("button", { name: "Close" });
+	await setup.page.keyboard.press("Escape");
+	const confirm = setup.page.getByRole("dialog", { name: "Discard setup?" });
+	await expect(confirm).toBeVisible();
+	await expect(confirm.getByRole("button", { name: "Continue setup" })).toBeFocused();
+	await expectTabWrap(setup.page, '[data-setup-confirm] [role="dialog"]');
+	await setup.page.keyboard.press("Escape");
+	await expect(confirm).toBeHidden();
+	await expect(preset).toBeVisible();
+	await expect(close).toBeFocused();
+
+	await close.click();
+	await confirm.getByRole("button", { name: "Continue setup" }).click();
+	await expect(confirm).toBeHidden();
+	await expect(close).toBeFocused();
+	await expect(gallery).toHaveAttribute("aria-pressed", "true");
+
+	await close.click();
+	await confirm.getByRole("button", { name: "Discard setup" }).click();
+	await expect(setup.page.locator('.preview-root > [data-state]:visible')).toHaveCount(0);
+	await expect(setup.page.locator("[data-setup-dismissed]")).toBeVisible();
+	await setup.page.locator('.preview-toolbar [data-state="preset"]').click();
+	await expect(preset.getByRole("button", { name: /Vocabulary/ })).toHaveAttribute("aria-pressed", "true");
+	await expect(setup.page.locator("[data-preview-title]")).toHaveText("remain");
+	await setup.context.close();
 });
 
 test("base and nested dialogs trap Tab in both directions", async ({ browser }) => {

@@ -1,6 +1,7 @@
 import {
 	installDialogFocusTrap,
 	installNoOverflowSignal,
+	layerController,
 	setPressed,
 	stateController,
 } from './preview.js';
@@ -12,10 +13,14 @@ function requiredElement(selector) {
 	return element;
 }
 
+const dismissed = requiredElement('[data-setup-dismissed]');
+const confirm = requiredElement('[data-setup-confirm]');
+const layers = layerController();
 const controller = stateController({
 	buttons: '.preview-toolbar [data-state]',
 	panels: '.preview-root > [data-state]',
 	initial: 'data',
+	onChange: () => { dismissed.hidden = true; },
 });
 for (const button of document.querySelectorAll('[data-next]')) {
 	if (!(button instanceof HTMLElement)) continue;
@@ -62,11 +67,48 @@ document.querySelector('[data-create-deck]')?.addEventListener('click', () => {
 	status.textContent = `Deck created: ${input.value.trim() || 'Untitled deck'}`;
 	status.focus();
 });
+
+/** @param {HTMLElement} opener */
+function openCloseConfirm(opener) {
+	if (confirm.hidden) layers.open(confirm, opener, '[data-continue-setup]');
+}
+
+function resetDraft() {
+	const presets = Array.from(document.querySelectorAll('[data-preset]'));
+	const icons = Array.from(document.querySelectorAll('[data-icon]'));
+	setPressed(presets, presets[0]);
+	setPressed(icons, icons[0]);
+	const title = document.querySelector('[data-preview-title]');
+	if (title) title.textContent = 'remain';
+	const input = document.querySelector('.tc-setup-field input');
+	if (input instanceof HTMLInputElement) input.value = 'English · Dictionary';
+	const ribbon = document.querySelector('.tc-setup-ribbon input');
+	if (ribbon instanceof HTMLInputElement) ribbon.checked = true;
+	const status = document.querySelector('[data-created]');
+	if (status instanceof HTMLElement) {
+		status.hidden = true;
+		status.textContent = '';
+	}
+}
+
+for (const close of document.querySelectorAll('.tc-setup-close')) {
+	if (close instanceof HTMLElement) close.addEventListener('click', () => openCloseConfirm(close));
+}
+document.querySelector('[data-continue-setup]')?.addEventListener('click', () => layers.close(confirm));
+document.querySelector('[data-discard-setup]')?.addEventListener('click', () => {
+	layers.close(confirm, false);
+	resetDraft();
+	for (const fixture of document.querySelectorAll('.preview-root > [data-state]')) {
+		if (fixture instanceof HTMLElement) fixture.hidden = true;
+	}
+	dismissed.hidden = false;
+	dismissed.focus();
+});
 document.addEventListener('keydown', (event) => {
-	if (event.key !== 'Escape') return;
+	if (event.defaultPrevented || event.key !== 'Escape') return;
 	event.preventDefault();
 	const close = document.querySelector('.preview-root > [data-state]:not([hidden]) .tc-setup-close');
-	if (close instanceof HTMLElement) close.focus();
+	if (close instanceof HTMLElement) openCloseConfirm(close);
 });
 
 installDialogFocusTrap();

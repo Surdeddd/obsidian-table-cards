@@ -17,8 +17,10 @@
 		.preview-browser-underlay { opacity: .2; pointer-events: none; }
 		.preview-browser-sheet .tc-sheet { width: min(430px, 92%); }
 		.preview-browser-sheet .tc-sheet-body { padding-block-end: 0; }
-		[data-selector-mount="general"],
-		.preview-desktop-scope { position: absolute; inset-inline: 0; z-index: 8; }
+			[data-selector-mount="general"],
+			[data-selector-mount="locked"],
+			.preview-desktop-scope { position: absolute; inset-inline: 0; z-index: 8; }
+			.preview-desktop-scope .tc-scope-row { min-height: 54px; padding-block: 6px; }
 		@media (max-width: 700px) {
 			.preview-desktop-scope { display: none; }
 			.preview-mobile-scope { display: block; }
@@ -69,10 +71,10 @@
 		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="locked" role="dialog" aria-modal="true" aria-label="Open Table Cards" tabindex="-1" hidden>
 			<div class="modal-content table-cards-shell"><div class="tc-launcher">
 				<header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close"><span class="preview-icon" aria-hidden="true">×</span></button></header>
-				<div class="tc-launcher-body">
-					<div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name" dir="auto">English · Dictionary</div></div>
-					<div class="tc-launcher-state"><div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button" aria-expanded="false"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value" dir="auto">Vocabulary · Core</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button></div><div class="tc-launcher-messages" aria-live="polite"></div></div>
-					<footer class="tc-launcher-footer"><div class="tc-launcher-summary">412 cards · 1 table</div><button class="tc-launcher-start mod-cta" type="button">Open cards: 412</button></footer>
+					<div class="tc-launcher-body">
+						<div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name" dir="auto">English · Dictionary</div></div>
+						<div class="tc-launcher-state"><div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button" aria-expanded="false" data-scope-open="locked"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value" dir="auto">1 table</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button><div data-selector-mount="locked" hidden></div></div><div class="tc-launcher-messages" aria-live="polite"></div></div>
+						<footer class="tc-launcher-footer"><div class="tc-launcher-summary" aria-live="polite" data-live-summary>412 cards · 1 table</div><button class="tc-launcher-start mod-cta" type="button" data-live-start>Open cards: 412</button></footer>
 				</div>
 			</div></div>
 		</section>

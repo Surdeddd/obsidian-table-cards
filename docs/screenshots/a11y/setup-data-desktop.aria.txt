@@ -1,0 +1,18 @@
+- main:
+  - dialog "Set up Table Cards":
+    - text: Table Cards
+    - heading "Set up Table Cards" [level=1]
+    - button "Close": ×
+    - text: Step 1 of 3
+    - heading "Choose your data" [level=2]
+    - paragraph: Add notes or folders, then choose the tables to study.
+    - button "Add file"
+    - button "Add folder"
+    - text: File 30_Areas/English/Dictionary.md 2 of 3 tables selected
+    - button "Choose tables"
+    - button "Remove source": ⌫
+    - text: Folder 30_Areas/English/Phrases All 2 tables
+    - button "Choose tables"
+    - button "Remove source": ⌫
+    - text: 583 cards · 4 tables · 7 fields Detected column types Word Text Translation Text Image Image Tags Tags 2 warnings
+    - button "Continue"

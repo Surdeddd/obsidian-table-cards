@@ -9,6 +9,27 @@ function isEscaped(source: string, index: number): boolean {
 	return slashes % 2 === 1;
 }
 
+function backtickRunLength(source: string, index: number): number {
+	let length = 1;
+	while (source[index + length] === "`") {
+		length += 1;
+	}
+	return length;
+}
+
+function countBacktickRuns(source: string): Map<number, number> {
+	const counts = new Map<number, number>();
+	for (let index = 0; index < source.length; index += 1) {
+		if (source[index] !== "`") {
+			continue;
+		}
+		const length = backtickRunLength(source, index);
+		counts.set(length, (counts.get(length) ?? 0) + 1);
+		index += length - 1;
+	}
+	return counts;
+}
+
 export function splitTableRow(line: string): string[] | null {
 	const source = line.trim();
 	if (!source) {
@@ -18,20 +39,34 @@ export function splitTableRow(line: string): string[] | null {
 	let cell = "";
 	let wikiDepth = 0;
 	let destinationDepth = 0;
-	let inCode = false;
+	let codeDelimiterLength: number | null = null;
 	let delimiterCount = 0;
+	const remainingBacktickRuns = countBacktickRuns(source);
 
 	for (let index = 0; index < source.length; index += 1) {
 		const char = source[index] ?? "";
 		const next = source[index + 1] ?? "";
-		if (char === "\\" && next === "|") {
+		const inCode = codeDelimiterLength !== null;
+		if (!inCode && char === "\\" && next === "|") {
 			cell += "|";
 			index += 1;
 			continue;
 		}
-		if (char === "`" && !isEscaped(source, index)) {
-			inCode = !inCode;
-			cell += char;
+		if (char === "`") {
+			const runLength = backtickRunLength(source, index);
+			const remaining = (remainingBacktickRuns.get(runLength) ?? 0) - 1;
+			if (remaining === 0) {
+				remainingBacktickRuns.delete(runLength);
+			} else {
+				remainingBacktickRuns.set(runLength, remaining);
+			}
+			if (inCode && runLength === codeDelimiterLength) {
+				codeDelimiterLength = null;
+			} else if (!inCode && !isEscaped(source, index) && remaining > 0) {
+				codeDelimiterLength = runLength;
+			}
+			cell += source.slice(index, index + runLength);
+			index += runLength - 1;
 			continue;
 		}
 		if (!inCode && char === "[" && next === "[") {
@@ -107,8 +142,30 @@ export function scanMarkdownTables(markdown: string, sourcePath = ""): ParsedTab
 	const lines = markdown.split(/\r?\n/);
 	const tables: ParsedTable[] = [];
 	const occurrences = new Map<string, number>();
+	const headingStack: string[] = [];
+	let fence: { marker: "`" | "~"; length: number } | null = null;
 	for (let lineIndex = 0; lineIndex < lines.length - 1; lineIndex += 1) {
-		const rawHeaders = splitTableRow(lines[lineIndex] ?? "");
+		const line = lines[lineIndex] ?? "";
+		if (fence) {
+			const closing = /^ {0,3}(`+|~+)\s*$/.exec(line);
+			if (closing?.[1]?.startsWith(fence.marker) && closing[1].length >= fence.length) {
+				fence = null;
+			}
+			continue;
+		}
+		const opening = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+		if (opening?.[1] && (opening[1][0] === "~" || !line.slice(opening[0].length).includes("`"))) {
+			fence = { marker: opening[1][0] as "`" | "~", length: opening[1].length };
+			continue;
+		}
+		const heading = /^(#{1,6})\s+(.+?)\s*#*\s*$/.exec(line);
+		if (heading) {
+			const level = heading[1]?.length ?? 1;
+			headingStack[level - 1] = stripMarkdownText(heading[2] ?? "");
+			headingStack.length = level;
+			continue;
+		}
+		const rawHeaders = splitTableRow(line);
 		const separator = splitTableRow(lines[lineIndex + 1] ?? "");
 		if (!rawHeaders || !separator || rawHeaders.length !== separator.length || !isSeparatorRow(separator)) {
 			continue;
@@ -139,6 +196,7 @@ export function scanMarkdownTables(markdown: string, sourcePath = ""): ParsedTab
 		tables.push({
 			index: tables.length,
 			selector: { headerSignature: signature, occurrence },
+			headingPath: headingStack.filter(Boolean),
 			headers,
 			rawHeaders: rawHeaders.map((header) => stripMarkdownText(header)),
 			rows,

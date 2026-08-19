@@ -7,16 +7,21 @@ import type {
 	DeckSource,
 	ImageRef,
 	ParsedTable,
+	TableCatalogItem,
 } from "../model";
 import { resolveCard } from "../layout/resolve";
 import { normalizeHeader, scanMarkdownTables } from "../parse/tables";
 import { profileColumns } from "../parse/profile";
+import {
+	canonicalizeTables,
+	cardOrigins,
+	type CanonicalTable,
+	type DeckLoadOptions,
+	type DeckScanResult,
+	type SourceTableEntry,
+} from "./catalog";
 import { shuffleItems, wrapIndex } from "./shuffle";
-
-interface SelectedSource {
-	source: DeckSource;
-	file: TFile;
-}
+import { selectorDiagnosticDetail, selectorMatchesTable } from "./selectors";
 
 function sourceFiles(app: App, source: DeckSource, diagnostics: DeckDiagnostic[]): TFile[] {
 	const path = source.path.trim();
@@ -35,18 +40,6 @@ function sourceFiles(app: App, source: DeckSource, diagnostics: DeckDiagnostic[]
 		detail: source.kind,
 	});
 	return [];
-}
-
-function matchingTables(source: DeckSource, tables: ParsedTable[]): ParsedTable[] {
-	if (source.table.mode === "all") {
-		return tables;
-	}
-	const { selector } = source.table;
-	return tables.filter(
-		(table) =>
-			table.selector.headerSignature === selector.headerSignature &&
-			table.selector.occurrence === selector.occurrence,
-	);
 }
 
 function addHeaderDiagnostics(table: ParsedTable, diagnostics: DeckDiagnostic[]): void {
@@ -85,13 +78,12 @@ export function resolveImageFile(app: App, sourcePath: string, image: ImageRef |
 	return direct instanceof TFile ? direct : null;
 }
 
-function tableCards(table: ParsedTable): Card[] {
-	return table.rows.map((cells, index) => ({
+function tableCards(canonical: CanonicalTable): Card[] {
+	const origins = cardOrigins(canonical.table);
+	return canonical.table.rows.map((cells, index) => ({
 		cells,
-		headers: table.headers.slice(),
-		sourcePath: table.sourcePath,
-		tableSelector: table.selector,
-		rowIndex: table.rowNumbers[index] ?? index + 1,
+		headers: canonical.table.headers.slice(),
+		origin: { ...origins[index]!, tableLabel: canonical.label },
 	}));
 }
 
@@ -130,52 +122,74 @@ export function deckFilePaths(app: App, deck: Deck): string[] {
 }
 
 export async function scanDeckTables(app: App, sources: DeckSource[]): Promise<ParsedTable[]> {
-	const diagnostics: DeckDiagnostic[] = [];
-	const reads = new Map<string, Promise<string>>();
-	const tables: ParsedTable[] = [];
-	for (const source of sources) {
-		for (const file of sourceFiles(app, source, diagnostics)) {
-			const pending = reads.get(file.path) ?? app.vault.cachedRead(file);
-			reads.set(file.path, pending);
-			tables.push(...scanMarkdownTables(await pending, file.path));
-		}
-	}
-	return tables;
+	return (await scanDeckSources(app, sources)).tables.map((item) => item.table);
 }
 
-export async function loadDeckData(app: App, deck: Deck): Promise<DeckLoadResult> {
+export async function scanDeckSources(
+	app: App,
+	sources: DeckSource[],
+	options: DeckLoadOptions = {},
+): Promise<DeckScanResult> {
 	const diagnostics: DeckDiagnostic[] = [];
-	const selectedSources: SelectedSource[] = [];
-	for (const source of deck.sources) {
+	const files = new Map<string, { file: TFile; sourceIds: Set<string> }>();
+	for (const source of sources) {
 		for (const file of sourceFiles(app, source, diagnostics)) {
-			selectedSources.push({ source, file });
+			const entry = files.get(file.path) ?? { file, sourceIds: new Set<string>() };
+			entry.sourceIds.add(source.id);
+			files.set(file.path, entry);
 		}
 	}
+	const entries: SourceTableEntry[] = [];
+	for (const { file, sourceIds } of files.values()) {
+		const tables = scanMarkdownTables(await app.vault.cachedRead(file), file.path);
+		for (const table of tables) {
+			for (const sourceId of sourceIds) {
+				entries.push({ sourceId, table });
+			}
+		}
+	}
+	return { tables: canonicalizeTables(entries, options), diagnostics };
+}
 
-	const reads = new Map<string, Promise<string>>();
-	const selectedTables: ParsedTable[] = [];
-	const selectedTableKeys = new Set<string>();
-	for (const { source, file } of selectedSources) {
-		const pending = reads.get(file.path) ?? app.vault.cachedRead(file);
-		reads.set(file.path, pending);
-		const tables = scanMarkdownTables(await pending, file.path);
-		const selected = matchingTables(source, tables);
-		if (source.table.mode === "single" && selected.length === 0) {
+function sourceSelects(source: DeckSource, table: ParsedTable): boolean {
+	if (source.tables.mode === "all") return true;
+	return source.tables.selectors.some((selector) => selectorMatchesTable(selector, table));
+}
+
+function catalogItem(table: CanonicalTable): TableCatalogItem {
+	const { table: _parsed, ...item } = table;
+	return item;
+}
+
+export function buildDeckDataFromScan(
+	app: App,
+	deck: Deck,
+	scan: DeckScanResult,
+): DeckLoadResult {
+	const diagnostics = scan.diagnostics.slice();
+	const sourcesById = new Map(deck.sources.map((source) => [source.id, source]));
+	for (const source of deck.sources) {
+		if (source.tables.mode !== "include") continue;
+		const liveTables = scan.tables.filter((table) => table.sourceIds.includes(source.id));
+		for (const selector of source.tables.selectors) {
+			if (liveTables.some((table) => selectorMatchesTable(selector, table.table))) continue;
 			diagnostics.push({
 				code: "tableMissing",
-				sourcePath: file.path,
-				detail: `${source.table.selector.headerSignature}:${source.table.selector.occurrence}`,
+				sourcePath: source.path.trim(),
+				detail: selectorDiagnosticDetail(selector),
 			});
-			continue;
 		}
-		for (const table of selected) {
-			const tableKey = `${file.path}\u0000${table.selector.headerSignature}\u0000${table.selector.occurrence}`;
-			if (selectedTableKeys.has(tableKey)) continue;
-			selectedTableKeys.add(tableKey);
-			selectedTables.push(table);
-			addHeaderDiagnostics(table, diagnostics);
-			addImageDiagnostics(app, table, diagnostics);
-		}
+	}
+	const selectedCatalog = scan.tables.filter((table) =>
+		table.sourceIds.some((sourceId) => {
+			const source = sourcesById.get(sourceId);
+			return source ? sourceSelects(source, table.table) : false;
+		}),
+	);
+	const selectedTables = selectedCatalog.map((item) => item.table);
+	for (const table of selectedTables) {
+		addHeaderDiagnostics(table, diagnostics);
+		addImageDiagnostics(app, table, diagnostics);
 	}
 
 	const sourcePaths = Array.from(new Set(selectedTables.map((table) => table.sourcePath)));
@@ -184,32 +198,37 @@ export async function loadDeckData(app: App, deck: Deck): Promise<DeckLoadResult
 			sourcePaths.some((sourcePath) => resolveImageFile(app, sourcePath, source) !== null),
 	});
 	const cards: Card[] = [];
-	for (const card of selectedTables.flatMap(tableCards)) {
+	for (const card of selectedCatalog.flatMap(tableCards)) {
 		const resolved = resolveCard(card, deck.blocks);
 		if (!resolved.skipReason) {
 			cards.push(card);
 			continue;
 		}
-		const table = selectedTables.find(
-			(candidate) =>
-				candidate.sourcePath === card.sourcePath &&
-				candidate.selector.headerSignature === card.tableSelector.headerSignature &&
-				candidate.selector.occurrence === card.tableSelector.occurrence,
-		);
+		const table = selectedCatalog.find((candidate) => candidate.key === card.origin.tableKey)?.table;
 		diagnostics.push({
 			code: "requiredEmpty",
-			sourcePath: card.sourcePath,
+			sourcePath: card.origin.sourcePath,
 			tableIndex: table?.index,
-			rowIndex: card.rowIndex,
+			rowIndex: card.origin.rowNumber,
 			detail: resolved.skipReason.blockId,
 		});
 	}
 	return {
 		cards,
 		tables: selectedTables,
+		catalog: selectedCatalog.map(catalogItem),
 		profiles,
 		diagnostics,
 	};
+}
+
+export async function loadDeckData(
+	app: App,
+	deck: Deck,
+	options: DeckLoadOptions = {},
+): Promise<DeckLoadResult> {
+	const scan = await scanDeckSources(app, deck.sources, options);
+	return buildDeckDataFromScan(app, deck, scan);
 }
 
 export async function loadDeckCards(app: App, deck: Deck): Promise<Card[]> {

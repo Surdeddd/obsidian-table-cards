@@ -1,0 +1,9 @@
+- main:
+  - dialog "اختيار جلسة دراسة":
+    - text: Table Cards
+    - heading "اختر جلسة دراسة" [level=1]
+    - button "إغلاق": ×
+    - text: الحزمة English · Dictionary
+    - button "الجداول ٣ جداول"
+    - text: سيتم تخطي جدول محفوظ واحد غير موجود ٥٨٣ بطاقة · ٣ جداول
+    - button "فتح ٥٨٣ بطاقة"

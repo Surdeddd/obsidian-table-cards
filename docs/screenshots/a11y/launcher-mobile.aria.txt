@@ -1,0 +1,27 @@
+- main:
+  - dialog "Choose tables":
+    - text: Table Cards
+    - heading "Choose a study session" [level=1]
+    - button "Close"
+    - text: Deck English · Dictionary
+    - button "Tables 3 tables" [expanded]
+    - text: 583 cards · 3 tables
+    - 'button "Open cards: 583"'
+    - button "Close table selector"
+    - dialog "Tables":
+      - heading "Tables" [level=2]
+      - button "Close": ×
+      - searchbox "Search tables"
+      - text: Dictionary.md English/Core 2 / 2
+      - button "Clear"
+      - checkbox "Vocabulary · Core 412 rows ·7 columns ·Word · Translation · Example…" [checked]
+      - text: Vocabulary · Core 412 rows ·7 columns ·Word · Translation · Example…
+      - checkbox "Phrases for travel 96 rows ·4 columns ·Phrase · Translation · Context" [checked]
+      - text: Phrases for travel 96 rows ·4 columns ·Phrase · Translation · Context Notes.md English/Reference 1 / 2
+      - button "Select all"
+      - checkbox "Common collocations 75 rows ·5 columns ·Verb · Noun · Example" [checked]
+      - text: Common collocations 75 rows ·5 columns ·Verb · Noun · Example
+      - checkbox "Archived terms 21 rows ·3 columns ·Term · Meaning · Note"
+      - text: Archived terms 21 rows ·3 columns ·Term · Meaning · Note
+      - button "Clear"
+      - button "Apply"

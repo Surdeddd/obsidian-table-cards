@@ -1,0 +1,41 @@
+- main:
+  - dialog "Редактор карточки":
+    - button "Назад": ←
+    - textbox "Название": English · Dictionary
+    - text: Есть изменения
+    - button "Отменить": ↶
+    - button "Повторить": ↷
+    - button "Компьютер" [pressed]: ▣
+    - button "Телефон": ▯
+    - button "Сохранить"
+    - button "▦ Поля · 7 · 2"
+    - button "Предыдущая строка": ‹
+    - group: 18 / 583
+    - button "Следующая строка": ›
+    - button "◐ Стиль карточки"
+    - button "remain" [pressed]
+    - button "транскрипция /rɪˈmeɪn/ римэ́йн"
+    - button "перевод оставаться, сохраняться"
+    - button "пример Please remain calm while we check the details."
+    - button "РЕ-МЕЙН — ремень остаётся на месте."
+    - button "Заголовок"
+    - button "Вся ширина"
+    - button "↕ Переместить"
+    - button "⋯ Ещё"
+    - button "Закрыть панель"
+    - dialog "Поля и данные":
+      - heading "Поля и данные" [level=2]
+      - button "Закрыть": ×
+      - button "Назад"
+      - text: Файл 30_Areas/English/Dictionary/Dictionary.md
+      - button "Все таблицы"
+      - button "Очистить"
+      - searchbox "Поиск таблиц"
+      - checkbox "Vocabulary · Core" [checked]
+      - group:
+        - text: Vocabulary · Core 412 строк 7 столбцов Предпросмотр ⌄ Word remain Translation оставаться Example Please remain calm. Image assets/remain.jpg
+        - button "Открыть эту таблицу"
+      - checkbox "Phrases for travel" [checked]
+      - group: Phrases for travel 96 строк 4 столбца Предпросмотр ⌄
+      - checkbox "Archived terms"
+      - group: Archived terms 21 строк 3 столбца Предпросмотр ⌄

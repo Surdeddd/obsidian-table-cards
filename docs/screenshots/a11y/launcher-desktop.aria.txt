@@ -1,0 +1,10 @@
+- main:
+  - dialog "Open Table Cards":
+    - text: Table Cards
+    - heading "Choose a study session" [level=1]
+    - button "Close"
+    - text: Deck
+    - button "Deck English · Dictionary": English · Dictionary
+    - button "Tables 3 tables"
+    - text: 1 saved table is missing and will be skipped 583 cards · 3 tables
+    - 'button "Open cards: 583"'

@@ -1,0 +1,26 @@
+{
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"lib": ["DOM", "DOM.Iterable", "ES2023"],
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"noEmit": true,
+		"noImplicitReturns": true,
+		"noUncheckedIndexedAccess": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"target": "ES2023",
+		"types": ["node"]
+	},
+	"include": [
+		"eslint.config.mts",
+		"manifest.json",
+		"playwright.config.mts",
+		"preview/**/*.js",
+		"scripts/**/*.mjs",
+		"tests-tools/**/*.mjs",
+		"tests-ui/**/*.ts"
+	]
+}

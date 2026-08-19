@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<link rel="icon" href="data:,">
+	<title>Table Cards — launcher fixtures</title>
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="preview.css">
+	<style>
+		.preview-launcher-modal { --tc-max-w: 760px; }
+		.preview-launcher-modal .tc-listbox-popover { position: absolute; }
+		.preview-launcher-modal .tc-launcher-body { width: min(620px, 100%); }
+		.preview-check { accent-color: var(--interactive-accent); }
+		.preview-mobile-scope { display: none; }
+		.preview-selector-underlay { min-height: 218px; }
+		.preview-browser-underlay { opacity: .2; pointer-events: none; }
+		.preview-browser-sheet .tc-sheet { width: min(430px, 92%); }
+		.preview-browser-sheet .tc-sheet-body { padding-block-end: 0; }
+			[data-selector-mount="general"],
+			[data-selector-mount="locked"],
+			.preview-desktop-scope { position: absolute; inset-inline: 0; z-index: 8; }
+			.preview-desktop-scope .tc-scope-row { min-height: 54px; padding-block: 6px; }
+		@media (max-width: 700px) {
+			.preview-desktop-scope { display: none; }
+			.preview-mobile-scope { display: block; }
+			.preview-launcher-modal .tc-launcher-body { width: 100%; }
+		}
+	</style>
+</head>
+<body>
+	<nav class="preview-toolbar" aria-label="Launcher fixtures">
+		<button type="button" data-state="general" aria-pressed="true">General</button>
+		<button type="button" data-state="locked" aria-pressed="false">Locked deck</button>
+		<button type="button" data-state="selector" aria-pressed="false">Table selector</button>
+		<button type="button" data-state="empty" aria-pressed="false">Empty</button>
+		<button type="button" data-state="loading" aria-pressed="false">Loading</button>
+		<button type="button" data-state="error" aria-pressed="false">Error</button>
+		<button type="button" data-state="browser" aria-pressed="false">Browser</button>
+		<button type="button" data-state="rtl" aria-pressed="false">العربية</button>
+		<a href="setup.html">Setup</a>
+		<a href="v2.html">Study</a>
+	</nav>
+
+	<main class="preview-root">
+		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="general" role="dialog" aria-modal="true" aria-label="Open Table Cards" tabindex="-1">
+			<div class="modal-content table-cards-shell">
+				<div class="tc-launcher">
+					<header class="tc-launcher-header">
+						<div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div>
+						<button class="tc-launcher-close" type="button" aria-label="Close"><span class="preview-icon" aria-hidden="true">×</span></button>
+					</header>
+					<div class="tc-launcher-body">
+						<div class="tc-launcher-deck">
+							<div class="tc-listbox">
+								<label id="general-deck-label">Deck</label>
+								<button class="tc-listbox-trigger" type="button" aria-labelledby="general-deck-label general-deck-value" aria-haspopup="listbox" aria-expanded="false" data-open-layer="general-decks"><span id="general-deck-value">English · Dictionary</span><span class="tc-listbox-chevron" aria-hidden="true">⌄</span></button>
+								<div class="tc-listbox-popover" id="general-decks" data-layer hidden><div class="tc-listbox-options" role="listbox" aria-labelledby="general-deck-label"><button class="tc-listbox-option" type="button" role="option" aria-selected="true">English · Dictionary</button><button class="tc-listbox-option" type="button" role="option" aria-selected="false">Product vocabulary</button><button class="tc-listbox-option" type="button" role="option" aria-selected="false">Japanese phrases</button></div></div>
+							</div>
+						</div>
+						<div class="tc-launcher-state">
+							<div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button" aria-expanded="false" data-scope-open="general"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value" dir="auto">3 tables</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button><div id="general-scope" data-selector-mount="general" hidden></div></div>
+							<div class="tc-launcher-messages" aria-live="polite"><div class="tc-launcher-warning">1 saved table is missing and will be skipped</div></div>
+						</div>
+						<footer class="tc-launcher-footer"><div class="tc-launcher-summary" aria-live="polite" data-live-summary>583 cards · 3 tables</div><button class="tc-launcher-start mod-cta" type="button" data-live-start>Open cards: 583</button></footer>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="locked" role="dialog" aria-modal="true" aria-label="Open Table Cards" tabindex="-1" hidden>
+			<div class="modal-content table-cards-shell"><div class="tc-launcher">
+				<header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close"><span class="preview-icon" aria-hidden="true">×</span></button></header>
+					<div class="tc-launcher-body">
+						<div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name" dir="auto">English · Dictionary</div></div>
+						<div class="tc-launcher-state"><div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button" aria-expanded="false" data-scope-open="locked"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value" dir="auto">1 table</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button><div data-selector-mount="locked" hidden></div></div><div class="tc-launcher-messages" aria-live="polite"></div></div>
+						<footer class="tc-launcher-footer"><div class="tc-launcher-summary" aria-live="polite" data-live-summary>412 cards · 1 table</div><button class="tc-launcher-start mod-cta" type="button" data-live-start>Open cards: 412</button></footer>
+				</div>
+			</div></div>
+		</section>
+
+		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="selector" role="dialog" aria-modal="true" aria-label="Choose tables" tabindex="-1" hidden>
+			<div class="modal-content table-cards-shell"><div class="tc-launcher">
+				<header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close"><span class="preview-icon" aria-hidden="true">×</span></button></header>
+				<div class="tc-launcher-body">
+					<div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name" dir="auto">English · Dictionary</div></div>
+					<div class="tc-launcher-state preview-selector-underlay"><div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button" aria-expanded="false" data-scope-open="selector"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value">3 tables</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button>
+						<div class="tc-scope-picker preview-desktop-scope" data-selector-root="desktop" hidden><div class="tc-scope-searchbar"><input class="tc-scope-search" type="search" aria-label="Search tables" placeholder="Search headings, paths, or columns"></div><div class="tc-scope-groups">
+							<section class="tc-scope-group"><header class="tc-scope-group-header"><div class="tc-scope-source" dir="auto"><div class="tc-scope-source-name">Dictionary.md</div><div class="tc-scope-source-path">English/Core</div></div><div class="tc-scope-group-controls"><span class="tc-scope-group-count">2 / 2</span><button class="tc-scope-group-toggle" type="button" data-group-toggle>Clear</button></div></header>
+								<label class="tc-scope-row"><input class="preview-check" type="checkbox" data-cards="412" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Vocabulary · Core</span><span class="tc-scope-row-meta"><span>412 rows</span><span>7 columns</span><span class="tc-scope-columns" dir="auto">Word · Translation · Example…</span></span></span></label>
+								<label class="tc-scope-row"><input class="preview-check" type="checkbox" data-cards="96" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Phrases for travel</span><span class="tc-scope-row-meta"><span>96 rows</span><span>4 columns</span><span class="tc-scope-columns" dir="auto">Phrase · Translation · Context</span></span></span></label>
+							</section>
+							<section class="tc-scope-group"><header class="tc-scope-group-header"><div class="tc-scope-source" dir="auto"><div class="tc-scope-source-name">Notes.md</div><div class="tc-scope-source-path">English/Reference</div></div><div class="tc-scope-group-controls"><span class="tc-scope-group-count">1 / 2</span><button class="tc-scope-group-toggle" type="button" data-group-toggle>Select all</button></div></header>
+								<label class="tc-scope-row"><input class="preview-check" type="checkbox" data-cards="75" checked><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Common collocations</span><span class="tc-scope-row-meta"><span>75 rows</span><span>5 columns</span><span class="tc-scope-columns" dir="auto">Verb · Noun · Example</span></span></span></label>
+								<label class="tc-scope-row"><input class="preview-check" type="checkbox" data-cards="21"><span class="tc-scope-row-content"><span class="tc-scope-row-title" dir="auto">Archived terms</span><span class="tc-scope-row-meta"><span>21 rows</span><span>3 columns</span><span class="tc-scope-columns" dir="auto">Term · Meaning · Note</span></span></span></label>
+							</section>
+						</div><div class="tc-scope-actions"><button type="button" data-clear-all>Clear</button><button class="mod-cta" type="button" data-apply>Apply</button></div></div>
+					</div></div>
+					<div class="tc-launcher-messages" aria-live="polite"></div>
+					<footer class="tc-launcher-footer"><div class="tc-launcher-summary" data-live-summary>583 cards · 3 tables</div><button class="tc-launcher-start mod-cta" type="button" data-live-start>Open cards: 583</button></footer>
+				</div>
+				<div class="tc-sheet-layer preview-mobile-scope" hidden><button class="tc-sheet-scrim" type="button" aria-label="Close table selector" data-mobile-close></button><section class="tc-sheet" data-variant="full" role="dialog" aria-modal="true" aria-labelledby="mobile-scope-title"><header class="tc-sheet-header"><h2 id="mobile-scope-title">Tables</h2><button class="tc-sheet-close" type="button" aria-label="Close" data-mobile-close>×</button></header><div class="tc-sheet-body" data-selector-mount="mobile"></div><footer class="tc-sheet-footer" data-selector-actions="mobile"></footer></section></div>
+			</div></div>
+		</section>
+
+		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="empty" role="dialog" aria-modal="true" aria-label="Open Table Cards" tabindex="-1" hidden><div class="modal-content table-cards-shell"><div class="tc-launcher"><header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close">×</button></header><div class="tc-launcher-body"><div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name">English · Dictionary</div></div><div class="tc-launcher-state"><div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button"><span class="tc-scope-trigger-label">Tables</span><span class="tc-scope-trigger-value">0 tables</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button></div><div class="tc-launcher-messages"><div class="tc-launcher-hint">Select at least one table</div></div></div><footer class="tc-launcher-footer"><div class="tc-launcher-summary">0 cards · 0 tables</div><button class="tc-launcher-start mod-cta" type="button" disabled>Open cards: 0</button></footer></div></div></div></section>
+
+		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="loading" role="dialog" aria-modal="true" aria-label="Open Table Cards" tabindex="-1" hidden><div class="modal-content table-cards-shell"><div class="tc-launcher"><header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close">×</button></header><div class="tc-launcher-body"><div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name">English · Dictionary</div></div><div class="tc-launcher-state is-loading" aria-live="polite" aria-busy="true" tabindex="-1"><div class="tc-launcher-state-title">Loading tables…</div><div class="tc-launcher-skeleton" aria-hidden="true"><div class="tc-launcher-skeleton-row"><span></span><span></span></div><div class="tc-launcher-skeleton-row"><span></span><span></span></div><div class="tc-launcher-skeleton-row"><span></span><span></span></div></div></div><footer class="tc-launcher-footer"><div class="tc-launcher-summary">Loading…</div><button class="tc-launcher-start mod-cta" type="button" disabled>Open cards: 0</button></footer></div></div></div></section>
+
+		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="error" role="dialog" aria-modal="true" aria-label="Open Table Cards" tabindex="-1" hidden><div class="modal-content table-cards-shell"><div class="tc-launcher"><header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>Choose a study session</h1></div><button class="tc-launcher-close" type="button" aria-label="Close">×</button></header><div class="tc-launcher-body"><div class="tc-launcher-deck"><div class="tc-launcher-label">Deck</div><div class="tc-launcher-deck-name">English · Dictionary</div></div><div class="tc-launcher-state is-error" role="alert" tabindex="-1"><div class="tc-launcher-state-title">Could not load this deck</div><div class="tc-launcher-error-scope">Last scope: 3 tables</div><button type="button" data-retry>Try again</button></div><footer class="tc-launcher-footer"><div class="tc-launcher-summary">Unavailable</div><button class="tc-launcher-start mod-cta" type="button" disabled>Open cards: 0</button></footer></div></div></div></section>
+
+		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="browser" role="dialog" aria-modal="true" aria-label="Browse cards" tabindex="-1" hidden><div class="modal-content table-cards-shell"><div class="tc-launcher preview-browser-underlay"><header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>English · Dictionary</h1></div></header><div class="tc-launcher-body"></div></div><div class="tc-sheet-layer preview-browser-sheet"><button class="tc-sheet-scrim" type="button" aria-label="Close browser"></button><section class="tc-sheet" role="dialog" aria-modal="true" aria-labelledby="browser-title"><header class="tc-sheet-header"><h2 id="browser-title">Browse cards</h2><button class="tc-sheet-close" type="button" aria-label="Close">×</button></header><div class="tc-sheet-body"><div class="tc-card-browser"><div class="tc-card-browser-controls"><button class="tc-card-browser-scope" type="button" aria-label="Tables: All tables" aria-expanded="false"><span>All tables</span><span class="tc-card-browser-scope-mark" aria-hidden="true">⌄</span></button><div class="tc-card-browser-search-wrap"><span class="tc-card-browser-search-icon" aria-hidden="true">⌕</span><input class="tc-card-browser-search" type="search" value="remain" aria-label="Search cards" placeholder="Search every cell" dir="auto"></div></div><div class="tc-card-browser-status" aria-live="polite">3 results</div><div class="tc-card-browser-results"><section class="tc-card-browser-group"><header class="tc-card-browser-group-header"><div class="tc-card-browser-group-title" dir="auto">Vocabulary · Core</div><div class="tc-card-browser-group-file" dir="auto">Dictionary</div></header><button class="tc-card-browser-result" type="button"><span class="tc-card-browser-primary" dir="auto">remain</span><span class="tc-card-browser-snippet" dir="auto">to continue to exist or stay in the same place</span><span class="tc-card-browser-meta"><span>Vocabulary · Core</span><span>Dictionary</span><span>Row 18</span></span></button><button class="tc-card-browser-result" type="button"><span class="tc-card-browser-primary" dir="auto">remainder</span><span class="tc-card-browser-snippet" dir="auto">the part that remains</span><span class="tc-card-browser-meta"><span>Vocabulary · Core</span><span>Dictionary</span><span>Row 204</span></span></button></section><section class="tc-card-browser-group"><header class="tc-card-browser-group-header"><div class="tc-card-browser-group-title" dir="auto">Phrases for travel</div><div class="tc-card-browser-group-file" dir="auto">Dictionary</div></header><button class="tc-card-browser-result" type="button"><span class="tc-card-browser-primary" dir="auto">Please remain seated</span><span class="tc-card-browser-meta"><span>Phrases for travel</span><span>Dictionary</span><span>Row 41</span></span></button></section></div></div></div></section></div></div></section>
+
+		<section class="modal table-cards-modal preview-launcher-modal border-thin has-shadow" data-state="rtl" lang="ar" dir="rtl" role="dialog" aria-modal="true" aria-label="اختيار جلسة دراسة" tabindex="-1" hidden><div class="modal-content table-cards-shell"><div class="tc-launcher"><header class="tc-launcher-header"><div class="tc-launcher-heading"><div class="tc-launcher-kicker">Table Cards</div><h1>اختر جلسة دراسة</h1></div><button class="tc-launcher-close" type="button" aria-label="إغلاق">×</button></header><div class="tc-launcher-body"><div class="tc-launcher-deck"><div class="tc-launcher-label">الحزمة</div><div class="tc-launcher-deck-name preview-ltr-content" dir="auto">English · Dictionary</div></div><div class="tc-launcher-state"><div class="tc-launcher-scope"><button class="tc-scope-trigger" type="button"><span class="tc-scope-trigger-label">الجداول</span><span class="tc-scope-trigger-value">٣ جداول</span><span class="tc-scope-trigger-chevron" aria-hidden="true">⌄</span></button></div><div class="tc-launcher-messages"><div class="tc-launcher-warning">سيتم تخطي جدول محفوظ واحد غير موجود</div></div></div><footer class="tc-launcher-footer"><div class="tc-launcher-summary">٥٨٣ بطاقة · ٣ جداول</div><button class="tc-launcher-start mod-cta" type="button">فتح ٥٨٣ بطاقة</button></footer></div></div></div></section>
+	</main>
+	<div class="preview-note">Production-class fixture · query with <code>?state=selector&amp;capture=1</code> for deterministic captures.</div>
+
+	<script type="module" src="launcher.js"></script>
+</body>
+</html>

@@ -1,14 +1,31 @@
 export type SheetMode = "responsive" | "side" | "bottom";
+export type SheetVariant = "default" | "full";
 
 export interface SheetOptions {
 	id: string;
 	title: string;
 	mode: SheetMode;
+	variant?: SheetVariant;
+	ariaLabelledBy?: string;
 	opener: HTMLElement | null;
 	closeLabel: string;
 	onClose: () => void;
 	renderBody: (body: HTMLElement) => void;
 	renderFooter?: (footer: HTMLElement) => void;
+}
+
+interface EscapeEvent {
+	key: string;
+	preventDefault: () => void;
+	stopPropagation: () => void;
+}
+
+export function consumeSheetEscape(event: EscapeEvent, onClose: () => void): boolean {
+	if (event.key !== "Escape") return false;
+	event.preventDefault();
+	event.stopPropagation();
+	onClose();
+	return true;
 }
 
 function focusableElements(root: HTMLElement): HTMLElement[] {
@@ -49,8 +66,9 @@ export class Sheet {
 				role: "dialog",
 				tabindex: "-1",
 				"aria-modal": "true",
-				"aria-labelledby": `${this.options.id}-title`,
+				"aria-labelledby": this.options.ariaLabelledBy ?? `${this.options.id}-title`,
 				"data-mode": this.options.mode,
+				"data-variant": this.options.variant ?? "default",
 			},
 		});
 		this.dialog.addEventListener("keydown", this.onKeyDown);
@@ -86,11 +104,7 @@ export class Sheet {
 	}
 
 	private readonly onKeyDown = (event: KeyboardEvent): void => {
-		if (event.key === "Escape") {
-			event.preventDefault();
-			this.close();
-			return;
-		}
+		if (consumeSheetEscape(event, () => this.close())) return;
 		if (event.key !== "Tab" || !this.dialog) return;
 		const items = focusableElements(this.dialog);
 		if (items.length === 0) {

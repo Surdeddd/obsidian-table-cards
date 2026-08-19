@@ -1,0 +1,231 @@
+:root {
+	--background-primary: #0d0d0e;
+	--background-primary-alt: #111113;
+	--background-secondary: #171719;
+	--background-modifier-border: #303034;
+	--background-modifier-border-hover: #505057;
+	--background-modifier-hover: #242427;
+	--background-modifier-cover: #000;
+	--interactive-accent: #f3f3f3;
+	--text-accent: #fff;
+	--text-normal: #f3f3f3;
+	--text-muted: #a7a7ac;
+	--text-faint: #8b8b92;
+	--text-on-accent: #101011;
+	--text-error: #ff8585;
+	--text-warning: #e1ad55;
+	--text-success: #72be83;
+	--font-interface: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	--font-text: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	color-scheme: dark;
+	font-family: var(--font-interface);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	min-width: 0;
+	min-height: 100%;
+	margin: 0;
+}
+
+body {
+	min-height: 100dvh;
+	background: #080809;
+	color: var(--text-normal);
+}
+
+button,
+input {
+	font: inherit;
+}
+
+button {
+	min-height: 36px;
+	padding: 0 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 9px;
+	background: var(--background-secondary);
+	box-shadow: none;
+	color: inherit;
+}
+
+button:hover:not(:disabled) {
+	border-color: var(--background-modifier-border-hover);
+	background: var(--background-modifier-hover);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+	accent-color: var(--interactive-accent);
+}
+
+button:disabled {
+	cursor: not-allowed;
+	opacity: 0.52;
+}
+
+[hidden] {
+	display: none !important;
+}
+
+.mod-cta {
+	border: 0;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-weight: 680;
+}
+
+.preview-toolbar {
+	position: fixed;
+	inset-block-start: 12px;
+	inset-inline: 12px;
+	z-index: 100;
+	display: flex;
+	width: fit-content;
+	max-width: calc(100vw - 24px);
+	padding: 5px;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 4px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 13px;
+	background: color-mix(in srgb, var(--background-primary) 94%, transparent);
+	box-shadow: 0 8px 28px rgb(0 0 0 / 32%);
+	backdrop-filter: blur(14px);
+}
+
+.preview-toolbar button,
+.preview-toolbar a {
+	min-height: 36px;
+	padding: 0 11px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 0;
+	border-radius: 9px;
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: 12px;
+	text-decoration: none;
+}
+
+.preview-toolbar button:hover,
+.preview-toolbar a:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.preview-toolbar button[aria-pressed="true"],
+.preview-toolbar a[aria-current="page"] {
+	background: var(--text-normal);
+	color: var(--background-primary);
+}
+
+.preview-root {
+	min-width: 0;
+	min-height: 100dvh;
+	padding: 68px 18px 18px;
+	display: grid;
+	place-items: center;
+}
+
+.preview-root > .modal {
+	position: relative;
+	inset: auto;
+}
+
+.preview-note {
+	position: fixed;
+	inset-inline-end: 16px;
+	inset-block-end: 14px;
+	z-index: 90;
+	max-width: min(360px, calc(100vw - 32px));
+	padding: 7px 10px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 9px;
+	background: var(--background-primary);
+	color: var(--text-muted);
+	font-size: 11px;
+	line-height: 1.4;
+}
+
+.preview-icon {
+	font-size: 18px;
+	line-height: 1;
+}
+
+.preview-ltr-content {
+	direction: ltr;
+	text-align: start;
+}
+
+.preview-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.is-capture .preview-toolbar,
+.is-capture .preview-note {
+	display: none;
+}
+
+.is-capture .preview-root {
+	padding-block-start: 18px;
+}
+
+@media (max-width: 560px) {
+	.preview-toolbar {
+		position: absolute;
+		inset-block-start: 4px;
+		inset-inline: 4px;
+		max-width: calc(100vw - 8px);
+		padding: 3px;
+		border-radius: 10px;
+		box-shadow: none;
+	}
+
+	.preview-toolbar button,
+	.preview-toolbar a {
+		min-height: 32px;
+		padding-inline: 8px;
+		font-size: 10px;
+	}
+
+	.preview-root {
+		padding: 0;
+		place-items: stretch;
+	}
+
+	.is-capture .preview-root {
+		padding: 0;
+	}
+
+	.preview-note {
+		display: none;
+	}
+}
+
+@media (pointer: coarse) {
+	.preview-toolbar button,
+	.preview-toolbar a {
+		min-height: 44px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.preview-toolbar {
+		backdrop-filter: none;
+	}
+}

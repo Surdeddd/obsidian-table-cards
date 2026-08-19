@@ -5,6 +5,28 @@ import obsidianmd from "eslint-plugin-obsidianmd";
 import globals from "globals";
 import { globalIgnores } from "eslint/config";
 
+const toolFiles = [
+	"eslint.config.mts",
+	"playwright.config.mts",
+	"preview/**/*.js",
+	"scripts/**/*.mjs",
+	"tests-tools/**/*.mjs",
+	"tests-ui/**/*.ts",
+];
+const nodeToolFiles = [
+	"eslint.config.mts",
+	"playwright.config.mts",
+	"scripts/**/*.mjs",
+	"tests-tools/**/*.mjs",
+	"tests-ui/**/*.ts",
+];
+const toolObsidianRules = Object.fromEntries(
+	Object.keys(obsidianmd.rules).map((rule) => [`obsidianmd/${rule}`, "off" as const]),
+);
+const disabledBrowserGlobals = Object.fromEntries(
+	Object.keys(globals.browser).map((name) => [name, "off" as const]),
+);
+
 export default tseslint.config(
 	{
 		languageOptions: {
@@ -14,9 +36,7 @@ export default tseslint.config(
 				activeWindow: "readonly",
 			},
 			parserOptions: {
-				projectService: {
-					allowDefaultProject: ["eslint.config.mts", "manifest.json"],
-				},
+				project: ["./tsconfig.json", "./tsconfig.tools.json"],
 				tsconfigRootDir: path.dirname(fileURLToPath(import.meta.url)),
 				extraFileExtensions: [".json"],
 			},
@@ -24,10 +44,32 @@ export default tseslint.config(
 	},
 	...obsidianmd.configs.recommended,
 	{
-		files: ["eslint.config.mts"],
+		files: toolFiles,
 		rules: {
+			...toolObsidianRules,
 			"obsidianmd/no-nodejs-modules": "off",
 			"@typescript-eslint/no-unsafe-argument": "off",
+			"import/no-extraneous-dependencies": "off",
+		},
+	},
+	{
+		files: ["preview/**/*.js"],
+		languageOptions: { globals: globals.browser },
+	},
+	{
+		files: nodeToolFiles,
+		languageOptions: {
+			globals: {
+				...disabledBrowserGlobals,
+				...globals.node,
+			},
+		},
+	},
+	{
+		files: ["tests-ui/**/*.ts"],
+		rules: {
+			// Browser globals only occur inside typed page.evaluate callbacks.
+			"no-undef": "off",
 		},
 	},
 	{
@@ -45,7 +87,6 @@ export default tseslint.config(
 		"version-bump.mjs",
 		"versions.json",
 		"main.js",
-		"scripts",
 		"tests",
 		"vitest.config.mts",
 	]),

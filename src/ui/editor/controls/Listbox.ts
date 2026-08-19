@@ -10,6 +10,7 @@ export interface ListboxOptions<T extends string> {
 	value: T;
 	options: Array<ListboxOption<T>>;
 	searchable?: boolean;
+	optionDirection?: "auto";
 	onChange: (value: T) => void;
 }
 
@@ -38,7 +39,10 @@ export class Listbox<T extends string> {
 		});
 		this.trigger.createSpan({
 			text: options.options.find((option) => option.value === options.value)?.label ?? options.value,
-			attr: { id: `${options.id}-value` },
+			attr: {
+				id: `${options.id}-value`,
+				...(options.optionDirection ? { dir: options.optionDirection } : {}),
+			},
 		});
 		this.trigger.createSpan({ cls: "tc-listbox-chevron", text: "⌄", attr: { "aria-hidden": "true" } });
 		this.trigger.addEventListener("click", () => (this.popover ? this.close() : this.open()));
@@ -80,11 +84,15 @@ export class Listbox<T extends string> {
 	private renderOptions(filter: string): void {
 		if (!this.popover) return;
 		this.popover.querySelector<HTMLElement>(".tc-listbox-options")?.remove();
+		const query = filter.trim().toLocaleLowerCase();
+		const visibleIndexes = this.options.options.flatMap((option, index) =>
+			query && !option.label.toLocaleLowerCase().includes(query) ? [] : [index],
+		);
+		if (!visibleIndexes.includes(this.activeIndex)) this.activeIndex = visibleIndexes[0] ?? 0;
 		const list = this.popover.createDiv({
 			cls: "tc-listbox-options",
 			attr: { id: `${this.options.id}-options`, role: "listbox", "aria-labelledby": `${this.options.id}-label` },
 		});
-		const query = filter.trim().toLocaleLowerCase();
 		for (const [index, option] of this.options.options.entries()) {
 			if (query && !option.label.toLocaleLowerCase().includes(query)) continue;
 			const item = list.createEl("button", {
@@ -97,7 +105,10 @@ export class Listbox<T extends string> {
 					tabindex: index === this.activeIndex ? "0" : "-1",
 				},
 			});
-			item.createSpan({ text: option.label });
+			item.createSpan({
+				text: option.label,
+				attr: this.options.optionDirection ? { dir: this.options.optionDirection } : undefined,
+			});
 			if (option.description) item.createSpan({ cls: "tc-listbox-description", text: option.description });
 			item.addEventListener("click", () => this.select(option.value));
 		}
@@ -120,8 +131,10 @@ export class Listbox<T extends string> {
 	private move(delta: number): void {
 		const items = this.items();
 		if (items.length === 0) return;
-		const current = Math.max(0, items.findIndex((item) => item === document.activeElement));
-		const next = (current + delta + items.length) % items.length;
+		const current = items.findIndex((item) => item === document.activeElement);
+		const next = current < 0
+			? delta > 0 ? 0 : items.length - 1
+			: (current + delta + items.length) % items.length;
 		for (const item of items) item.tabIndex = -1;
 		const target = items[next];
 		if (target) {

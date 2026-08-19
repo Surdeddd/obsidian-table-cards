@@ -1,0 +1,27 @@
+- main:
+  - dialog "Table Cards":
+    - text: Table Cards English · Dictionary
+    - button "٣ جداول"
+    - button "البحث في البطاقات" [expanded]: ⌕
+    - text: ١٨ / ٥٨٣
+    - button "إغلاق": ×
+    - progressbar "التقدم"
+    - article: remain
+    - article: الترجمة يبقى، يظل
+    - article: Example Please remain calm while we check the details.
+    - article: يبقى المحتوى الذي كتبه المستخدم في اتجاهه الطبيعي.
+    - text: Vocabulary · Core Dictionary.md
+    - button "السابق"
+    - button "خلط البطاقات": ↝
+    - button "التالي"
+    - button "إغلاق المتصفح"
+    - dialog "تصفح البطاقات":
+      - heading "تصفح البطاقات" [level=2]
+      - button "إغلاق المتصفح": ×
+      - button "٣ جداول"
+      - searchbox "البحث في البطاقات": remain
+      - text: ٣ نتائج Vocabulary · Core Dictionary
+      - button "remain to continue to exist or stay in the same place Vocabulary · Core ·Dictionary ·الصف ١٨"
+      - button "remainder the part that remains Vocabulary · Core ·Dictionary ·الصف ٢٠٤"
+      - text: Phrases for travel Travel
+      - button "Please remain seated Phrases for travel ·Travel ·الصف ٤١"

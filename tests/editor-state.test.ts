@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createBlock } from "../src/model";
+import { createBlock, type DeckSource, type TableSelector } from "../src/model";
 import {
 	createEditorState,
 	isDirty,
@@ -17,6 +17,18 @@ function stateWithBlocks(...ids: string[]) {
 		createDeck({ blocks: ids.map((id) => createBlock({ id, width: "half", columns: [id.toUpperCase()] })) }),
 	);
 }
+
+const selector = (headerSignature: string, occurrence: number): TableSelector => ({
+	headerSignature,
+	occurrence,
+});
+
+const sourceAll = (path: string): DeckSource => ({
+	id: `source-${path}`,
+	kind: "file",
+	path,
+	tables: { mode: "all" },
+});
 
 describe("editor state", () => {
 	it("changes only the draft and records one undo state", () => {
@@ -94,14 +106,51 @@ describe("editor state", () => {
 		expect(next.baseline.blocks[0]?.label).toBe("");
 		expect(createEditorState(next.baseline).draft.blocks[0]?.label).toBe("");
 	});
+
+	it("keeps v3 source table selections in the editable draft", () => {
+		const persisted = createDeck({
+			sources: [{
+				id: "source",
+				kind: "file",
+				path: "cards.md",
+				tables: { mode: "include", selectors: [{ headerSignature: "term\u001fru", occurrence: 0 }] },
+			}],
+		});
+		const state = createEditorState(persisted);
+		expect(state.draft.sources[0]?.tables).toEqual({
+			mode: "include",
+			selectors: [{ headerSignature: "term\u001fru", occurrence: 0 }],
+		});
+	});
+
+	it("changes multiple table selectors through one undoable source action", () => {
+		const initial = createEditorState(createDeck({ sources: [sourceAll("words.md")] }));
+		const selectors = [selector("a", 0), selector("b", 0)];
+		const next = reduceEditorState(initial, {
+			type: "replaceSources",
+			sources: [{ ...initial.draft.sources[0]!, tables: { mode: "include", selectors } }],
+		});
+
+		expect(next.draft.sources[0]?.tables).toEqual({ mode: "include", selectors });
+		expect(next.past).toHaveLength(1);
+		expect(undo(next).draft.sources[0]?.tables).toEqual({ mode: "all" });
+	});
 });
 
 describe("representative preview rows", () => {
 	it("finds the longest and most-empty cards", () => {
+		const origin = (rowNumber: number) => ({
+			tableKey: "x.md\u0000x\u00000",
+			tableLabel: "Table 1",
+			tableNumber: 1,
+			sourcePath: "x.md",
+			rowNumber,
+			rowKey: `row-${rowNumber}`,
+		});
 		const cards: Card[] = [
-			{ cells: { A: parseCell("short"), B: parseCell("filled") }, headers: ["A", "B"], sourcePath: "x.md", tableSelector: { headerSignature: "x", occurrence: 0 }, rowIndex: 1 },
-			{ cells: { A: parseCell("a very long value"), B: parseCell("filled") }, headers: ["A", "B"], sourcePath: "x.md", tableSelector: { headerSignature: "x", occurrence: 0 }, rowIndex: 2 },
-			{ cells: { A: parseCell(""), B: parseCell("") }, headers: ["A", "B"], sourcePath: "x.md", tableSelector: { headerSignature: "x", occurrence: 0 }, rowIndex: 3 },
+			{ cells: { A: parseCell("short"), B: parseCell("filled") }, headers: ["A", "B"], origin: origin(1) },
+			{ cells: { A: parseCell("a very long value"), B: parseCell("filled") }, headers: ["A", "B"], origin: origin(2) },
+			{ cells: { A: parseCell(""), B: parseCell("") }, headers: ["A", "B"], origin: origin(3) },
 		];
 		expect(representativeRowIndexes(cards)).toEqual({ first: 0, longest: 1, mostEmpty: 2 });
 	});

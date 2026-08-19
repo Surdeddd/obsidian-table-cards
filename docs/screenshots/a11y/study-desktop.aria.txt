@@ -1,0 +1,17 @@
+- main:
+  - dialog "Table Cards":
+    - text: Table Cards English · Dictionary
+    - button "3 tables"
+    - button "Search cards": ⌕
+    - text: 18 / 583
+    - button "Close": ×
+    - progressbar "Progress"
+    - article: remain
+    - article: pronunciation /rɪˈmeɪn/ римэ́йн
+    - article: translation оставаться, сохраняться
+    - article: example Please remain calm while we check the details.
+    - article: РЕ-МЕЙН — ремень остаётся на месте.
+    - text: Vocabulary · Core Dictionary.md
+    - button "Previous"
+    - button "Shuffle": ↝
+    - button "Next"

@@ -1,6 +1,8 @@
 import {
 	BLOCK_KINDS,
+	RIBBON_ICONS,
 	SCHEMA_VERSION,
+	UI_LOCALES,
 	cloneJson,
 	createBlock,
 	newId,
@@ -11,11 +13,13 @@ import {
 	type ColumnDataType,
 	type Deck,
 	type DeckSource,
+	type DeckRibbonSettings,
 	type EmptyValuePolicy,
 	type PluginSettings,
 	type TableSelector,
 } from "../model";
 import { defaultAppearance, mergeAppearance } from "./appearance";
+import { normalizeVaultPath } from "../deck/selectors";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -54,16 +58,40 @@ function normalizeSelector(value: unknown): TableSelector | null {
 	if (!input || typeof input.headerSignature !== "string") {
 		return null;
 	}
-	return {
+	const selector: TableSelector = {
 		headerSignature: input.headerSignature,
 		occurrence:
 			typeof input.occurrence === "number" && Number.isInteger(input.occurrence) && input.occurrence >= 0
 				? input.occurrence
 				: 0,
 	};
+	if (typeof input.sourcePath === "string" && normalizeVaultPath(input.sourcePath)) {
+		selector.sourcePath = normalizeVaultPath(input.sourcePath);
+	}
+	return selector;
 }
 
-function normalizeSource(value: unknown): DeckSource | null {
+function normalizeSelectors(value: unknown): TableSelector[] {
+	if (!Array.isArray(value)) {
+		return [];
+	}
+	const seen = new Set<string>();
+	const selectors: TableSelector[] = [];
+	for (const item of value) {
+		const selector = normalizeSelector(item);
+		if (!selector) {
+			continue;
+		}
+		const key = `${selector.sourcePath ?? ""}\u0000${selector.headerSignature}\u0000${selector.occurrence}`;
+		if (!seen.has(key)) {
+			seen.add(key);
+			selectors.push(selector);
+		}
+	}
+	return selectors;
+}
+
+function migrateV2Source(value: unknown): DeckSource | null {
 	const input = recordOf(value);
 	if (!input || (input.kind !== "file" && input.kind !== "folder") || typeof input.path !== "string") {
 		return null;
@@ -74,7 +102,37 @@ function normalizeSource(value: unknown): DeckSource | null {
 		id: typeof input.id === "string" && input.id ? input.id : newId("source"),
 		kind: input.kind,
 		path: input.path,
-		table: rawTable?.mode === "single" && selector ? { mode: "single", selector } : { mode: "all" },
+		tables: rawTable?.mode === "single" && selector
+			? { mode: "include", selectors: [selector] }
+			: { mode: "all" },
+	};
+}
+
+function normalizeV3Source(value: unknown): DeckSource | null {
+	const input = recordOf(value);
+	if (!input || (input.kind !== "file" && input.kind !== "folder") || typeof input.path !== "string") {
+		return null;
+	}
+	const tables = recordOf(input.tables);
+	return {
+		id: typeof input.id === "string" && input.id ? input.id : newId("source"),
+		kind: input.kind,
+		path: input.path,
+		tables:
+			tables?.mode === "include"
+				? { mode: "include", selectors: normalizeSelectors(tables.selectors) }
+				: { mode: "all" },
+	};
+}
+
+function normalizeRibbon(value: unknown, fallbackVisible = false): DeckRibbonSettings {
+	const input = recordOf(value);
+	return {
+		visible: typeof input?.visible === "boolean" ? input.visible : fallbackVisible,
+		icon:
+			typeof input?.icon === "string" && (RIBBON_ICONS as readonly string[]).includes(input.icon)
+				? input.icon as DeckRibbonSettings["icon"]
+				: "layers-3",
 	};
 }
 
@@ -276,49 +334,28 @@ export function createDeck(partial: Partial<Deck> = {}): Deck {
 		id: partial.id ?? newId("deck"),
 		name: partial.name ?? "New deck",
 		enabled: partial.enabled ?? true,
-		sources: partial.sources?.map((source) => cloneJson(source)) ?? [],
-		blocks: partial.blocks?.map((block) => createBlock(block)) ?? dictionaryBlocks(),
+		sources: partial.sources?.map(cloneJson) ?? [],
+		blocks: partial.blocks?.map((block) => createBlock(block)) ?? [],
 		columnTypes: { ...partial.columnTypes },
 		appearance: partial.appearance ? { ...partial.appearance } : undefined,
 		shuffleDefault: partial.shuffleDefault ?? false,
+		ribbon: { visible: partial.ribbon?.visible ?? false, icon: partial.ribbon?.icon ?? "layers-3" },
 	};
 }
 
-export const DEFAULT_SETTINGS: PluginSettings = {
-	schemaVersion: SCHEMA_VERSION,
-	locale: "auto",
-	lastDeckId: "dictionary",
-	perDeck: {},
-	appearance: defaultAppearance(),
-	decks: [
-		createDeck({
-			id: "dictionary",
-			name: "Dictionary",
-			sources: [
-				{
-					id: "dictionary-source",
-					kind: "file",
-					path: "30_Areas/English/Dictionary/Dictionary.md",
-					table: { mode: "all" },
-				},
-			],
-			blocks: dictionaryBlocks(),
-		}),
-		createDeck({
-			id: "phrases",
-			name: "Phrases",
-			sources: [
-				{
-					id: "phrases-source",
-					kind: "file",
-					path: "30_Areas/English/Dictionary/Phrases.md",
-					table: { mode: "all" },
-				},
-			],
-			blocks: phrasesBlocks(),
-		}),
-	],
-};
+function freshSettings(): PluginSettings {
+	return {
+		schemaVersion: SCHEMA_VERSION,
+		setupVersion: 0,
+		locale: "auto",
+		lastDeckId: null,
+		perDeck: {},
+		appearance: defaultAppearance(),
+		decks: [],
+	};
+}
+
+export const DEFAULT_SETTINGS: PluginSettings = freshSettings();
 
 function columnTypesOf(value: unknown): Record<string, ColumnDataType> {
 	const input = recordOf(value);
@@ -339,14 +376,14 @@ function partialAppearanceOf(value: unknown): Deck["appearance"] {
 	return input ? (cloneJson(input) as Deck["appearance"]) : undefined;
 }
 
-function normalizeV2Deck(value: unknown): Deck {
+function normalizeDeck(value: unknown, sourceNormalizer: (source: unknown) => DeckSource | null): Deck {
 	const input = recordOf(value);
 	const fallback = createDeck();
 	if (!input) {
 		return fallback;
 	}
 	const sources = Array.isArray(input.sources)
-		? input.sources.map(normalizeSource).filter((source): source is DeckSource => source !== null)
+		? input.sources.map(sourceNormalizer).filter((source): source is DeckSource => source !== null)
 		: [];
 	const blocks = Array.isArray(input.blocks)
 		? input.blocks.map(normalizeV2Block).filter((block): block is CardBlock => block !== null)
@@ -360,6 +397,7 @@ function normalizeV2Deck(value: unknown): Deck {
 		columnTypes: columnTypesOf(input.columnTypes),
 		appearance: partialAppearanceOf(input.appearance),
 		shuffleDefault: input.shuffleDefault === true,
+		ribbon: normalizeRibbon(input.ribbon),
 	});
 }
 
@@ -371,10 +409,10 @@ function migrateV1Deck(value: unknown): Deck {
 	}
 	const sources: DeckSource[] = [];
 	for (const path of stringsOf(input.files)) {
-		sources.push({ id: newId("source"), kind: "file", path, table: { mode: "all" } });
+		sources.push({ id: newId("source"), kind: "file", path, tables: { mode: "all" } });
 	}
 	for (const path of stringsOf(input.folders)) {
-		sources.push({ id: newId("source"), kind: "folder", path, table: { mode: "all" } });
+		sources.push({ id: newId("source"), kind: "folder", path, tables: { mode: "all" } });
 	}
 	const migratedBlocks = Array.isArray(input.blocks)
 		? input.blocks.map(migrateV1Block).filter((block): block is CardBlock => block !== null)
@@ -389,6 +427,7 @@ function migrateV1Deck(value: unknown): Deck {
 		columnTypes: columnTypesOf(input.columnTypes),
 		appearance: partialAppearanceOf(input.appearance),
 		shuffleDefault: input.shuffleDefault === true,
+		ribbon: normalizeRibbon(input.ribbon),
 	});
 }
 
@@ -406,17 +445,36 @@ function mergeProgress(value: unknown): PluginSettings["perDeck"] {
 		result[id] = {
 			index: typeof progress.index === "number" ? progress.index : 0,
 			shuffle: progress.shuffle === true,
-			seed: typeof progress.seed === "number" ? progress.seed : Date.now(),
+			seed: typeof progress.seed === "number" ? progress.seed : 0,
+			scope:
+				recordOf(progress.scope)?.mode === "tables"
+					? { mode: "tables", tableKeys: stringsOf(recordOf(progress.scope)?.tableKeys) }
+					: { mode: "all" },
+			cardKey: typeof progress.cardKey === "string" ? progress.cardKey : null,
 		};
 	}
 	return result;
 }
 
-function sharedSettings(raw: UnknownRecord, decks: Deck[]): PluginSettings {
+function localeOf(value: unknown): PluginSettings["locale"] {
+	return typeof value === "string" && (UI_LOCALES as readonly string[]).includes(value)
+		? value as PluginSettings["locale"]
+		: "auto";
+}
+
+function selectedDeckId(raw: UnknownRecord, decks: Deck[], pinEnabledDeck: boolean): string | null {
+	if (typeof raw.lastDeckId === "string" && decks.some((deck) => deck.id === raw.lastDeckId && deck.enabled)) {
+		return raw.lastDeckId;
+	}
+	return pinEnabledDeck ? decks.find((deck) => deck.enabled)?.id ?? null : null;
+}
+
+function sharedSettings(raw: UnknownRecord, decks: Deck[], setupVersion: number, pinEnabledDeck: boolean): PluginSettings {
 	return {
 		schemaVersion: SCHEMA_VERSION,
-		locale: raw.locale === "en" || raw.locale === "ru" ? raw.locale : "auto",
-		lastDeckId: typeof raw.lastDeckId === "string" || raw.lastDeckId === null ? raw.lastDeckId : null,
+		setupVersion,
+		locale: localeOf(raw.locale),
+		lastDeckId: selectedDeckId(raw, decks, pinEnabledDeck),
 		decks,
 		perDeck: mergeProgress(raw.perDeck),
 		appearance: mergeAppearance(raw.appearance),
@@ -426,32 +484,71 @@ function sharedSettings(raw: UnknownRecord, decks: Deck[]): PluginSettings {
 function migrateV1Settings(raw: unknown): PluginSettings {
 	const input = recordOf(raw);
 	if (!input) {
-		return cloneJson(DEFAULT_SETTINGS);
+		return freshSettings();
 	}
-	const decks = Array.isArray(input.decks) && input.decks.length > 0
+	const decks = Array.isArray(input.decks)
 		? input.decks.map(migrateV1Deck)
-		: cloneJson(DEFAULT_SETTINGS.decks);
-	return sharedSettings(input, decks);
+		: [];
+	const selectedId = selectedDeckId(input, decks, true);
+	return sharedSettings(
+		input,
+		decks.map((deck) => createDeck({ ...deck, ribbon: { visible: deck.id === selectedId, icon: deck.ribbon.icon } })),
+		1,
+		true,
+	);
 }
 
-function normalizeV2Settings(raw: unknown): PluginSettings {
+function migrateV2Settings(raw: unknown): PluginSettings {
 	const input = recordOf(raw);
 	if (!input) {
-		return cloneJson(DEFAULT_SETTINGS);
+		return freshSettings();
 	}
-	const decks = Array.isArray(input.decks) ? input.decks.map(normalizeV2Deck) : cloneJson(DEFAULT_SETTINGS.decks);
-	return sharedSettings(input, decks);
+	const provisionalDecks = Array.isArray(input.decks)
+		? input.decks.map((deck) => normalizeDeck(deck, migrateV2Source))
+		: [];
+	const selectedId = selectedDeckId(input, provisionalDecks, true);
+	const decks = provisionalDecks.map((deck) =>
+		createDeck({ ...deck, ribbon: { visible: deck.id === selectedId, icon: deck.ribbon.icon } }),
+	);
+	return sharedSettings(input, decks, 1, true);
 }
 
-function isV2Settings(raw: unknown): boolean {
-	return recordOf(raw)?.schemaVersion === SCHEMA_VERSION;
+function normalizeV3Settings(raw: unknown): PluginSettings {
+	const input = recordOf(raw);
+	if (!input) {
+		return freshSettings();
+	}
+	const decks = Array.isArray(input.decks)
+		? input.decks.map((deck) => normalizeDeck(deck, normalizeV3Source))
+		: [];
+	return sharedSettings(
+		input,
+		decks,
+		typeof input.setupVersion === "number" ? input.setupVersion : 1,
+		false,
+	);
 }
 
 export function mergeDeck(raw: unknown): Deck {
 	const input = recordOf(raw);
-	return input && Array.isArray(input.sources) ? normalizeV2Deck(input) : migrateV1Deck(input);
+	if (input && Array.isArray(input.sources)) {
+		return normalizeDeck(input, (source) =>
+			recordOf(source)?.tables ? normalizeV3Source(source) : migrateV2Source(source),
+		);
+	}
+	return migrateV1Deck(input);
 }
 
 export function mergeSettings(raw: unknown): PluginSettings {
-	return isV2Settings(raw) ? normalizeV2Settings(raw) : migrateV1Settings(raw);
+	if (raw === null || raw === undefined) {
+		return freshSettings();
+	}
+	const version = recordOf(raw)?.schemaVersion;
+	if (version === 3) {
+		return normalizeV3Settings(raw);
+	}
+	if (version === 2) {
+		return migrateV2Settings(raw);
+	}
+	return migrateV1Settings(raw);
 }

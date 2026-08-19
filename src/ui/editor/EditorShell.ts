@@ -1,6 +1,6 @@
 import { setIcon, type App, type Component } from "obsidian";
-import type { AppearanceSettings, DeckLoadResult } from "../../model";
-import type { Translator } from "../../i18n";
+import type { AppearanceSettings, DeckLoadResult, UiLocale } from "../../model";
+import { formatUiNumber, type Translator } from "../../i18n";
 import { representativeRowIndexes } from "../../editor/rows";
 import {
 	isDirty,
@@ -30,6 +30,7 @@ export interface EditorShellContext {
 	error: string | null;
 	saving: boolean;
 	previewDevice: PreviewDevice;
+	locale: UiLocale;
 	t: Translator;
 	globalAppearance: AppearanceSettings;
 	dispatch: (action: EditorAction) => void;
@@ -105,6 +106,7 @@ export class EditorShell {
 			attr: {
 				value: context.state.draft.name,
 				"aria-label": context.t("settings.deck.name"),
+				dir: "auto",
 				spellcheck: "false",
 				autocomplete: "off",
 			},
@@ -153,7 +155,7 @@ export class EditorShell {
 			context.data.profiles.reduce((total, profile) => total + profile.warnings.length, 0);
 		const fields = button(
 			canvasBar,
-			`${context.t("editor.fields")} · ${context.data.profiles.length} · ${warningCount}`,
+			`${context.t("editor.fields")} · ${formatUiNumber(context.data.profiles.length, context.locale)} · ${formatUiNumber(warningCount, context.locale)}`,
 			"table-properties",
 			() => context.dispatch({ type: "openPanel", panel: "fields" }),
 			"tc-editor-button with-label",
@@ -164,10 +166,12 @@ export class EditorShell {
 		const previous = button(rows, context.t("modal.prev"), "chevron-left", () => context.dispatch({ type: "setPreviewRow", index: Math.max(0, currentRow - 1) }), "tc-editor-icon-button");
 		previous.disabled = currentRow <= 0;
 		const rowPicker = rows.createEl("details", { cls: "tc-editor-row-picker" });
+		const currentRowLabel = formatUiNumber(rowCount === 0 ? 0 : currentRow + 1, context.locale);
+		const rowCountLabel = formatUiNumber(rowCount, context.locale);
 		rowPicker.createEl("summary", {
-			text: `${rowCount === 0 ? 0 : currentRow + 1} / ${rowCount}`,
+			text: `${currentRowLabel} / ${rowCountLabel}`,
 			attr: {
-				"aria-label": `${context.t("editor.row.choose")}: ${rowCount === 0 ? 0 : currentRow + 1} / ${rowCount}`,
+				"aria-label": `${context.t("editor.row.choose")}: ${currentRowLabel} / ${rowCountLabel}`,
 			},
 		});
 		const rowMenu = rowPicker.createDiv({ cls: "tc-editor-row-menu" });

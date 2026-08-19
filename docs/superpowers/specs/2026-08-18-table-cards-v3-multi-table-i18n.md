@@ -456,7 +456,7 @@ After the release gate, deploy only `main.js`, `manifest.json`, and `styles.css`
 
 - [Anki search and card browser](https://docs.ankiweb.net/searching.html)
 - [Anki filtered decks](https://docs.ankiweb.net/filtered-decks.html)
-- [Quizlet combining study sets](https://help.quizlet.com/hc/en-us/articles/360029638892-Combining-study-sets)
+- [Quizlet combining flashcard sets](https://help.quizlet.com/hc/en-us/articles/360029638892-Combining-study-sets)
 - [RemNote practicing specific flashcards](https://help.remnote.com/en/articles/6904503-practicing-specific-flashcards)
 - [Notion multi-source databases](https://www.notion.com/help/what-is-a-database)
 - [Notion views, filters, and search](https://www.notion.com/en-gb/help/views-filters-and-sorts)

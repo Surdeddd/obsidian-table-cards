@@ -1,4 +1,5 @@
 import type { Card, CellValue } from "../model";
+import { cardOrigins } from "../deck/catalog";
 import { parseCell, stripMarkdownText } from "./cells";
 import { normalizeHeader, scanMarkdownTables } from "./table-scanner";
 
@@ -54,13 +55,12 @@ export function listTableHeaders(markdown: string): string[] {
 export function parseMarkdownTables(markdown: string, sourcePath = ""): Card[] {
 	const cards: Card[] = [];
 	for (const table of scanMarkdownTables(markdown, sourcePath)) {
+		const origins = cardOrigins(table);
 		for (let rowIndex = 0; rowIndex < table.rows.length; rowIndex += 1) {
 			cards.push({
 				cells: table.rows[rowIndex] ?? {},
 				headers: table.headers.slice(),
-				sourcePath,
-				tableSelector: table.selector,
-				rowIndex: table.rowNumbers[rowIndex] ?? rowIndex + 1,
+				origin: origins[rowIndex]!,
 			});
 		}
 	}

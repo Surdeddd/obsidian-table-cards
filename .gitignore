@@ -10,6 +10,8 @@ data.json
 *.log
 npm-debug.log*
 coverage/
+playwright-report/
+test-results/
 .env
 .env.*
 MEMORY_BANK/

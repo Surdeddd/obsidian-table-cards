@@ -1,0 +1,22 @@
+- main:
+  - dialog "Choose a card layout":
+    - text: Table Cards
+    - heading "Set up Table Cards" [level=1]
+    - button "Close": ×
+    - text: Step 2 of 3
+    - heading "Choose a card layout" [level=2]
+    - paragraph: The recommendation uses your real columns and values.
+    - group "Card layouts":
+      - button "Vocabulary Recommended Term, translation, pronunciation, example, note, and image. Word column · translation column · image found" [pressed]
+      - button "Phrases Phrase, translation, context quote, and note."
+      - button "Question and answer Question, answer, explanation, and optional image."
+      - button "Gallery Leading image, title, tags, and description."
+      - button "Reference Title with dense, labelled properties."
+      - button "Universal Best title plus every remaining column in source order."
+    - article: remain
+    - article: Pronunciation /rɪˈmeɪn/
+    - article: Translation оставаться
+    - article: Example Please remain calm while we check the details.
+    - text: Vocabulary · Core Dictionary.md
+    - button "Back"
+    - button "Continue"

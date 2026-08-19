@@ -1,9 +1,16 @@
 import { Component, Modal, type App } from "obsidian";
-import type { Deck, DeckLoadResult, ParsedTable, PluginSettings } from "../../model";
-import type { Translator } from "../../i18n";
+import type { Deck, DeckLoadResult, ParsedTable, PluginSettings, UiLocale } from "../../model";
+import {
+	applyUiChromeDirection,
+	formatUiNumber,
+	type Translator,
+} from "../../i18n";
 import { cloneJson } from "../../model";
-import { loadDeckData, scanDeckTables } from "../../deck/load";
+import { buildDeckDataFromScan, scanDeckSources } from "../../deck/load";
+import type { DeckScanResult } from "../../deck/catalog";
 import { autoLayout } from "../../layout";
+import { EditorScanCache, editorSourceTopologyKey } from "../../editor/scan-cache";
+import { mergeEditorDeck } from "../../editor/settings-save";
 import {
 	createEditorState,
 	isDirty,
@@ -14,18 +21,21 @@ import {
 	type EditorState,
 } from "../../editor/state";
 import { EditorShell, type PreviewDevice } from "./EditorShell";
-import { renderFieldsSheet } from "./FieldsSheet";
+import { FieldsSheet } from "./FieldsSheet";
 import { renderReorderSheet } from "./ReorderSheet";
 import { renderInspectorSheet } from "./InspectorSheet";
+import type { SettingsMutation } from "../../settings/persistence";
 
 export interface EditorHost {
 	settings: PluginSettings;
-	saveSettings: () => Promise<void>;
+	updateSettings: (mutate: SettingsMutation) => Promise<void>;
 	getTranslator: () => Translator;
+	getLocale: () => UiLocale;
 	onDeckSaved?: () => void;
+	onOpenDraftSession?: (deck: Deck, table: ParsedTable) => void;
 }
 
-const EMPTY_DATA: DeckLoadResult = { cards: [], tables: [], profiles: [], diagnostics: [] };
+const EMPTY_DATA: DeckLoadResult = { cards: [], tables: [], catalog: [], profiles: [], diagnostics: [] };
 
 function isTextEditing(event: KeyboardEvent): boolean {
 	const target = event.target;
@@ -48,12 +58,14 @@ class DirtyConfirmModal extends Modal {
 	constructor(
 		app: App,
 		private readonly t: Translator,
+		private readonly locale: UiLocale,
 		private readonly actions: DirtyConfirmActions,
 	) {
 		super(app);
 	}
 
 	onOpen(): void {
+		applyUiChromeDirection(this.modalEl, this.locale);
 		this.titleEl.setText(this.t("editor.unsavedTitle"));
 		this.contentEl.empty();
 		this.contentEl.createEl("p", { text: this.t("editor.unsavedDesc") });
@@ -102,7 +114,10 @@ export class DeckEditorModal extends Modal {
 	private readonly persistedId: string;
 	private state: EditorState;
 	private data: DeckLoadResult = EMPTY_DATA;
-	private availableTables: ParsedTable[] = [];
+	private scan: DeckScanResult | null = null;
+	private dataTopology = "";
+	private readonly scanCache: EditorScanCache;
+	private readonly fieldsSheet = new FieldsSheet();
 	private shell: EditorShell | null = null;
 	private loading = false;
 	private saving = false;
@@ -118,6 +133,14 @@ export class DeckEditorModal extends Modal {
 		this.host = host;
 		this.persistedId = deck.id;
 		this.state = createEditorState(deck);
+		this.scanCache = new EditorScanCache(
+			(sources) => scanDeckSources(this.app, sources, {
+				untitledTableLabel: (number) => this.host.getTranslator()("table.untitled", {
+					number: formatUiNumber(number, this.host.getLocale()),
+				}),
+			}),
+			(draft, scan) => buildDeckDataFromScan(this.app, draft, scan),
+		);
 	}
 
 	async onOpen(): Promise<void> {
@@ -127,6 +150,7 @@ export class DeckEditorModal extends Modal {
 			this.state = reduceEditorState(this.state, { type: "openPanel", panel: "fields" });
 		}
 		this.modalEl.addClass("table-cards-editor");
+		applyUiChromeDirection(this.modalEl, this.host.getLocale());
 		this.titleEl.setText("");
 		this.contentEl.empty();
 		this.contentEl.addClass("table-cards-editor-body");
@@ -145,14 +169,12 @@ export class DeckEditorModal extends Modal {
 		});
 		this.scope.register(["Mod"], "z", (event) => {
 			if (isTextEditing(event)) return;
-			this.state = undo(this.state);
-			this.render();
+			this.replaceState(undo(this.state));
 			return false;
 		});
 		const redoDraft = (event: KeyboardEvent): false | undefined => {
 			if (isTextEditing(event)) return;
-			this.state = redo(this.state);
-			this.render();
+			this.replaceState(redo(this.state));
 			return false;
 		};
 		this.scope.register(["Mod", "Shift"], "z", redoDraft);
@@ -166,7 +188,7 @@ export class DeckEditorModal extends Modal {
 		}
 		if (this.confirmOpen) return;
 		this.confirmOpen = true;
-		new DirtyConfirmModal(this.app, this.host.getTranslator(), {
+		new DirtyConfirmModal(this.app, this.host.getTranslator(), this.host.getLocale(), {
 			onSave: async () => {
 				await this.save();
 				this.closeImmediately();
@@ -187,6 +209,8 @@ export class DeckEditorModal extends Modal {
 
 	onClose(): void {
 		this.loadVersion += 1;
+		this.scanCache.invalidate();
+		this.fieldsSheet.destroy();
 		this.component?.unload();
 		this.component = null;
 		this.shell?.destroy();
@@ -195,24 +219,34 @@ export class DeckEditorModal extends Modal {
 	}
 
 	private dispatch(action: EditorAction): void {
-		this.state = reduceEditorState(this.state, action);
+		this.replaceState(reduceEditorState(this.state, action));
+	}
+
+	private replaceState(next: EditorState): void {
+		const draftChanged = next.draft !== this.state.draft;
+		this.state = next;
 		this.render();
-		if (action.type === "replaceSources") void this.refreshData();
+		if (draftChanged) void this.refreshData();
 	}
 
 	private async refreshData(): Promise<void> {
 		const version = ++this.loadVersion;
-		this.loading = true;
+		const topology = editorSourceTopologyKey(this.state.draft.sources);
+		const topologyChanged = topology !== this.dataTopology;
+		if (topologyChanged) {
+			this.dataTopology = topology;
+			this.data = EMPTY_DATA;
+			this.scan = null;
+		}
+		this.loading = topologyChanged || this.scan === null;
 		this.error = null;
-		this.render();
+		if (this.loading) this.render();
 		try {
-			const [result, availableTables] = await Promise.all([
-				loadDeckData(this.app, this.state.draft),
-				scanDeckTables(this.app, this.state.draft.sources),
-			]);
-			if (version !== this.loadVersion) return;
+			const loaded = await this.scanCache.load(this.state.draft);
+			if (loaded.status === "stale" || version !== this.loadVersion) return;
+			const result = loaded.result;
 			this.data = result;
-			this.availableTables = availableTables;
+			this.scan = loaded.scan;
 			if (this.state.draft.blocks.length === 0 && result.profiles.length > 0) {
 				this.state = reduceEditorState(this.state, {
 					type: "replaceBlocks",
@@ -227,6 +261,10 @@ export class DeckEditorModal extends Modal {
 			}
 		} catch (error) {
 			if (version !== this.loadVersion) return;
+			this.scanCache.invalidate();
+			this.scan = null;
+			this.data = EMPTY_DATA;
+			this.dataTopology = "";
 			this.error = error instanceof Error ? error.message : this.host.getTranslator()("editor.loadError");
 		} finally {
 			if (version === this.loadVersion) {
@@ -238,19 +276,20 @@ export class DeckEditorModal extends Modal {
 
 	private async save(): Promise<void> {
 		if (this.saving || !isDirty(this.state)) return;
-		const index = this.host.settings.decks.findIndex((deck) => deck.id === this.persistedId);
-		if (index < 0) return;
+		if (!this.host.settings.decks.some((deck) => deck.id === this.persistedId)) return;
 		this.saving = true;
 		this.error = null;
 		this.render();
-		const previous = this.host.settings.decks[index];
 		try {
 			const saved = cloneJson(this.state.draft);
-			this.host.settings.decks[index] = saved;
-			await this.host.saveSettings();
+			const missingMessage = this.host.getTranslator()("editor.saveError");
+			await this.host.updateSettings((settings) => {
+				const index = settings.decks.findIndex((deck) => deck.id === this.persistedId);
+				if (index < 0) throw new Error(missingMessage);
+				settings.decks[index] = mergeEditorDeck(settings.decks[index]!, saved);
+			});
 			this.state = createEditorState(saved);
 		} catch (error) {
-			if (previous) this.host.settings.decks[index] = previous;
 			this.error = error instanceof Error ? error.message : this.host.getTranslator()("editor.saveError");
 			throw error;
 		} finally {
@@ -271,16 +310,15 @@ export class DeckEditorModal extends Modal {
 			error: this.error,
 			saving: this.saving,
 			previewDevice: this.previewDevice,
+			locale: this.host.getLocale(),
 			t: this.host.getTranslator(),
 			globalAppearance: this.host.settings.appearance,
 			dispatch: (action) => this.dispatch(action),
 			onUndo: () => {
-				this.state = undo(this.state);
-				this.render();
+				this.replaceState(undo(this.state));
 			},
 			onRedo: () => {
-				this.state = redo(this.state);
-				this.render();
+				this.replaceState(redo(this.state));
 			},
 			onSave: () => void this.save().catch(() => undefined),
 			onBack: () => this.close(),
@@ -290,20 +328,23 @@ export class DeckEditorModal extends Modal {
 			},
 			renderPanel: (panel, body, footer) => {
 				if (panel === "fields") {
-					renderFieldsSheet(body, {
+					this.fieldsSheet.render(body, {
 						app: this.app,
 						state: this.state,
-						tables: this.availableTables,
+						scan: this.scan,
 						profiles: this.data.profiles,
 						rowCount: this.data.cards.length,
-						diagnostics: this.data.diagnostics.length,
+						diagnostics: this.data.diagnostics,
 						loading: this.loading,
+						locale: this.host.getLocale(),
 						t: this.host.getTranslator(),
 						dispatch: (action) => this.dispatch(action),
+						onOpenTable: (table) => this.host.onOpenDraftSession?.(this.state.draft, table),
 					});
 				} else if (panel === "reorder") {
 					renderReorderSheet(body, {
 						state: this.state,
+						locale: this.host.getLocale(),
 						t: this.host.getTranslator(),
 						dispatch: (action) => this.dispatch(action),
 					});

@@ -1,0 +1,53 @@
+- main:
+  - dialog "Редактор карточки":
+    - button "Назад": ←
+    - textbox "Название": English · Dictionary
+    - text: Есть изменения
+    - button "Отменить": ↶
+    - button "Повторить": ↷
+    - button "Компьютер" [pressed]: ▣
+    - button "Телефон": ▯
+    - button "Сохранить"
+    - button "▦ Поля · 7 · 2"
+    - button "Предыдущая строка": ‹
+    - group: 18 / 583
+    - button "Следующая строка": ›
+    - button "◐ Стиль карточки"
+    - button "remain" [pressed]
+    - button "транскрипция /rɪˈmeɪn/ римэ́йн"
+    - button "перевод оставаться, сохраняться"
+    - button "пример Please remain calm while we check the details."
+    - button "РЕ-МЕЙН — ремень остаётся на месте."
+    - button "Заголовок"
+    - button "Вся ширина"
+    - button "↕ Переместить"
+    - button "⋯ Ещё"
+    - button "Закрыть панель"
+    - dialog "Поля и данные":
+      - heading "Поля и данные" [level=2]
+      - button "Закрыть": ×
+      - text: 7 столбцов 583 строк 2 предупреждения
+      - heading "Источники данных" [level=3]
+      - button "Добавить файл"
+      - button "Добавить папку"
+      - text: Файл 30_Areas/English/Dictionary/Dictionary.md Выбрано 2 из 3 таблиц
+      - button "Удалить источник": ⌫
+      - text: Одна сохранённая таблица не найдена
+      - button "Выбрать таблицы"
+      - text: Папка 30_Areas/English/Phrases Все 2 таблицы
+      - button "Удалить источник": ⌫
+      - button "Выбрать таблицы"
+      - heading "Столбцы таблицы" [level=3]
+      - group:
+        - checkbox "Показывать Words" [checked]
+        - text: Words 583 / 583 Текст
+      - group:
+        - checkbox "Показывать Picture" [checked]
+        - text: Picture 348 / 583 Изображение
+        - img "Большинство ячеек пустые"
+        - text: Тип данных
+        - button "Тип данных": Изображение
+        - text: Уверенность 100% Уникальных 337 Большинство ячеек пустые Примеры
+        - list:
+          - listitem: assets/lighthouse.jpg
+      - button "Собрать раскладку автоматически"

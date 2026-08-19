@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<link rel="icon" href="data:,">
+	<title>Table Cards — setup fixtures</title>
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="preview.css">
+	<style>
+		.tc-setup-card-preview { --tc-window-bg:#0d0d0e; --tc-card-bg:#151516; --tc-text:#f3f3f3; --tc-text-muted:#a7a7ac; --tc-label:var(--text-faint); --tc-accent:#fff; --tc-border:#303034; --tc-border-w:1px; --tc-radius:16px; --tc-pad:16px; --tc-gap:10px; --tc-word:.78; }
+		.tc-setup-card-preview .table-cards-word { font-size: clamp(1.8rem, 5vw, 2.7rem); }
+		.tc-setup-preset-icon { font-size: 18px; }
+		.preview-setup-icon { font-size: 18px; }
+		.preview-setup-rtl .tc-setup-preset,
+			.preview-setup-rtl .tc-source-path,
+			.preview-setup-rtl .tc-setup-card-preview { text-align: start; }
+			.preview-setup-confirm { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 18px; background: rgb(0 0 0 / 68%); }
+			.preview-setup-confirm-dialog { width: min(420px, 100%); padding: 24px; border: 1px solid var(--background-modifier-border); border-radius: 16px; background: var(--background-primary); box-shadow: 0 18px 56px rgb(0 0 0 / 44%); }
+			.preview-setup-confirm-dialog h2 { margin: 0 0 10px; font-size: 20px; }
+			.preview-setup-confirm-dialog p { margin: 0; color: var(--text-muted); line-height: 1.5; }
+			.preview-setup-dismissed { padding: 24px; color: var(--text-muted); text-align: center; }
+	</style>
+</head>
+<body>
+	<nav class="preview-toolbar" aria-label="Setup fixtures">
+		<button type="button" data-state="data" aria-pressed="true">1 · Data</button>
+		<button type="button" data-state="preset" aria-pressed="false">2 · Preset</button>
+		<button type="button" data-state="finish" aria-pressed="false">3 · Finish</button>
+		<button type="button" data-rtl aria-pressed="false">RTL</button>
+		<a href="launcher.html">Launcher</a>
+		<a href="editor.html">Editor</a>
+	</nav>
+
+	<main class="preview-root">
+		<section class="modal table-cards-setup" data-state="data" role="dialog" aria-modal="true" aria-label="Set up Table Cards" tabindex="-1">
+			<div class="modal-content tc-setup-shell"><div class="tc-setup">
+				<header class="tc-setup-header"><div class="tc-setup-heading"><div class="tc-setup-kicker">Table Cards</div><h1>Set up Table Cards</h1></div><button class="tc-setup-close" type="button" aria-label="Close">×</button></header>
+				<div class="tc-setup-progress"><div class="tc-setup-progress-label">Step 1 of 3</div><div class="tc-setup-progress-track" aria-hidden="true"><span class="is-complete"></span><span></span><span></span></div></div>
+				<div class="tc-setup-body">
+					<div class="tc-setup-intro"><h2>Choose your data</h2><p>Add notes or folders, then choose the tables to study.</p></div>
+					<div class="tc-setup-source-actions"><button type="button">Add file</button><button type="button">Add folder</button></div>
+					<div class="tc-setup-sources">
+						<div class="tc-setup-source-card"><div class="tc-setup-source-identity"><div class="tc-source-kind">File</div><div class="tc-source-path" dir="auto">30_Areas/English/Dictionary.md</div><div class="tc-setup-source-summary">2 of 3 tables selected</div></div><div class="tc-setup-source-card-actions"><button type="button" data-open-tables>Choose tables</button><button class="tc-setup-source-remove" type="button" aria-label="Remove source">⌫</button></div></div>
+						<div class="tc-setup-source-card"><div class="tc-setup-source-identity"><div class="tc-source-kind">Folder</div><div class="tc-source-path" dir="auto">30_Areas/English/Phrases</div><div class="tc-setup-source-summary">All 2 tables</div></div><div class="tc-setup-source-card-actions"><button type="button">Choose tables</button><button class="tc-setup-source-remove" type="button" aria-label="Remove source">⌫</button></div></div>
+					</div>
+					<div class="tc-setup-status has-data" aria-live="polite"><div class="tc-setup-status-summary">583 cards · 4 tables · 7 fields</div><div class="tc-setup-detected-types"><div class="tc-setup-detected-title">Detected column types</div><div class="tc-setup-detected-values"><span class="tc-setup-detected-type"><span dir="auto">Word</span><span>Text</span></span><span class="tc-setup-detected-type"><span dir="auto">Translation</span><span>Text</span></span><span class="tc-setup-detected-type"><span dir="auto">Image</span><span>Image</span></span><span class="tc-setup-detected-type"><span dir="auto">Tags</span><span>Tags</span></span></div></div><div class="tc-setup-warning-count">2 warnings</div></div>
+				</div>
+				<footer class="tc-setup-footer"><button class="mod-cta" type="button" data-next="preset">Continue</button></footer>
+			</div></div>
+		</section>
+
+		<section class="modal table-cards-setup" data-state="preset" role="dialog" aria-modal="true" aria-label="Choose a card layout" tabindex="-1" hidden>
+			<div class="modal-content tc-setup-shell"><div class="tc-setup">
+				<header class="tc-setup-header"><div class="tc-setup-heading"><div class="tc-setup-kicker">Table Cards</div><h1>Set up Table Cards</h1></div><button class="tc-setup-close" type="button" aria-label="Close">×</button></header>
+				<div class="tc-setup-progress"><div class="tc-setup-progress-label">Step 2 of 3</div><div class="tc-setup-progress-track" aria-hidden="true"><span class="is-complete"></span><span class="is-complete"></span><span></span></div></div>
+				<div class="tc-setup-body"><div class="tc-setup-intro"><h2>Choose a card layout</h2><p>The recommendation uses your real columns and values.</p></div>
+					<div class="tc-setup-presets" role="group" aria-label="Card layouts">
+					<button class="tc-setup-preset" type="button" aria-pressed="true" data-preset data-preview-word="remain"><span class="tc-setup-preset-icon" aria-hidden="true">Aa</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Vocabulary<span class="tc-setup-recommended">Recommended</span></span><span class="tc-setup-preset-description">Term, translation, pronunciation, example, note, and image.</span><span class="tc-setup-preset-reasons">Word column · translation column · image found</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="Could you help me?"><span class="tc-setup-preset-icon" aria-hidden="true">“ ”</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Phrases</span><span class="tc-setup-preset-description">Phrase, translation, context quote, and note.</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="What remains?"><span class="tc-setup-preset-icon" aria-hidden="true">?</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Question and answer</span><span class="tc-setup-preset-description">Question, answer, explanation, and optional image.</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="lighthouse"><span class="tc-setup-preset-icon" aria-hidden="true">▧</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Gallery</span><span class="tc-setup-preset-description">Leading image, title, tags, and description.</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="API response"><span class="tc-setup-preset-icon" aria-hidden="true">≡</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Reference</span><span class="tc-setup-preset-description">Title with dense, labelled properties.</span></span></button>
+						<button class="tc-setup-preset" type="button" aria-pressed="false" data-preset data-preview-word="remain"><span class="tc-setup-preset-icon" aria-hidden="true">✣</span><span class="tc-setup-preset-copy"><span class="tc-setup-preset-name">Universal</span><span class="tc-setup-preset-description">Best title plus every remaining column in source order.</span></span></button>
+					</div>
+					<div class="tc-setup-card-preview" dir="auto">
+						<article class="table-cards-box" data-kind="title" data-width="full" data-overflow="shrink"><div class="table-cards-word" data-preview-title>remain</div></article>
+						<article class="table-cards-box" data-kind="chips" data-width="half"><div class="table-cards-label">Pronunciation</div><div class="table-cards-pron"><span class="table-cards-chip">/rɪˈmeɪn/</span></div></article>
+						<article class="table-cards-box" data-kind="text" data-width="half"><div class="table-cards-label">Translation</div><div class="table-cards-translation">оставаться</div></article>
+						<article class="table-cards-box" data-kind="quote" data-width="full"><div class="table-cards-label">Example</div><div class="table-cards-example">Please remain calm while we check the details.</div></article>
+						<div class="table-cards-source-meta"><span class="table-cards-source-table">Vocabulary · Core</span><span aria-hidden="true">·</span><span class="table-cards-source-file">Dictionary.md</span></div>
+					</div>
+				</div>
+				<footer class="tc-setup-footer"><button type="button" data-next="data">Back</button><button class="mod-cta" type="button" data-next="finish">Continue</button></footer>
+			</div></div>
+		</section>
+
+			<section class="modal table-cards-setup" data-state="finish" role="dialog" aria-modal="true" aria-label="Name your deck" tabindex="-1" hidden>
+			<div class="modal-content tc-setup-shell"><div class="tc-setup">
+				<header class="tc-setup-header"><div class="tc-setup-heading"><div class="tc-setup-kicker">Table Cards</div><h1>Set up Table Cards</h1></div><button class="tc-setup-close" type="button" aria-label="Close">×</button></header>
+				<div class="tc-setup-progress"><div class="tc-setup-progress-label">Step 3 of 3</div><div class="tc-setup-progress-track" aria-hidden="true"><span class="is-complete"></span><span class="is-complete"></span><span class="is-complete"></span></div></div>
+				<div class="tc-setup-body"><div class="tc-setup-intro"><h2>Name your deck</h2><p>You can change every field later in the editor.</p></div><div class="tc-setup-finish-form">
+					<label class="tc-setup-field"><span>Deck name</span><input type="text" value="English · Dictionary" autocomplete="off" dir="auto"></label>
+					<div class="tc-setup-field-label">Ribbon icon</div>
+					<div class="tc-setup-icons" role="group" aria-label="Ribbon icon">
+						<button type="button" aria-label="Card gallery" aria-pressed="true" data-icon><span class="preview-setup-icon" aria-hidden="true">▤</span></button><button type="button" aria-label="Languages" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">文</span></button><button type="button" aria-label="Quote" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">❝</span></button><button type="button" aria-label="Question" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">?</span></button><button type="button" aria-label="Image" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">▧</span></button><button type="button" aria-label="Book" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">▱</span></button><button type="button" aria-label="Layers" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">≋</span></button><button type="button" aria-label="Graduation cap" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">⌂</span></button><button type="button" aria-label="Brain" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">✺</span></button><button type="button" aria-label="Library" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">▥</span></button><button type="button" aria-label="Notebook" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">▣</span></button><button type="button" aria-label="Rows" aria-pressed="false" data-icon><span class="preview-setup-icon" aria-hidden="true">☷</span></button>
+					</div>
+					<label class="tc-setup-ribbon"><input type="checkbox" checked><span>Show this deck in the left ribbon</span></label><div class="tc-setup-hint">Pin decks you open often.</div><div class="tc-setup-final-summary">583 cards · 4 tables · 7 fields</div><div class="tc-setup-status has-data" role="status" data-created hidden></div>
+				</div></div>
+			<footer class="tc-setup-footer"><button type="button" data-next="preset">Back</button><button class="mod-cta" type="button" data-create-deck>Create deck</button></footer>
+				</div></div>
+			</section>
+
+			<div class="preview-setup-dismissed" data-setup-dismissed role="status" tabindex="-1" hidden>Setup discarded. Open a fixture step to start from the clean draft.</div>
+			<div class="preview-setup-confirm" data-setup-confirm hidden>
+				<section class="preview-setup-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="setup-confirm-title" aria-describedby="setup-confirm-description">
+					<h2 id="setup-confirm-title">Discard setup?</h2>
+					<p id="setup-confirm-description">Your setup changes have not been saved.</p>
+					<div class="tc-confirm-actions"><button type="button" data-continue-setup>Continue setup</button><button class="mod-warning" type="button" data-discard-setup>Discard setup</button></div>
+				</section>
+			</div>
+		</main>
+	<div class="preview-note">Setup is a draft until Create deck. Toggle RTL to verify scoped direction; row content remains <code>dir="auto"</code>.</div>
+
+	<script type="module" src="setup.js"></script>
+</body>
+</html>

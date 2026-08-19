@@ -25,7 +25,7 @@ manifest.json
 styles.css
 ```
 
-Then enable **Table Cards** in **Settings → Community plugins**. User settings live separately in `data.json`; the deploy script copies only the three runtime artifacts above.
+Then enable **Table Cards** in **Settings → Community plugins**. Obsidian 1.6.7 or newer is required. User settings live separately in `data.json`; the deploy script copies only the three runtime artifacts above.
 
 ## First run
 
@@ -111,9 +111,14 @@ npm run typecheck:tools
 npm run build
 npx playwright install chromium
 npm run test:ui
+npm run test:obsidian
 npm run check:links
 ```
 
-`npx playwright install chromium` is a one-time browser setup for a clean checkout. Deterministic production-class fixtures live in `preview/launcher.html`, `preview/setup.html`, `preview/v2.html`, and `preview/editor.html`. The Playwright gate covers desktop, tablet, zoom-equivalent, phone, Arabic RTL, reduced motion, focus restoration, target geometry, overflow, and console output.
+`npx playwright install chromium` is a one-time browser setup for a clean checkout.
+
+`npm run test:ui` drives the static fixtures in `preview/launcher.html`, `preview/setup.html`, `preview/v2.html`, and `preview/editor.html`. They are a design mock: they exercise the stylesheet and the interaction patterns, not the plugin bundle. That gate covers desktop, tablet, zoom-equivalent, phone, Arabic RTL, reduced motion, focus restoration, target geometry, overflow, and console output.
+
+`npm run test:obsidian` covers the plugin itself. It builds a throwaway vault under `.obsidian-harness/`, installs the freshly built artifacts into it, launches the installed Obsidian desktop app with a remote debugging port, and drives the real plugin over CDP: command and ribbon registration, editor shell geometry, panel chrome against Obsidian's own stylesheet, block placement and width dragging, wizard copy, and study navigation. The suite skips itself when no Obsidian binary is present, and `OBSIDIAN_APP` points it at any build.
 
 See the [changelog](CHANGELOG.md) and [UX/accessibility audit](docs/ux-audit-2026-08-18.md). Version `0.1.0` is the first complete release and already uses the schema-v3 product model; schema version and package version are intentionally independent.

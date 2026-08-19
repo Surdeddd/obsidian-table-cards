@@ -8,6 +8,10 @@ import { globalIgnores } from "eslint/config";
 const toolFiles = [
 	"eslint.config.mts",
 	"playwright.config.mts",
+	"playwright.obsidian.config.mts",
+	"tests-obsidian/**/*.ts",
+	"tests-obsidian/**/*.mts",
+	"tests-obsidian/**/*.mjs",
 	"preview/**/*.js",
 	"scripts/**/*.mjs",
 	"tests-tools/**/*.mjs",
@@ -16,6 +20,10 @@ const toolFiles = [
 const nodeToolFiles = [
 	"eslint.config.mts",
 	"playwright.config.mts",
+	"playwright.obsidian.config.mts",
+	"tests-obsidian/**/*.ts",
+	"tests-obsidian/**/*.mts",
+	"tests-obsidian/**/*.mjs",
 	"scripts/**/*.mjs",
 	"tests-tools/**/*.mjs",
 	"tests-ui/**/*.ts",
@@ -81,6 +89,7 @@ export default tseslint.config(
 	},
 	globalIgnores([
 		"node_modules",
+		".obsidian-harness",
 		"dist",
 		"esbuild.config.mjs",
 		"eslint.config.js",

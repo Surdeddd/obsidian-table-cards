@@ -2,7 +2,11 @@
 	"compilerOptions": {
 		"allowJs": true,
 		"checkJs": true,
-		"lib": ["DOM", "DOM.Iterable", "ES2023"],
+		"lib": [
+			"DOM",
+			"DOM.Iterable",
+			"ES2023"
+		],
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"noEmit": true,
@@ -12,14 +16,20 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "ES2023",
-		"types": ["node"]
+		"types": [
+			"node"
+		]
 	},
 	"include": [
 		"eslint.config.mts",
 		"manifest.json",
 		"playwright.config.mts",
+		"playwright.obsidian.config.mts",
 		"preview/**/*.js",
 		"scripts/**/*.mjs",
+		"tests-obsidian/**/*.mjs",
+		"tests-obsidian/**/*.mts",
+		"tests-obsidian/**/*.ts",
 		"tests-tools/**/*.mjs",
 		"tests-ui/**/*.ts"
 	]

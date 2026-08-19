@@ -34,7 +34,7 @@ test("the study session shows only its own close control", async () => {
 	await closeOverlays(page);
 	await ensureDeck(page);
 	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:open"));
-	await page.waitForSelector(".tc-launcher-start");
+	await page.waitForSelector(".table-cards-stage", { timeout: 15_000 });
 
 	expect(await hostCloseButtons(page)).toBe(0);
 

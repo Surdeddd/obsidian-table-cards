@@ -25,10 +25,24 @@ test.beforeEach(async () => {
 	await ensureDeck(page);
 });
 
-test("escape closes an open listbox without closing the launcher", async () => {
+test("escape closes an open listbox without closing the picker", async () => {
 	const page = await obsidianPage();
+	await page.evaluate(async () => {
+		const plugin = window.app.plugins.plugins["table-cards"] as unknown as {
+			settings: { decks: unknown[]; lastDeckId: string | null };
+			updateSettings(mutate: (settings: unknown) => unknown): Promise<void>;
+		};
+		await plugin.updateSettings((settings) => {
+			const typed = settings as { decks: Record<string, unknown>[]; lastDeckId: string | null };
+			if (typed.decks.length === 1 && typed.decks[0]) {
+				typed.decks.push({ ...typed.decks[0], id: "deck-picker-fixture", name: "Second deck" });
+			}
+			typed.lastDeckId = null;
+			return typed;
+		});
+	});
 	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:open"));
-	await page.waitForSelector(".tc-launcher-start");
+	await page.waitForSelector(".tc-launcher-start", { timeout: 15_000 });
 	await page.locator(".tc-launcher-deck button.tc-listbox-trigger").first().click();
 	await page.waitForSelector(".tc-listbox-popover");
 
@@ -40,14 +54,23 @@ test("escape closes an open listbox without closing the launcher", async () => {
 	expect(state.modals).toBe(1);
 
 	await closeOverlays(page);
+	await page.evaluate(async () => {
+		const plugin = window.app.plugins.plugins["table-cards"] as unknown as {
+			updateSettings(mutate: (settings: unknown) => unknown): Promise<void>;
+		};
+		await plugin.updateSettings((settings) => {
+			const typed = settings as { decks: { id: string }[]; lastDeckId: string | null };
+			typed.decks = typed.decks.filter((deck) => deck.id !== "deck-picker-fixture");
+			typed.lastDeckId = typed.decks[0]?.id ?? null;
+			return typed;
+		});
+	});
 });
 
 test("escape closes the card search without closing the session", async () => {
 	const page = await obsidianPage();
 	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:open"));
-	await page.waitForSelector(".tc-launcher-start");
-	await page.locator(".tc-launcher-start").click();
-	await page.waitForSelector(".table-cards-stage");
+	await page.waitForSelector(".table-cards-stage", { timeout: 15_000 });
 	await page.locator("button.table-cards-search-btn").first().click();
 	await page.waitForSelector(".tc-card-browser");
 

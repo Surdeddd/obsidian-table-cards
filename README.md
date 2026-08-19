@@ -9,7 +9,7 @@ Turn Markdown tables into focused, all-visible study cards inside Obsidian. Tabl
 ## What it does
 
 - Builds one deck from any mix of notes, folders, and individual tables.
-- Opens every session through a mandatory launcher, so the deck, tables, and valid card count are explicit before study starts.
+- Opens straight into the cards once a deck is configured; the picker appears only when several decks exist and none has been studied yet.
 - Shows every enabled card block immediately—there is no front/back reveal state.
 - Searches every cell in the active scope and opens the exact matching source row as a card.
 - Provides a visual, draft-based layout editor with desktop and phone previews.
@@ -39,11 +39,11 @@ The wizard is deliberately compact; every preset produces ordinary editable bloc
 
 ## Start a study session
 
-Run **Open cards** for the general launcher. Pick a deck, review its remembered table scope, and confirm **Open N cards**. Clearing every table disables the start action.
+Run **Open cards**. A configured deck opens immediately with its remembered table scope. The picker appears only when it has a real question to ask — several decks and none studied yet — and there you pick a deck, review its scope, and confirm **Open N cards**; clearing every table disables the start action.
 
-A deck-specific ribbon button opens the same launcher with that deck locked. It still stops for table selection and confirmation—ribbon buttons never bypass the launcher.
+A deck-specific ribbon button opens the same launcher with that deck locked, straight into the cards.
 
-![The mandatory launcher shows the deck, table scope, warnings, and exact card count](docs/screenshots/launcher-desktop.png)
+![The picker names the deck, table scope, warnings, and exact card count when a choice is genuinely needed](docs/screenshots/launcher-desktop.png)
 
 During study:
 

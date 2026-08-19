@@ -211,7 +211,7 @@ button.tc-card-browser-scope[aria-expanded="true"] {
 	color: var(--tc-text);
 }
 
-.table-cards-deck-picker button.tc-listbox-option {
+.table-cards-deck-picker .tc-listbox-popover button.tc-listbox-option {
 	justify-content: flex-start;
 	text-align: start;
 	color: var(--tc-text);
@@ -842,8 +842,8 @@ button.tc-launcher-close {
 	padding: 0;
 	flex: 0 0 auto;
 	border: 0;
-	border-radius: 10px;
-	background: transparent;
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--tc-text) 8%, transparent);
 	box-shadow: none;
 	color: var(--tc-text-muted);
 }
@@ -2607,6 +2607,9 @@ button.tc-listbox-option {
 	min-height: 44px;
 	padding: 8px 10px;
 	display: grid;
+	justify-content: start;
+	justify-items: start;
+	text-align: start;
 	gap: 2px;
 	border: 0;
 	border-inline-start: 3px solid transparent;
@@ -2986,7 +2989,7 @@ button.tc-setup-source-remove {
 	border: 0;
 	border-radius: 12px;
 	box-shadow: none;
-	background: transparent;
+	background: color-mix(in srgb, var(--text-normal) 8%, transparent);
 	color: var(--text-muted);
 }
 

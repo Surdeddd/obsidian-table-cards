@@ -215,3 +215,12 @@ export function launcherWarningCount(state: LauncherState): number {
 export function canStartSession(state: LauncherState): boolean {
 	return state.phase === "choose" && selectedTableCount(state) > 0 && launcherCards(state).length > 0;
 }
+
+export interface AutoStartContext {
+	hasLastDeck: boolean;
+}
+
+export function shouldAutoStart(state: LauncherState, context: AutoStartContext): boolean {
+	if (!canStartSession(state)) return false;
+	return state.lockedDeck || state.decks.length <= 1 || context.hasLastDeck;
+}

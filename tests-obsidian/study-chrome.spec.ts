@@ -8,8 +8,7 @@ test("labels both navigation buttons in the study footer", async () => {
 	await closeOverlays(page);
 	await ensureDeck(page);
 	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:open"));
-	await page.click(".tc-launcher-start");
-	await page.waitForSelector(".table-cards-nav-next");
+	await page.waitForSelector(".table-cards-nav-next", { timeout: 15_000 });
 
 	const labels = await page.evaluate(() => {
 		const read = (selector: string): string =>

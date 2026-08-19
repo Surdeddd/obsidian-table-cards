@@ -13,6 +13,7 @@ import {
 	type LauncherState,
 } from "../session/launcher-state";
 import { isDeckUnavailableError } from "../session/settings-intents";
+import { shouldAutoStart } from "../session/launcher-state";
 import { Listbox } from "./editor/controls/Listbox";
 import { ScopePicker } from "./ScopePicker";
 
@@ -339,6 +340,9 @@ export class SessionLauncher {
 				savedScope,
 			});
 			if (!this.commitState(next)) return;
+			if (shouldAutoStart(this.state, { hasLastDeck: Boolean(this.options.settings.lastDeckId) })) {
+				void this.start();
+			}
 		} catch (error) {
 			const next = reduceLauncherState(this.state, {
 				type: "failed",

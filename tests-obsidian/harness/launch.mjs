@@ -15,6 +15,7 @@ export async function obsidianAvailable() {
 	}
 }
 
+/** @param {number} port */
 async function cdpReady(port) {
 	try {
 		const response = await fetch(`http://127.0.0.1:${port}/json/version`);
@@ -24,6 +25,10 @@ async function cdpReady(port) {
 	}
 }
 
+/**
+ * @param {{ vaultPath?: string, userDataPath: string }} paths
+ * @param {number} [port]
+ */
 export async function launchObsidian({ userDataPath }, port = CDP_PORT) {
 	const child = spawn(
 		OBSIDIAN_BINARY,
@@ -39,6 +44,7 @@ export async function launchObsidian({ userDataPath }, port = CDP_PORT) {
 	throw new Error(`Obsidian did not expose CDP on port ${port}`);
 }
 
+/** @param {number | undefined} pid */
 export function stopObsidian(pid) {
 	if (!pid) return;
 	try {

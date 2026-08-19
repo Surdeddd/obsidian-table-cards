@@ -32,6 +32,7 @@ const FACTS = [
 	"",
 ].join("\n");
 
+/** @param {string} harnessRoot */
 export async function createFixtureVault(harnessRoot) {
 	const vaultPath = join(harnessRoot, "vault");
 	const userDataPath = join(harnessRoot, "user-data");

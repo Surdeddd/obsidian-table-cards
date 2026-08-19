@@ -256,7 +256,10 @@ export class TableCardsSettingTab extends PluginSettingTab {
 
 	private renderDeck(containerEl: HTMLElement, deck: Deck, t: Translator, locale: UiLocale): void {
 		const wrap = containerEl.createDiv({ cls: "table-cards-deck-settings" });
-		const description = `${formatUiNumber(deck.sources.length, locale)} ${t("settings.deck.sources")} · ${formatUiNumber(deck.blocks.length, locale)} ${t("settings.deck.blocks")}`;
+		const description = [
+			t("settings.deck.sources", { count: formatUiNumber(deck.sources.length, locale) }),
+			t("settings.deck.blocks", { count: formatUiNumber(deck.blocks.length, locale) }),
+		].join(" · ");
 		const setting = new Setting(wrap)
 			.setName(deck.name)
 			.setDesc(description)
@@ -344,7 +347,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 					result.profiles.reduce((total, profile) => total + profile.warnings.length, 0);
 				setting.setDesc(
 					warnings > 0
-						? `${description} · ${formatUiNumber(warnings, locale)} ${t("settings.deck.warnings")}`
+						? `${description} · ${t("settings.deck.warnings", { count: formatUiNumber(warnings, locale) })}`
 						: description,
 				);
 			})

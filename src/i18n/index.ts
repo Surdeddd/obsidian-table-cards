@@ -2,6 +2,7 @@ import type { UiLocale } from "../model";
 import { CATALOGS, EN } from "./catalogs";
 import type { Translator } from "./keys";
 
+export * from "./app-language";
 export * from "./catalogs";
 export * from "./keys";
 export * from "./locale";

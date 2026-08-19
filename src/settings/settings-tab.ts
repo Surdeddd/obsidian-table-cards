@@ -1,4 +1,4 @@
-import { Modal, Plugin, PluginSettingTab, Setting, getLanguage, type App } from "obsidian";
+import { Modal, Plugin, PluginSettingTab, Setting, type App } from "obsidian";
 import {
 	cloneJson,
 	createBlock,
@@ -13,6 +13,7 @@ import {
 	type UiLocale,
 } from "../model";
 import {
+	appLanguage,
 	applyUiChromeDirection,
 	applyUserDataDirection,
 	formatUiNumber,
@@ -132,7 +133,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		const t = this.plugin.getTranslator();
-		const locale = resolveUiLocale(this.plugin.settings.locale, getLanguage() || "en");
+		const locale = resolveUiLocale(this.plugin.settings.locale, appLanguage());
 		containerEl.empty();
 		containerEl.addClass("table-cards-settings");
 		applyUiChromeDirection(containerEl, locale);

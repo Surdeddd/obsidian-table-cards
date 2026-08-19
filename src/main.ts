@@ -1,5 +1,5 @@
-import { Plugin, getLanguage } from "obsidian";
-import { createTranslator, resolveUiLocale, type Translator } from "./i18n";
+import { Plugin } from "obsidian";
+import { appLanguage, createTranslator, resolveUiLocale, type Translator } from "./i18n";
 import { DEFAULT_SETTINGS, mergeSettings } from "./settings/defaults";
 import { TableCardsSettingTab } from "./settings/settings-tab";
 import type { Deck, ParsedTable, PluginSettings, UiLocale } from "./model";
@@ -119,6 +119,6 @@ export default class TableCardsPlugin extends Plugin {
 	}
 
 	getLocale(): UiLocale {
-		return resolveUiLocale(this.settings.locale, getLanguage() || "en");
+		return resolveUiLocale(this.settings.locale, appLanguage());
 	}
 }

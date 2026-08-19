@@ -2,7 +2,7 @@
 	"id": "table-cards",
 	"name": "Table Cards",
 	"version": "0.1.0",
-	"minAppVersion": "1.8.7",
+	"minAppVersion": "1.6.7",
 	"description": "Study Markdown tables as adaptive, all-visible cards with a visual layout editor.",
 	"author": "Maxim Kravtsov",
 	"authorUrl": "https://github.com/Surdeddd",

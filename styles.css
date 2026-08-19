@@ -1549,10 +1549,15 @@ button.tc-editor-save:disabled {
 .tc-editor-canvas-bar > button.tc-editor-button {
 	min-width: 0;
 	max-width: 100%;
+	justify-self: start;
 	overflow-wrap: anywhere;
 	white-space: normal;
 	line-height: 1.15;
 	text-align: center;
+}
+
+.tc-editor-canvas-bar > button.tc-editor-button:last-child {
+	justify-self: end;
 }
 
 .tc-editor-row-count {

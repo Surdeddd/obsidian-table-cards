@@ -129,7 +129,7 @@ function colorTokens(appearance: AppearanceSettings): ColorTokens {
 			card: "var(--background-primary)",
 			primary: "var(--text-normal)",
 			secondary: "var(--text-muted)",
-			label: "var(--text-faint)",
+			label: "var(--text-muted)",
 			accent: "var(--interactive-accent)",
 			border: "var(--background-modifier-border)",
 		};

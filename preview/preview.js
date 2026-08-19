@@ -74,6 +74,36 @@ export function stateController({ buttons, panels, initial, onChange }) {
 	return { show };
 }
 
+/** @param {HTMLElement} trigger @param {HTMLElement} popover */
+export function placeAnchoredPopover(trigger, popover) {
+	const mobile = matchMedia("(max-width: 700px)").matches;
+	popover.classList.toggle("is-mobile-sheet", mobile);
+	if (mobile) {
+		popover.removeAttribute("style");
+		return;
+	}
+	const rect = trigger.getBoundingClientRect();
+	const gutter = 8;
+	const width = Math.min(Math.max(rect.width, 220), window.innerWidth - gutter * 2);
+	const left = Math.min(Math.max(gutter, rect.left), window.innerWidth - width - gutter);
+	const spaceBelow = window.innerHeight - rect.bottom - gutter;
+	const spaceAbove = rect.top - gutter;
+	const flip = spaceBelow < 168 && spaceAbove > spaceBelow;
+	const maxHeight = Math.max(96, Math.min(360, flip ? spaceAbove : spaceBelow));
+	const top = flip ? Math.max(gutter, rect.top - maxHeight - 5) : rect.bottom + 5;
+	popover.classList.toggle("is-above", flip);
+	Object.assign(popover.style, {
+		position: "fixed",
+		top: `${top}px`,
+		left: `${left}px`,
+		width: `${width}px`,
+		right: "auto",
+		bottom: "auto",
+		maxHeight: `${maxHeight}px`,
+		zIndex: "80",
+	});
+}
+
 export function layerController() {
 	/** @type {Array<{ layer: HTMLElement, opener: HTMLElement }>} */
 	const stack = [];
@@ -83,6 +113,7 @@ export function layerController() {
 		layer.hidden = false;
 		opener.setAttribute('aria-expanded', 'true');
 		stack.push({ layer, opener });
+		if (layer.classList.contains("tc-listbox-popover")) placeAnchoredPopover(opener, layer);
 		requestAnimationFrame(() => {
 			const target = focusSelector ? layer.querySelector(focusSelector) : visibleFocusable(layer)[0];
 			if (target instanceof HTMLElement) target.focus();

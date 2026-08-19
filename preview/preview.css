@@ -141,10 +141,10 @@ button:disabled {
 
 .preview-note {
 	position: fixed;
-	inset-inline-end: 16px;
+	inset-inline-start: 16px;
 	inset-block-end: 14px;
-	z-index: 90;
-	max-width: min(360px, calc(100vw - 32px));
+	z-index: 5;
+	max-width: min(280px, calc(100vw - 32px));
 	padding: 7px 10px;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 9px;
@@ -152,6 +152,7 @@ button:disabled {
 	color: var(--text-muted);
 	font-size: 11px;
 	line-height: 1.4;
+	pointer-events: none;
 }
 
 .preview-icon {

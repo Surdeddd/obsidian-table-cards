@@ -9,18 +9,14 @@
 	<link rel="stylesheet" href="preview.css">
 	<style>
 		.preview-launcher-modal { --tc-max-w: 760px; }
-		.preview-launcher-modal .tc-listbox-popover { position: absolute; }
 		.preview-launcher-modal .tc-launcher-body { width: min(620px, 100%); }
 		.preview-check { accent-color: var(--interactive-accent); }
 		.preview-mobile-scope { display: none; }
-		.preview-selector-underlay { min-height: 218px; }
+		.preview-selector-underlay { min-height: 0; flex: 1 1 auto; }
 		.preview-browser-underlay { opacity: .2; pointer-events: none; }
 		.preview-browser-sheet .tc-sheet { width: min(430px, 92%); }
 		.preview-browser-sheet .tc-sheet-body { padding-block-end: 0; }
-			[data-selector-mount="general"],
-			[data-selector-mount="locked"],
-			.preview-desktop-scope { position: absolute; inset-inline: 0; z-index: 8; }
-			.preview-desktop-scope .tc-scope-row { min-height: 54px; padding-block: 6px; }
+		.preview-desktop-scope .tc-scope-row { min-height: 48px; }
 		@media (max-width: 700px) {
 			.preview-desktop-scope { display: none; }
 			.preview-mobile-scope { display: block; }

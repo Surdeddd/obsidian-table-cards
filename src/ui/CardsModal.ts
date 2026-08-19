@@ -23,6 +23,7 @@ import { requireEnabledDeck, saveDeckProgressIfEnabled } from "../session/settin
 import { findExactCardIndex, selectStudyCards } from "../session/study-state";
 import { applyAppearance, resolveDeckAppearance, shouldSplit } from "../settings/appearance";
 import { CardBrowser } from "./CardBrowser";
+import { closeOpenListbox } from "./editor/controls/Listbox";
 import { renderCard } from "./CardView";
 import { buildTableDisplayLabels } from "./card-browser-state";
 import { buildCardImageCache, type CardImageCache } from "./card-image-cache";
@@ -120,6 +121,20 @@ export class CardsModal extends Modal {
 			onStart: (selection) => this.startStudy(selection),
 			onClose: () => this.close(),
 		});
+	}
+
+	close(): void {
+		if (closeOpenListbox()) return;
+		if (this.browser?.closeNestedLayer()) return;
+		if (this.scopeSheet) {
+			this.closeScopePicker(true);
+			return;
+		}
+		if (this.browser) {
+			this.closeBrowser(true);
+			return;
+		}
+		super.close();
 	}
 
 	onClose(): void {
@@ -295,7 +310,7 @@ export class CardsModal extends Modal {
 			attr: { "aria-label": this.t("modal.next") },
 		});
 		next.createSpan({ text: this.t("modal.next") });
-		setIcon(next, "chevron-right");
+		setIcon(next.createSpan({ cls: "table-cards-nav-icon" }), "chevron-right");
 		next.addEventListener("click", () => void this.step(1));
 	}
 

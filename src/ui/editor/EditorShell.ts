@@ -221,7 +221,7 @@ export class EditorShell {
 		if (selected) {
 			const toolbar = this.root.createDiv({ cls: "tc-editor-block-toolbar" });
 			blockOpener = button(toolbar, context.t(`editor.style.${selected.kind}`), null, () => context.dispatch({ type: "openPanel", panel: "block" }), "tc-editor-button with-label is-block-type");
-			button(toolbar, selected.width === "half" ? context.t("editor.widthHalf") : context.t("editor.widthFull"), null, () => context.dispatch({ type: "setBlockWidth", blockId: selected.id, width: selected.width === "half" ? "full" : "half" }), "tc-editor-button with-label is-block-width");
+			button(toolbar, selected.width === "half" ? context.t("editor.widthHalf") : context.t("editor.widthFull"), "arrow-left-right", () => context.dispatch({ type: "setBlockWidth", blockId: selected.id, width: selected.width === "half" ? "full" : "half" }), "tc-editor-button with-label is-block-width");
 			reorderOpener = button(toolbar, context.t("editor.move"), "move", () => context.dispatch({ type: "openPanel", panel: "reorder" }), "tc-editor-button with-label is-block-move");
 			button(toolbar, context.t("editor.more"), "sliders-horizontal", () => context.dispatch({ type: "openPanel", panel: "block" }), "tc-editor-button with-label is-block-more");
 		}

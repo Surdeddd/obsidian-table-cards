@@ -156,6 +156,28 @@ function colorTokens(appearance: AppearanceSettings): ColorTokens {
 	};
 }
 
+const ON_ACCENT_DARK = "#101114";
+const ON_ACCENT_LIGHT = "#ffffff";
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+function channelLuminance(value: number): number {
+	const channel = value / 255;
+	return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+}
+
+export function onAccentColor(accent: string): string {
+	const value = accent.trim();
+	if (!HEX_COLOR.test(value)) return "var(--text-on-accent)";
+	const digits = value.slice(1);
+	const expanded = digits.length === 3 ? digits.split("").map((digit) => digit + digit).join("") : digits;
+	const red = Number.parseInt(expanded.slice(0, 2), 16);
+	const green = Number.parseInt(expanded.slice(2, 4), 16);
+	const blue = Number.parseInt(expanded.slice(4, 6), 16);
+	const luminance =
+		0.2126 * channelLuminance(red) + 0.7152 * channelLuminance(green) + 0.0722 * channelLuminance(blue);
+	return luminance > 0.32 ? ON_ACCENT_DARK : ON_ACCENT_LIGHT;
+}
+
 export function applyAppearance(
 	el: HTMLElement,
 	appearance: AppearanceSettings,
@@ -177,6 +199,7 @@ export function applyAppearance(
 		"--tc-text-muted": colors.secondary,
 		"--tc-label": colors.label,
 		"--tc-accent": colors.accent,
+		"--tc-on-accent": onAccentColor(colors.accent),
 		"--tc-border": colors.border,
 		"--tc-radius": `${appearance.radius}px`,
 		"--tc-pad": `${appearance.padding}px`,
@@ -188,5 +211,16 @@ export function applyAppearance(
 }
 
 export function shouldSplit(width: number, appearance: AppearanceSettings): boolean {
-	return appearance.twoColumn && width >= appearance.twoColumnFrom;
+	return appearance.twoColumn && width >= Math.min(appearance.twoColumnFrom, appearance.maxWidth);
+}
+
+export const EDITOR_SPLIT_MIN = 520;
+
+export function shouldSplitEditor(width: number, appearance: AppearanceSettings): boolean {
+	return appearance.twoColumn && width >= Math.min(EDITOR_SPLIT_MIN, appearance.twoColumnFrom);
+}
+
+export function widthFromPointer(clientX: number, blockLeft: number, stageWidth: number): "half" | "full" {
+	if (stageWidth <= 0) return "full";
+	return (clientX - blockLeft) / stageWidth < 0.62 ? "half" : "full";
 }

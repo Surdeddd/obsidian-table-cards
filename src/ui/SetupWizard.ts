@@ -31,6 +31,7 @@ import { TableSelectionView } from "./sources/TableSelectionView";
 import { renderFinishForm } from "./setup/FinishForm";
 import { renderPresetChooser } from "./setup/PresetChooser";
 import { SetupCloseConfirm } from "./setup/SetupCloseConfirm";
+import { closeOpenListbox } from "./editor/controls/Listbox";
 import { applySetupDirection } from "./setup/setup-a11y";
 import { tableSelectedBySource } from "../deck/selectors";
 import type { SettingsMutation } from "../settings/persistence";
@@ -100,6 +101,7 @@ export class SetupWizard extends Modal {
 	}
 
 	close(): void {
+		if (closeOpenListbox()) return;
 		this.saveLifecycle.tryClose(() => this.closeWhenIdle());
 	}
 

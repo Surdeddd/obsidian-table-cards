@@ -23,7 +23,8 @@ import {
 import { EditorShell, type PreviewDevice } from "./EditorShell";
 import { FieldsSheet } from "./FieldsSheet";
 import { renderReorderSheet } from "./ReorderSheet";
-import { renderInspectorSheet } from "./InspectorSheet";
+import { renderInspectorSheet, resetInspectorGroups } from "./InspectorSheet";
+import { closeOpenListbox } from "./controls/Listbox";
 import type { SettingsMutation } from "../../settings/persistence";
 
 export interface EditorHost {
@@ -125,6 +126,7 @@ export class DeckEditorModal extends Modal {
 	private previewDevice: PreviewDevice = "desktop";
 	private forceClose = false;
 	private confirmOpen = false;
+	private skipLayerClose = false;
 	private loadVersion = 0;
 	private component: Component | null = null;
 
@@ -146,6 +148,7 @@ export class DeckEditorModal extends Modal {
 	async onOpen(): Promise<void> {
 		this.component = new Component();
 		this.component.load();
+		resetInspectorGroups();
 		if (this.state.draft.sources.length === 0) {
 			this.state = reduceEditorState(this.state, { type: "openPanel", panel: "fields" });
 		}
@@ -181,7 +184,23 @@ export class DeckEditorModal extends Modal {
 		this.scope.register(["Mod"], "y", redoDraft);
 	}
 
+	requestExit(): void {
+		this.skipLayerClose = true;
+		try {
+			this.close();
+		} finally {
+			this.skipLayerClose = false;
+		}
+	}
+
 	close(): void {
+		if (!this.forceClose && !this.skipLayerClose) {
+			if (closeOpenListbox()) return;
+			if (this.state.activePanel) {
+				this.dispatch({ type: "openPanel", panel: null });
+				return;
+			}
+		}
 		if (this.forceClose || !isDirty(this.state)) {
 			super.close();
 			return;
@@ -321,7 +340,7 @@ export class DeckEditorModal extends Modal {
 				this.replaceState(redo(this.state));
 			},
 			onSave: () => void this.save().catch(() => undefined),
-			onBack: () => this.close(),
+			onBack: () => this.requestExit(),
 			onDevice: (device) => {
 				this.previewDevice = device;
 				this.render();

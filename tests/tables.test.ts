@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { activeBlocks } from "../src/model";
 import { guessStyle, placeRemaining, unusedHeaders } from "../src/layout";
-import { defaultAppearance, shouldSplit } from "../src/settings/appearance";
+import { defaultAppearance, shouldSplit, shouldSplitEditor, widthFromPointer } from "../src/settings/appearance";
 import { dictionaryBlocks, phrasesBlocks } from "../src/settings/defaults";
 import {
 	cellValues,
@@ -192,6 +192,36 @@ describe("layout", () => {
 		expect(shouldSplit(900, look)).toBe(true);
 		look.twoColumn = false;
 		expect(shouldSplit(900, look)).toBe(false);
+	});
+
+	it("lets the editor split below the live overlay threshold", () => {
+		const look = defaultAppearance();
+		expect(shouldSplitEditor(500, look)).toBe(false);
+		expect(shouldSplitEditor(600, look)).toBe(true);
+		expect(shouldSplit(600, look)).toBe(false);
+		look.twoColumn = false;
+		expect(shouldSplitEditor(900, look)).toBe(false);
+	});
+
+	it("maps a side drag onto half or full width", () => {
+		expect(widthFromPointer(100, 0, 400)).toBe("half");
+		expect(widthFromPointer(300, 0, 400)).toBe("full");
+		expect(widthFromPointer(0, 0, 0)).toBe("full");
+	});
+
+	it("measures the side drag from the block's own left edge", () => {
+		expect(widthFromPointer(400, 200, 400)).toBe("half");
+		expect(widthFromPointer(420, 200, 400)).toBe("half");
+		expect(widthFromPointer(460, 200, 400)).toBe("full");
+	});
+
+	it("splits a card that caps its own width below the split threshold", () => {
+		const look = defaultAppearance();
+		look.maxWidth = 720;
+		expect(shouldSplit(720, look)).toBe(true);
+		expect(shouldSplit(700, look)).toBe(false);
+		look.twoColumn = false;
+		expect(shouldSplit(720, look)).toBe(false);
 	});
 
 	it("keeps ordered full and half-width blocks", () => {

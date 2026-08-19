@@ -2,6 +2,7 @@ import {
 	installDialogFocusTrap,
 	installNoOverflowSignal,
 	layerController,
+	placeAnchoredPopover,
 	setPressed,
 } from './preview.js';
 
@@ -65,9 +66,25 @@ document.querySelector('[data-open-exact]')?.addEventListener('click', () => {
 const listboxTrigger = requiredElement('[data-demo-listbox]');
 const listbox = requiredElement('[data-demo-options]');
 listboxTrigger.addEventListener('click', () => {
-	if (listbox.hidden) layers.open(listbox, listboxTrigger, '[aria-selected="true"]');
-	else layers.close(listbox);
+	if (listbox.hidden) {
+		layers.open(listbox, listboxTrigger, '[aria-selected="true"]');
+		placeAnchoredPopover(listboxTrigger, listbox);
+	} else layers.close(listbox);
 });
+for (const input of document.querySelectorAll('.tc-range-line input[type="range"]')) {
+	if (!(input instanceof HTMLInputElement)) continue;
+	const paint = () => {
+		const min = Number(input.min || "0");
+		const max = Number(input.max || "100");
+		const value = Number(input.value);
+		const pct = max <= min ? 0 : Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+		input.style.setProperty("--tc-range-pct", `${pct}%`);
+		const output = input.parentElement?.querySelector("output");
+		if (output) output.textContent = input.value;
+	};
+	input.addEventListener("input", paint);
+	paint();
+}
 for (const option of listbox.querySelectorAll('[role="option"]')) {
 	option.addEventListener('click', () => {
 		for (const candidate of listbox.querySelectorAll('[role="option"]')) {

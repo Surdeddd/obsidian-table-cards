@@ -14,10 +14,21 @@ export interface ListboxOptions<T extends string> {
 	onChange: (value: T) => void;
 }
 
+let openListboxToken: object | null = null;
+let openListboxDismiss: (() => void) | null = null;
+
+export function closeOpenListbox(): boolean {
+	const dismiss = openListboxDismiss;
+	if (!dismiss) return false;
+	dismiss();
+	return true;
+}
+
 export class Listbox<T extends string> {
 	private readonly root: HTMLElement;
 	private readonly trigger: HTMLButtonElement;
 	private readonly options: ListboxOptions<T>;
+	private readonly token = {};
 	private popover: HTMLElement | null = null;
 	private activeIndex = 0;
 	private query = "";
@@ -55,18 +66,26 @@ export class Listbox<T extends string> {
 	}
 
 	destroy(): void {
-		window.clearTimeout(this.queryTimer);
+		this.hostDocument().defaultView?.clearTimeout(this.queryTimer);
 		this.close(false);
+	}
+
+	private hostDocument(): Document {
+		return this.root.ownerDocument;
 	}
 
 	private open(): void {
 		if (this.popover) return;
+		closeOpenListbox();
+		openListboxToken = this.token;
+		openListboxDismiss = () => this.close();
 		this.activeIndex = Math.max(
 			0,
 			this.options.options.findIndex((option) => option.value === this.options.value),
 		);
 		this.trigger.setAttr("aria-expanded", "true");
-		this.popover = this.root.createDiv({ cls: "tc-listbox-popover" });
+		this.root.classList.add("is-open");
+		this.popover = this.mountPopover();
 		if (this.options.searchable && this.options.options.length > 8) {
 			const search = this.popover.createEl("input", {
 				type: "search",
@@ -76,10 +95,51 @@ export class Listbox<T extends string> {
 			search.addEventListener("input", () => this.renderOptions(search.value));
 		}
 		this.renderOptions("");
+		this.placePopover();
 		this.popover.addEventListener("keydown", this.onKeyDown);
-		document.addEventListener("pointerdown", this.onOutsidePointerDown, true);
-		window.setTimeout(() => this.focusActive(), 0);
+		const scope = this.hostDocument();
+		scope.addEventListener("pointerdown", this.onOutsidePointerDown, true);
+		scope.defaultView?.addEventListener("resize", this.placePopover);
+		scope.addEventListener("scroll", this.placePopover, true);
+		scope.defaultView?.setTimeout(() => this.focusActive(), 0);
 	}
+
+	private mountPopover(): HTMLElement {
+		const popover = this.root.createDiv({ cls: "tc-listbox-popover" });
+		(this.trigger.ownerDocument.body ?? this.trigger.doc.body).append(popover);
+		return popover;
+	}
+
+	private readonly placePopover = (): void => {
+		if (!this.popover) return;
+		const view = this.hostDocument().defaultView ?? window;
+		const mobile = view.matchMedia("(max-width: 700px)").matches;
+		this.popover.classList.toggle("is-mobile-sheet", mobile);
+		if (mobile) {
+			this.popover.removeAttribute("style");
+			return;
+		}
+		const rect = this.trigger.getBoundingClientRect();
+		const gutter = 8;
+		const width = Math.min(Math.max(rect.width, 260), view.innerWidth - gutter * 2);
+		const left = Math.min(Math.max(gutter, rect.left), view.innerWidth - width - gutter);
+		const spaceBelow = view.innerHeight - rect.bottom - gutter;
+		const spaceAbove = rect.top - gutter;
+		const flip = spaceBelow < 168 && spaceAbove > spaceBelow;
+		const maxHeight = Math.max(96, Math.min(360, flip ? spaceAbove : spaceBelow));
+		const top = flip ? Math.max(gutter, rect.top - maxHeight - 5) : rect.bottom + 5;
+		this.popover.classList.toggle("is-above", flip);
+		Object.assign(this.popover.style, {
+			position: "fixed",
+			top: `${top}px`,
+			left: `${left}px`,
+			width: `${width}px`,
+			right: "auto",
+			bottom: "auto",
+			maxHeight: `${maxHeight}px`,
+			zIndex: "10000",
+		});
+	};
 
 	private renderOptions(filter: string): void {
 		if (!this.popover) return;
@@ -131,7 +191,8 @@ export class Listbox<T extends string> {
 	private move(delta: number): void {
 		const items = this.items();
 		if (items.length === 0) return;
-		const current = items.findIndex((item) => item === document.activeElement);
+		const scope = this.popover?.ownerDocument ?? document;
+		const current = items.findIndex((item) => item === scope.activeElement);
 		const next = current < 0
 			? delta > 0 ? 0 : items.length - 1
 			: (current + delta + items.length) % items.length;
@@ -150,16 +211,27 @@ export class Listbox<T extends string> {
 	}
 
 	private close(restoreFocus = true): void {
+		if (openListboxToken === this.token) {
+			openListboxToken = null;
+			openListboxDismiss = null;
+		}
 		this.popover?.removeEventListener("keydown", this.onKeyDown);
 		this.popover?.remove();
 		this.popover = null;
+		this.root.classList.remove("is-open");
 		this.trigger.setAttr("aria-expanded", "false");
-		document.removeEventListener("pointerdown", this.onOutsidePointerDown, true);
+		const scope = this.hostDocument();
+		scope.removeEventListener("pointerdown", this.onOutsidePointerDown, true);
+		scope.defaultView?.removeEventListener("resize", this.placePopover);
+		scope.removeEventListener("scroll", this.placePopover, true);
 		if (restoreFocus) this.trigger.focus();
 	}
 
 	private readonly onOutsidePointerDown = (event: PointerEvent): void => {
-		if (event.target instanceof Node && !this.root.contains(event.target)) this.close();
+		const target = event.target as Node | null;
+		if (!target || typeof target.nodeType !== "number") return;
+		if (this.root.contains(target) || this.popover?.contains(target)) return;
+		this.close();
 	};
 
 	private readonly onKeyDown = (event: KeyboardEvent): void => {

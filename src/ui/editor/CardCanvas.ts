@@ -2,7 +2,7 @@ import type { App, Component } from "obsidian";
 import type { EditorAction, EditorState } from "../../editor/state";
 import { resolveCard } from "../../layout/resolve";
 import type { AppearanceSettings, DeckLoadResult } from "../../model";
-import { applyAppearance, resolveDeckAppearance, shouldSplit } from "../../settings/appearance";
+import { applyAppearance, resolveDeckAppearance, shouldSplitEditor, widthFromPointer } from "../../settings/appearance";
 import type { Translator } from "../../i18n";
 import { renderCard } from "../CardView";
 import type { PreviewDevice } from "./EditorShell";
@@ -134,6 +134,7 @@ function attachResizeHandles(stage: HTMLElement, context: CardCanvasContext): vo
 		if (start.button !== 0) return;
 		start.preventDefault();
 		width.setPointerCapture(start.pointerId);
+		const originLeft = box.getBoundingClientRect().left;
 		let next = block.width;
 		const cleanup = (): void => {
 			delete box.dataset.previewWidth;
@@ -154,9 +155,10 @@ function attachResizeHandles(stage: HTMLElement, context: CardCanvasContext): vo
 		};
 		const onMove = (move: PointerEvent): void => {
 			if (!width.hasPointerCapture(move.pointerId)) return;
-			const delta = move.clientX - start.clientX;
-			next = delta > 24 ? "full" : delta < -24 ? "half" : block.width;
+			const stageRect = stage.getBoundingClientRect();
+			next = widthFromPointer(move.clientX, originLeft, stageRect.width);
 			box.dataset.previewWidth = next;
+			stage.classList.toggle("is-single-column", false);
 		};
 		const onPointerUp = (up: PointerEvent): void => {
 			if (width.hasPointerCapture(up.pointerId)) width.releasePointerCapture(up.pointerId);
@@ -227,7 +229,7 @@ export function renderCardCanvas(parent: HTMLElement, context: CardCanvasContext
 	const updateColumns = (): void => {
 		stage.toggleClass(
 			"is-single-column",
-			context.previewDevice === "phone" || !shouldSplit(stage.clientWidth, appearance),
+			context.previewDevice === "phone" || !shouldSplitEditor(stage.clientWidth, appearance),
 		);
 	};
 	updateColumns();

@@ -5,6 +5,7 @@ import { normalizeHeader } from "../../parse/tables";
 import { applySizePreset, resolveDeckAppearance } from "../../settings/appearance";
 import { ColorField } from "./controls/ColorField";
 import { Listbox, type ListboxOption } from "./controls/Listbox";
+import { paintRangeInput } from "./range";
 
 export interface InspectorSheetContext {
 	state: EditorState;
@@ -95,7 +96,11 @@ function rangeInput(
 		},
 	});
 	const output = line.createEl("output", { text: String(value) });
-	input.addEventListener("input", () => output.setText(input.value));
+	paintRangeInput(input);
+	input.addEventListener("input", () => {
+		output.setText(input.value);
+		paintRangeInput(input);
+	});
 	input.addEventListener("change", () => onChange(Number(input.value)));
 }
 
@@ -110,13 +115,24 @@ function select<T extends string>(
 	new Listbox(parent, { id, label, value, options, onChange });
 }
 
+let expandedGroup: string | null = null;
+
+export function resetInspectorGroups(): void {
+	expandedGroup = null;
+}
+
 function accordion(parent: HTMLElement, title: string, render: (body: HTMLElement) => void): void {
 	const details = parent.createEl("details", { cls: "tc-inspector-group", attr: { name: "tc-inspector-group" } });
 	details.createEl("summary", { text: title });
 	const body = details.createDiv({ cls: "tc-inspector-group-body" });
 	render(body);
+	if (expandedGroup === title) details.open = true;
 	details.addEventListener("toggle", () => {
-		if (!details.open) return;
+		if (!details.open) {
+			if (expandedGroup === title) expandedGroup = null;
+			return;
+		}
+		expandedGroup = title;
 		for (const other of Array.from(parent.querySelectorAll<HTMLDetailsElement>(".tc-inspector-group"))) {
 			if (other !== details) other.open = false;
 		}

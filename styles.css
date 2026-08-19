@@ -87,7 +87,7 @@
 	grid-template-columns: minmax(0, 1fr) auto auto;
 	align-items: end;
 	gap: 10px 12px;
-	padding: calc(14px + env(safe-area-inset-top)) var(--tc-pad) 10px;
+	padding: calc(14px + var(--safe-area-inset-top, env(safe-area-inset-top))) var(--tc-pad) 10px;
 	flex-shrink: 0;
 }
 
@@ -600,7 +600,7 @@ button.table-cards-shuffle-btn.is-active {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: 12px var(--tc-pad) calc(14px + env(safe-area-inset-bottom));
+	padding: 12px var(--tc-pad) calc(14px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 	flex-shrink: 0;
 	border-top: 1px solid var(--tc-border);
 	background: var(--tc-window-bg);
@@ -677,7 +677,7 @@ input.tc-card-browser-search:focus {
 
 .tc-card-browser-results {
 	display: grid;
-	padding-block-end: calc(12px + env(safe-area-inset-bottom));
+	padding-block-end: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 }
 
 .tc-card-browser-hint,
@@ -811,7 +811,7 @@ button.tc-card-browser-result:focus-visible {
 	align-items: flex-start;
 	justify-content: space-between;
 	gap: 16px;
-	padding: calc(22px + env(safe-area-inset-top)) clamp(18px, 4vw, 32px) 16px;
+	padding: calc(22px + var(--safe-area-inset-top, env(safe-area-inset-top))) clamp(18px, 4vw, 32px) 16px;
 	border-block-end: 1px solid var(--tc-border);
 }
 
@@ -1218,7 +1218,7 @@ button.tc-scope-group-toggle {
 	display: grid;
 	flex: 0 0 auto;
 	margin-block-start: auto;
-	padding: 16px 0 calc(18px + env(safe-area-inset-bottom));
+	padding: 16px 0 calc(18px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 16px;
@@ -1352,7 +1352,7 @@ button.tc-launcher-start {
 
 .table-cards-lightbox-close {
 	position: absolute;
-	top: calc(12px + env(safe-area-inset-top));
+	top: calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top)));
 	right: 12px;
 	min-width: 44px;
 	min-height: 44px;
@@ -1443,7 +1443,7 @@ button.tc-launcher-start {
 	align-items: center;
 	gap: 10px;
 	min-height: 66px;
-	padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+	padding: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top))) 14px 10px;
 	border-bottom: 1px solid var(--background-modifier-border);
 	background: var(--background-primary);
 }
@@ -1808,7 +1808,7 @@ button.tc-editor-save:disabled {
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+	padding: 10px 14px calc(10px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 	border-top: 1px solid var(--background-modifier-border);
 	background: var(--background-primary);
 }
@@ -1907,7 +1907,7 @@ button.tc-sheet-close {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 	gap: 8px;
-	padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+	padding: 12px 14px calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 	border-top: 1px solid var(--background-modifier-border);
 	background: var(--background-primary);
 }
@@ -1915,7 +1915,7 @@ button.tc-sheet-close {
 .tc-scope-sheet-actions {
 	position: sticky;
 	inset-block-end: 0;
-	padding-block-end: calc(12px + env(safe-area-inset-bottom));
+	padding-block-end: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 }
 
 .tc-sheet-footer:empty {
@@ -2586,7 +2586,7 @@ button.tc-inspector-move {
 	top: auto;
 	left: 8px;
 	right: 8px;
-	bottom: calc(8px + env(safe-area-inset-bottom));
+	bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 	width: auto;
 	max-height: 58dvh;
 	border-radius: 18px;
@@ -2774,7 +2774,7 @@ button.tc-sheet-scrim:focus-visible,
 	.tc-editor-row-menu {
 		position: fixed;
 		top: auto;
-		bottom: calc(72px + env(safe-area-inset-bottom));
+		bottom: calc(72px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 		left: 10px;
 		right: 10px;
 		width: auto;
@@ -2804,7 +2804,7 @@ button.tc-sheet-scrim:focus-visible,
 
 	.tc-editor-block-toolbar {
 		justify-content: stretch;
-		padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+		padding: 8px 8px calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 	}
 
 	.tc-editor-block-toolbar button.tc-editor-button {
@@ -2849,7 +2849,7 @@ button.tc-sheet-scrim:focus-visible,
 	}
 
 	.table-cards-modal .tc-sheet[data-variant="full"] .tc-sheet-header {
-		padding-block-start: calc(4px + env(safe-area-inset-top));
+		padding-block-start: calc(4px + var(--safe-area-inset-top, env(safe-area-inset-top)));
 	}
 
 	.table-cards-modal .tc-sheet[data-variant="full"] .tc-card-browser {
@@ -2892,7 +2892,7 @@ button.tc-sheet-scrim:focus-visible,
 		top: auto;
 		left: 8px;
 		right: 8px;
-		bottom: calc(8px + env(safe-area-inset-bottom));
+		bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 		width: auto;
 		min-width: 0;
 		max-height: 58dvh;
@@ -3502,7 +3502,7 @@ button.tc-setup-preset[aria-pressed="true"] {
 }
 
 .tc-setup-footer {
-	padding: 12px 24px calc(12px + env(safe-area-inset-bottom));
+	padding: 12px 24px calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 	display: flex;
 	justify-content: flex-end;
 	gap: 9px;
@@ -3535,7 +3535,7 @@ button.tc-setup-preset[aria-pressed="true"] {
 	}
 
 	.tc-setup-header {
-		padding: calc(12px + env(safe-area-inset-top)) 16px 10px;
+		padding: calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top))) 16px 10px;
 	}
 
 	.tc-setup-progress {

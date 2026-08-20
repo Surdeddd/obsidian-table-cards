@@ -27,7 +27,7 @@
 	color: var(--tc-text);
 }
 
-.modal.table-cards-modal.is-center:has(.tc-launcher):not(:has(.table-cards-stage)) {
+.modal.table-cards-modal.is-center.is-launcher {
 	height: auto;
 	min-height: min(420px, calc(100vh - 56px));
 	max-height: min(780px, calc(100vh - 56px));
@@ -361,41 +361,6 @@ button.table-cards-shuffle-btn.is-active {
 	cursor: default;
 	background: var(--tc-card-bg);
 	overscroll-behavior: contain;
-}
-
-.tc-stack {
-	display: flex;
-	flex-direction: column;
-	gap: var(--tc-gap);
-	min-width: 0;
-}
-
-.tc-stack-main {
-	grid-area: main;
-}
-
-.tc-stack-side {
-	grid-area: side;
-}
-
-.table-cards-stage.is-split .tc-stack-side:has(.table-cards-box:nth-child(5)) {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	align-content: start;
-}
-
-.table-cards-stage.is-split .tc-stack-side:has(.table-cards-box:nth-child(5)) .table-cards-box[data-style="note"],
-.table-cards-stage.is-split .tc-stack-side:has(.table-cards-box:nth-child(5)) .table-cards-box[data-style="quote"] {
-	grid-column: 1 / -1;
-}
-
-.tc-stack-full {
-	grid-area: full;
-}
-
-.table-cards-stage.is-split .tc-stack-side {
-	padding-left: 22px;
-	border-left: 1px solid var(--background-modifier-border);
 }
 
 .table-cards-box {
@@ -918,7 +883,7 @@ button.tc-launcher-close:hover {
 	overscroll-behavior: contain;
 }
 
-.tc-launcher:has(.tc-scope-picker:not([hidden])) .tc-launcher-body {
+.tc-launcher.is-scope-open .tc-launcher-body {
 	overflow: hidden;
 }
 
@@ -955,7 +920,7 @@ button.tc-scope-trigger {
 	gap: 14px;
 }
 
-.tc-launcher:has(.tc-scope-picker:not([hidden])) .tc-launcher-state {
+.tc-launcher.is-scope-open .tc-launcher-state {
 	min-height: 0;
 }
 
@@ -1025,8 +990,8 @@ button.tc-scope-trigger {
 	flex-direction: column;
 }
 
-.tc-launcher:has(.tc-scope-picker:not([hidden])) .tc-launcher-scope,
-.tc-launcher-scope:has(.tc-scope-picker:not([hidden])) > :not(.tc-scope-trigger) {
+.tc-launcher.is-scope-open .tc-launcher-scope,
+.tc-launcher.is-scope-open .tc-launcher-scope > :not(.tc-scope-trigger) {
 	display: flex;
 	min-height: 0;
 	flex: 1 1 auto;
@@ -1475,10 +1440,10 @@ button.tc-launcher-start {
 }
 
 @media (min-width: 701px) {
-	.tc-editor-shell:has(.tc-sheet-layer:not([hidden])) .tc-editor-header,
-	.tc-editor-shell:has(.tc-sheet-layer:not([hidden])) .tc-editor-canvas-bar,
-	.tc-editor-shell:has(.tc-sheet-layer:not([hidden])) .tc-editor-canvas-wrap,
-	.tc-editor-shell:has(.tc-sheet-layer:not([hidden])) .tc-editor-block-toolbar {
+	.tc-editor-shell.is-sheet-open .tc-editor-header,
+	.tc-editor-shell.is-sheet-open .tc-editor-canvas-bar,
+	.tc-editor-shell.is-sheet-open .tc-editor-canvas-wrap,
+	.tc-editor-shell.is-sheet-open .tc-editor-block-toolbar {
 		padding-inline-end: min(390px, 42vw);
 	}
 }

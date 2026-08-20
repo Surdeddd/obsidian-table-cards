@@ -100,6 +100,7 @@ export class EditorShell {
 		this.sheet = null;
 		this.root.empty();
 		this.root.addClass("tc-editor-shell");
+		this.root.toggleClass("is-sheet-open", context.state.activePanel !== null);
 
 		const header = this.root.createEl("header", { cls: "tc-editor-header" });
 		button(header, context.t("editor.backAction"), "arrow-left", context.onBack, "tc-editor-icon-button is-editor-back");

@@ -107,6 +107,7 @@ export class CardsModal extends Modal {
 		this.titleEl.setText("");
 		this.contentEl.empty();
 		this.contentEl.addClass("table-cards-shell");
+		this.modalEl.addClass("is-launcher");
 		this.applyLook();
 		this.launcher = new SessionLauncher(this.contentEl, {
 			decks: this.host.settings.decks,
@@ -126,6 +127,7 @@ export class CardsModal extends Modal {
 
 	close(): void {
 		if (closeOpenListbox()) return;
+		if (this.launcher?.closeNestedLayer()) return;
 		if (this.browser?.closeNestedLayer()) return;
 		if (this.scopeSheet) {
 			this.closeScopePicker(true);
@@ -233,6 +235,7 @@ export class CardsModal extends Modal {
 		this.launcher?.destroy();
 		this.launcher = null;
 		this.contentEl.empty();
+		this.modalEl.removeClass("is-launcher");
 		this.modalEl.setAttr("aria-label", `${this.t("modal.kicker")}: ${selection.deck.name}`);
 		this.applyLook();
 		this.buildChrome();

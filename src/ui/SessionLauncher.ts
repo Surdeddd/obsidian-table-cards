@@ -288,6 +288,12 @@ export class SessionLauncher {
 		this.scopeButton.createSpan({ cls: "tc-scope-trigger-chevron", text: "⌄", attr: { "aria-hidden": "true" } });
 	}
 
+	closeNestedLayer(): boolean {
+		if (!this.scopePicker) return false;
+		this.closeScopePicker();
+		return true;
+	}
+
 	private toggleScopePicker(host: HTMLElement): void {
 		if (this.scopePicker) {
 			this.closeScopePicker();
@@ -307,11 +313,13 @@ export class SessionLauncher {
 			},
 			onClose: () => this.closeScopePicker(),
 		});
+		this.root.addClass("is-scope-open");
 	}
 
 	private closeScopePicker(): void {
 		this.scopePicker?.destroy();
 		this.scopePicker = null;
+		this.root.removeClass("is-scope-open");
 		this.scopeButton?.setAttr("aria-expanded", "false");
 		this.scopeButton?.focus();
 	}

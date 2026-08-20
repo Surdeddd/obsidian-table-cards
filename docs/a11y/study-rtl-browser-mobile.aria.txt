@@ -21,7 +21,7 @@
       - button "٣ جداول"
       - searchbox "البحث في البطاقات": remain
       - text: ٣ نتائج Vocabulary · Core Dictionary
-      - button "remain to continue to exist or stay in the same place Vocabulary · Core ·Dictionary ·الصف ١٨"
-      - button "remainder the part that remains Vocabulary · Core ·Dictionary ·الصف ٢٠٤"
+      - button "remain to continue to exist or stay in the same place Vocabulary · Core Dictionary الصف ١٨"
+      - button "remainder the part that remains Vocabulary · Core Dictionary الصف ٢٠٤"
       - text: Phrases for travel Travel
-      - button "Please remain seated Phrases for travel ·Travel ·الصف ٤١"
+      - button "Please remain seated Phrases for travel Travel الصف ٤١"

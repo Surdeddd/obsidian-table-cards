@@ -98,18 +98,20 @@ export class SetupWizard extends Modal {
 		this.titleEl.setText("");
 		this.contentEl.empty();
 		this.contentEl.addClass("tc-setup-shell");
-		this.seedFromOpenNote();
+		const seeded = this.seedFromOpenNote();
 		this.render();
+		if (seeded) void this.refreshData();
 	}
 
-	private seedFromOpenNote(): void {
-		if (this.state.sources.length > 0) return;
+	private seedFromOpenNote(): boolean {
+		if (this.state.sources.length > 0) return false;
 		const open = this.app.workspace.getActiveFile();
-		if (!open || open.extension !== "md" || !noteHasTable(this.app, open)) return;
+		if (!open || open.extension !== "md" || !noteHasTable(this.app, open)) return false;
 		this.state = {
 			...this.state,
 			sources: [{ id: newId("source"), kind: "file", path: open.path, tables: { mode: "all" } }],
 		};
+		return true;
 	}
 
 	close(): void {

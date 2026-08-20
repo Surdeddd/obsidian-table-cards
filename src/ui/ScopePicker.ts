@@ -2,6 +2,7 @@ import { normalizeSearchText, materializeTableScope } from "../deck/filter";
 import { formatUiNumber, type Translator } from "../i18n";
 import { UI_LOCALES, type StudyScope, type TableCatalogItem, type UiLocale } from "../model";
 import { Sheet } from "./editor/controls/Sheet";
+import { metaSeparator } from "./meta-separator";
 
 export interface ScopePickerOptions {
 	catalog: TableCatalogItem[];
@@ -325,8 +326,10 @@ export class ScopePicker {
 		content.createDiv({ cls: "tc-scope-row-title", text: this.tableLabel(table), attr: { dir: "auto" } });
 		const meta = content.createDiv({ cls: "tc-scope-row-meta" });
 		meta.createSpan({ text: this.options.t("scope.rows", { count: formatUiNumber(table.rowCount, this.locale) }) });
+		metaSeparator(meta);
 		meta.createSpan({ text: this.options.t("scope.columns", { count: formatUiNumber(table.headers.length, this.locale) }) });
 		if (table.headers.length > 0) {
+			metaSeparator(meta);
 			meta.createSpan({
 				cls: "tc-scope-columns",
 				text: `${table.headers.slice(0, 3).join(" · ")}${table.headers.length > 3 ? "…" : ""}`,

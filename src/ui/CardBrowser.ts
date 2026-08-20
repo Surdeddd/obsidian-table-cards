@@ -9,6 +9,7 @@ import {
 	type BrowserGroup,
 } from "./card-browser-state";
 import { Sheet } from "./editor/controls/Sheet";
+import { metaSeparator } from "./meta-separator";
 import { ScopeSheet } from "./ScopeSheet";
 
 export interface CardBrowserOptions {
@@ -232,7 +233,9 @@ export class CardBrowser {
 			}
 			const metadata = button.createDiv({ cls: "tc-card-browser-meta" });
 			metadata.createSpan({ text: label, attr: { dir: "auto" } });
+			metaSeparator(metadata);
 			metadata.createSpan({ text: fileBasename(card.origin.sourcePath), attr: { dir: "auto" } });
+			metaSeparator(metadata);
 			metadata.createSpan({
 				text: this.options.t("browser.row", {
 					number: formatUiNumber(card.origin.rowNumber, this.locale),

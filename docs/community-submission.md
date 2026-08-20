@@ -8,9 +8,9 @@ Obsidian no longer takes plugin submissions as a pull request against `obsidianm
 
 | Requirement | State |
 | --- | --- |
-| `manifest.json` at the repository root, semantic version | `0.1.0` |
+| `manifest.json` at the repository root, semantic version | `0.2.0` |
 | `id` unique and free of the word `obsidian` | `table-cards` |
-| GitHub release tagged exactly as the manifest version, no `v` prefix | [`0.1.0`](https://github.com/Surdeddd/obsidian-table-cards/releases/tag/0.1.0) |
+| GitHub release tagged exactly as the manifest version, no `v` prefix | [`0.2.0`](https://github.com/Surdeddd/obsidian-table-cards/releases/tag/0.2.0) |
 | Release assets `main.js`, `manifest.json`, `styles.css` | attached by `.github/workflows/release.yml` on tag push |
 | `README.md` describing purpose and usage | present, with screenshots |
 | `LICENSE` | MIT |
@@ -30,7 +30,13 @@ Obsidian no longer takes plugin submissions as a pull request against `obsidianm
 - Name: `Table Cards`
 - Author: `Maxim Kravtsov`
 - Description: `Study Markdown tables as adaptive, all-visible cards with a visual layout editor.`
-- Minimum app version: `1.6.7` — the floor the harness verifies; also verified on 1.13.7.
+- Minimum app version: `1.6.7` — the floor the harness verifies; also verified on 1.13.7 and on Android.
+
+## Guideline audit (2026-08-20)
+
+Checked against [Plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines): no global `app`,
+no console output, no `innerHTML`/`outerHTML`, no regex lookbehind, no `any` casts, no `var`, no default hotkeys,
+no Node or Electron imports, no `Vault.modify` on user notes, settings headings through `setHeading()`.
 
 ## Cutting a new release
 

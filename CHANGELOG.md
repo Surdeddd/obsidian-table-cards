@@ -4,7 +4,7 @@
 
 All notable changes to Table Cards are documented here.
 
-## Unreleased
+## 0.2.0 — 2026-08-20
 
 ### Changed
 

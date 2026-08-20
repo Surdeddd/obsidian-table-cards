@@ -72,6 +72,8 @@ Source selection, automatic layout, and visual changes remain one local draft un
 
 ## Data, empty cells, and images
 
+Editing a table keeps working on the deck built from it: adding, renaming, or removing a column re-identifies the table inside its note instead of dropping it, and the saved table scope follows. A table that genuinely disappears is reported as missing rather than silently replaced.
+
 Columns are detected as text, number, date, boolean, tags, link, Markdown, image, or mixed. Each block can hide an empty value, show a dash or custom text, preserve space, fall back to another column, or skip the complete row when required.
 
 Obsidian embeds such as `![[image.png|300x200]]` and Markdown images are supported. Image blocks provide contain/cover, aspect ratio, crop focus, captions, missing-file state, and optional tap-to-zoom. Local files resolve through the vault. A remote URL already present in source Markdown is passed to the standard image element; Table Cards itself adds no image service or network client.

@@ -4,6 +4,26 @@
 
 All notable changes to Table Cards are documented here.
 
+## Unreleased
+
+### Changed
+
+- A configured deck opens straight into the cards; the picker appears only when several decks exist and none has been studied. When several decks are enabled, the deck name in the session header returns to the picker.
+- Saving in the layout editor keeps the undo history, the selected block, the previewed row, and the open panel.
+- The block toolbar drops its duplicate button, names the block list, states the width it holds, and marks parse warnings with a dot instead of a bare number.
+- The launcher prints the diagnostic sentence for a broken deck instead of a warning count.
+- The first-run wizard opens once, starts from the note you have open when it holds a table, and lists notes containing tables first.
+- On the phone the card centres in the viewport, search sits beside shuffle in the thumb row, and full-screen sheets can be pulled down by their grab handle.
+- Russian speaks with one voice, and Slavic metric labels agree with any count.
+
+### Fixed
+
+- Decks follow notes that the vault renames or moves.
+- Switching a column off keeps its block; switching it back on restores it in place.
+- A block that renders nothing on the previewed row can be selected from the block list.
+- The find sheet opens on its search field and `Enter` opens the top match; the table picker keeps focus on the row being ticked.
+- Arabic keeps card counts left to right, mirrors navigation icons, and separates metadata correctly.
+
 ## 0.1.0 — 2026-08-19
 
 First complete release.

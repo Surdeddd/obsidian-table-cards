@@ -29,7 +29,7 @@ Then enable **Table Cards** in **Settings → Community plugins**. Obsidian 1.6.
 
 ## First run
 
-A fresh install opens a three-step setup wizard:
+A fresh install opens a three-step setup wizard once. It starts from the note you have open when that note holds a table, and the file picker lists notes containing tables first:
 
 1. **Data** — add one or more Markdown notes or folders, then choose all tables or an explicit subset.
 2. **Preset** — compare six layouts against a real representative row. The scorer recommends one from **Vocabulary**, **Phrases**, **Question and answer**, **Gallery**, **Reference**, and **Universal**.
@@ -41,20 +41,20 @@ The wizard is deliberately compact; every preset produces ordinary editable bloc
 
 Run **Open cards**. A configured deck opens immediately with its remembered table scope. The picker appears only when it has a real question to ask — several decks and none studied yet — and there you pick a deck, review its scope, and confirm **Open N cards**; clearing every table disables the start action.
 
-A deck-specific ribbon button opens the same launcher with that deck locked, straight into the cards.
+A deck-specific ribbon button opens the same launcher with that deck locked, straight into the cards. When several decks are enabled, the deck name in the session header is a button that returns to the picker.
 
-![The picker names the deck, table scope, warnings, and exact card count when a choice is genuinely needed](docs/screenshots/launcher-desktop.png)
+![The picker names the deck, table scope, what went wrong, and the exact card count when a choice is genuinely needed](docs/screenshots/launcher-desktop.png)
 
 During study:
 
 - use Previous/Next, `←`/`→`, or a horizontal swipe;
 - press `S` to toggle shuffle;
 - select the scope chip to change tables without rescanning the vault;
-- open the card browser to search all active table cells;
+- open the card browser to search all active table cells — it opens on its search field, and `Enter` opens the top match;
 - choose a result to open that exact card with its file, table label, and row context;
 - tap an enabled image to zoom it.
 
-The source line under each card stays secondary and uses the human table heading plus file name.
+The source line under each card stays secondary and uses the human table heading plus file name. Problems are named rather than counted: a renamed or deleted note reads as a missing source, and decks follow notes that the vault renames or moves.
 
 ## Visual editor
 
@@ -78,7 +78,7 @@ Obsidian embeds such as `![[image.png|300x200]]` and Markdown images are support
 
 ## Phone, keyboard, and RTL
 
-Phone uses one card column, full-height selection/browser sheets, safe-area-aware footers, and controls at least 44×44 CSS px. Long content stays inside the card or its configured scrolling block and never creates document-level horizontal overflow. Reduced-motion preferences remove interface transitions.
+Phone uses one card column, full-height selection/browser sheets that can be pulled down by their grab handle, search beside shuffle in the thumb row, safe-area-aware footers, and controls at least 44×44 CSS px. Long content stays inside the card or its configured scrolling block and never creates document-level horizontal overflow. Reduced-motion preferences remove interface transitions.
 
 The UI supports English, Russian, Ukrainian, Spanish, German, French, Brazilian Portuguese, Italian, Polish, Turkish, Simplified Chinese, Traditional Chinese, Japanese, Korean, Arabic, and Hindi. Automatic mode follows Obsidian's locale; manual selection uses native language names. Arabic mirrors only Table Cards chrome. User-authored table content keeps `dir="auto"` and its natural direction.
 

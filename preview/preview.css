@@ -68,8 +68,8 @@ button:disabled {
 	opacity: 0.52;
 }
 
-[hidden] {
-	display: none !important;
+[hidden][hidden] {
+	display: none;
 }
 
 .mod-cta {

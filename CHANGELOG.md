@@ -4,6 +4,12 @@
 
 All notable changes to Table Cards are documented here.
 
+## 0.2.2 — 2026-08-20
+
+### Fixed
+
+- The stylesheet declares nothing `!important` any more: the visually-hidden helper and the reduced-motion reset win on specificity alone, and a duplicate `text-align` in the listbox option rule is gone.
+
 ## 0.2.1 — 2026-08-20
 
 ### Fixed

@@ -117,7 +117,7 @@
 	font-size: 11px;
 	letter-spacing: 0.16em;
 	text-transform: uppercase;
-	color: var(--text-faint);
+	color: var(--tc-text-muted, var(--text-muted));
 	margin-bottom: 4px;
 }
 
@@ -1529,7 +1529,7 @@ button.tc-editor-save {
 
 button.tc-editor-save:disabled {
 	background: var(--background-secondary);
-	color: var(--text-faint);
+	color: var(--text-muted);
 }
 
 .tc-editor-canvas-bar {
@@ -2968,7 +2968,7 @@ button.tc-sheet-scrim:focus-visible,
 	font-weight: 700;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
-	color: var(--text-faint);
+	color: var(--text-muted);
 }
 
 .tc-setup-heading h1 {

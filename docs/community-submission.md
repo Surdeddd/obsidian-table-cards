@@ -58,8 +58,9 @@ Both come from one decision: `minAppVersion` is `1.6.7`.
 - **`setWarning()` instead of `setDestructive()`.** `setDestructive()` also arrived in 1.13.0. At the
   declared floor `setWarning()` is the only destructive-button API that exists.
 
-Raising the floor to 1.13.0 clears both, at the price of dropping every user below it. That is a
-product decision, not a lint decision, and it is deliberately not taken here.
+Raising the floor to 1.13.0 clears both, at the price of dropping every user below it. The owner
+decided on 2026-08-20 to keep 1.6.7 and let both findings stand, so the plugin keeps working on the
+version it is actually used on.
 
 ## Guideline audit (2026-08-20)
 

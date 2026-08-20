@@ -173,7 +173,7 @@ export class EditorShell {
 		const rows = canvasBar.createDiv({ cls: "tc-editor-row-nav" });
 		const rowCount = context.data.cards.length;
 		const currentRow = rowCount === 0 ? 0 : Math.min(context.state.previewRow, rowCount - 1);
-		const previous = button(rows, context.t("modal.prev"), "chevron-left", () => context.dispatch({ type: "setPreviewRow", index: Math.max(0, currentRow - 1) }), "tc-editor-icon-button");
+		const previous = button(rows, context.t("editor.row.previous"), "chevron-left", () => context.dispatch({ type: "setPreviewRow", index: Math.max(0, currentRow - 1) }), "tc-editor-icon-button");
 		previous.disabled = currentRow <= 0;
 		const rowPicker = rows.createEl("details", { cls: "tc-editor-row-picker" });
 		const currentRowLabel = formatUiNumber(rowCount === 0 ? 0 : currentRow + 1, context.locale);
@@ -201,7 +201,7 @@ export class EditorShell {
 			choice.disabled = rowCount === 0;
 			choice.addEventListener("click", () => context.dispatch({ type: "setPreviewRow", index }));
 		}
-		const next = button(rows, context.t("modal.next"), "chevron-right", () => context.dispatch({ type: "setPreviewRow", index: Math.min(Math.max(0, rowCount - 1), currentRow + 1) }), "tc-editor-icon-button");
+		const next = button(rows, context.t("editor.row.next"), "chevron-right", () => context.dispatch({ type: "setPreviewRow", index: Math.min(Math.max(0, rowCount - 1), currentRow + 1) }), "tc-editor-icon-button");
 		next.disabled = rowCount === 0 || currentRow >= rowCount - 1;
 		const cardStyle = button(
 			canvasBar,

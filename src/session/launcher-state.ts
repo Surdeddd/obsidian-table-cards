@@ -208,10 +208,6 @@ export function launcherCards(state: LauncherState): Card[] {
 	return state.result ? filterCardsByScope(state.result.cards, state.scope) : [];
 }
 
-export function launcherWarningCount(state: LauncherState): number {
-	return state.result?.diagnostics.length ?? 0;
-}
-
 export function canStartSession(state: LauncherState): boolean {
 	return state.phase === "choose" && selectedTableCount(state) > 0 && launcherCards(state).length > 0;
 }

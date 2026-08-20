@@ -1,11 +1,11 @@
 import { Platform, setIcon } from "obsidian";
 import { formatUiNumber, type Translator } from "../i18n";
 import type { Deck, DeckLoadResult, PluginSettings, StudyScope, UiLocale } from "../model";
+import { describeDiagnostics } from "../deck/diagnostics";
 import {
 	canStartSession,
 	createLauncherState,
 	launcherCards,
-	launcherWarningCount,
 	reduceLauncherState,
 	selectedTableCount,
 	selectedTableKeys,
@@ -242,20 +242,30 @@ export class SessionLauncher {
 		if (this.saveFailed) {
 			this.messageEl.createDiv({ cls: "tc-launcher-error", text: this.options.t("launcher.saveFailed") });
 		}
-		if (tables === 0) {
-			this.messageEl.createDiv({ cls: "tc-launcher-hint", text: this.options.t("launcher.selectAtLeastOne") });
-		} else if (cards === 0) {
-			this.messageEl.createDiv({ cls: "tc-launcher-hint", text: this.options.t("launcher.noValidCards") });
+		const report = describeDiagnostics(
+			this.state.result?.diagnostics ?? [],
+			this.options.t,
+			this.options.locale,
+		);
+		if (report.messages.length === 0) {
+			if (tables === 0) {
+				this.messageEl.createDiv({ cls: "tc-launcher-hint", text: this.options.t("launcher.selectAtLeastOne") });
+			} else if (cards === 0) {
+				this.messageEl.createDiv({ cls: "tc-launcher-hint", text: this.options.t("launcher.noValidCards") });
+			}
 		}
 		if (this.missingScopeCount > 0) {
 			this.messageEl.createDiv({ cls: "tc-launcher-warning", text: this.options.t("scope.missing", {
 				count: formatUiNumber(this.missingScopeCount, this.options.locale),
 			}) });
 		}
-		const warnings = launcherWarningCount(this.state);
-		if (warnings > 0) {
+		for (const message of report.messages.slice(0, 3)) {
+			this.messageEl.createDiv({ cls: "tc-launcher-warning", text: message, attr: { dir: "auto" } });
+		}
+		const rest = Math.max(0, report.messages.length - 3) + report.unexplained;
+		if (rest > 0) {
 			this.messageEl.createDiv({ cls: "tc-launcher-warning", text: this.options.t("launcher.warnings", {
-				count: formatUiNumber(warnings, this.options.locale),
+				count: formatUiNumber(rest, this.options.locale),
 			}) });
 		}
 	}

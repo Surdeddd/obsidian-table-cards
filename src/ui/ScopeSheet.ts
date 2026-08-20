@@ -54,6 +54,7 @@ export class ScopeSheet {
 			mode: "side",
 			variant: presentation.variant,
 			opener: options.opener,
+			initialFocus: () => (Platform.isMobile ? null : this.picker?.searchField() ?? null),
 			closeLabel: options.t("modal.close"),
 			onClose: () => this.dismiss(false),
 			renderBody: (body) => {

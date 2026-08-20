@@ -72,33 +72,31 @@ function tokens(value: string): string[] {
 }
 
 const SEMANTIC_GLOSSARY = {
-	ru: ["Колода", "Карточки", "Таблица", "Если ячейка пустая", "Первая строка", "столбцов", "Блок", "Метки", "По одному пути к заметке в хранилище на строку.", "Рамка", "Применить", "Снять выбор", "Найти таблицы", "Сохранить"],
-	uk: ["Колода", "Картки", "Таблиця", "Якщо клітинка порожня", "Перший рядок", "стовпців", "Блок", "Мітки", "По одному шляху до нотатки у сховищі на рядок.", "Рамка", "Застосувати", "Зняти вибір", "Знайти таблиці", "Зберегти"],
-	es: ["Mazo", "Tarjetas", "Tabla", "Cuando la celda esté vacía", "Primera fila", "columnas", "Bloque", "Etiquetas", "Una ruta de nota de la bóveda por línea.", "Borde", "Aplicar", "Borrar selección", "Buscar tablas", "Guardar"],
-	de: ["Stapel", "Karten", "Tabelle", "Wenn die Zelle leer ist", "Erste Zeile", "Spalten", "Block", "Chips", "Ein Notizpfad im Vault pro Zeile.", "Rahmen", "Übernehmen", "Auswahl aufheben", "Tabellen durchsuchen", "Speichern"],
-	fr: ["Paquet", "Cartes", "Tableau", "Lorsque la cellule est vide", "Première ligne", "colonnes", "Bloc", "Pastilles", "Un chemin de note du coffre Obsidian par ligne.", "Bordure", "Appliquer", "Tout désélectionner", "Rechercher des tableaux", "Enregistrer"],
-	"pt-BR": ["Baralho", "Cartões", "Tabela", "Quando a célula estiver vazia", "Primeira linha", "colunas", "Bloco", "Chips", "Um caminho de nota no cofre por linha.", "Borda", "Aplicar", "Limpar seleção", "Pesquisar tabelas", "Salvar"],
-	it: ["Mazzo", "Carte", "Tabella", "Quando la cella è vuota", "Prima riga", "colonne", "Blocco", "Chip", "Un percorso di nota nel vault per riga.", "Bordo", "Applica", "Deseleziona tutto", "Cerca tabelle", "Salva"],
-	pl: ["Talia", "Karty", "Tabela", "Gdy komórka jest pusta", "Pierwszy wiersz", "kolumn", "Blok", "Znaczniki", "Jedna ścieżka do notatki w skarbcu Obsidian na wiersz.", "Obramowanie", "Zastosuj", "Wyczyść wybór", "Szukaj tabel", "Zapisz"],
-	tr: ["Deste", "Kartlar", "Tablo", "Hücre boş olduğunda", "İlk satır", "sütun", "Blok", "Etiket çipleri", "Her satıra kasadaki bir not yolu.", "Kenarlık", "Uygula", "Seçimi temizle", "Tablolarda ara", "Kaydet"],
-	"zh-CN": ["卡组", "卡片", "表格", "单元格为空时", "第一行", "列", "区块", "标签", "每行一个仓库内的笔记路径。", "边框", "应用", "清除选择", "搜索表格", "保存"],
-	"zh-TW": ["牌組", "卡片", "表格", "儲存格為空時", "第一列", "欄", "區塊", "標籤", "每行輸入一個儲存庫內的筆記路徑。", "邊框", "套用", "清除選取", "搜尋表格", "儲存"],
-	ja: ["デッキ", "カード", "表", "セルが空の場合", "最初の行", "列", "ブロック", "タグ", "1 行に 1 つ、保管庫内のノートのパスを入力します。", "境界線", "適用", "選択を解除", "表を検索", "保存"],
-	ko: ["덱", "카드", "표", "셀이 비어 있을 때", "첫 번째 행", "열", "블록", "태그", "한 줄에 보관소의 노트 경로 하나씩 입력합니다.", "테두리", "적용", "선택 해제", "표 검색", "저장"],
-	ar: ["حزمة", "بطاقات", "جدول", "عندما تكون الخلية فارغة", "الصف الأول", "أعمدة", "كتلة", "وسوم", "مسار ملاحظة واحد داخل الخزنة في كل سطر.", "حدود", "تطبيق", "إلغاء التحديد", "البحث في الجداول", "حفظ"],
-	hi: ["डेक", "कार्ड", "तालिका", "जब सेल खाली हो", "पहली पंक्ति", "कॉलम", "ब्लॉक", "टैग", "हर पंक्ति में वॉल्ट के एक नोट का पथ।", "बॉर्डर", "लागू करें", "चयन हटाएँ", "तालिकाएँ खोजें", "सहेजें"],
+	ru: ["Колода", "Карточки", "Если ячейка пустая", "Первая строка", "столбцы", "Блок", "Метки", "Рамка", "Применить", "Снять выбор", "Найти таблицы", "Сохранить"],
+	uk: ["Колода", "Картки", "Якщо клітинка порожня", "Перший рядок", "стовпці", "Блок", "Мітки", "Рамка", "Застосувати", "Зняти вибір", "Знайти таблиці", "Зберегти"],
+	es: ["Mazo", "Tarjetas", "Cuando la celda esté vacía", "Primera fila", "columnas", "Bloque", "Etiquetas", "Borde", "Aplicar", "Borrar selección", "Buscar tablas", "Guardar"],
+	de: ["Stapel", "Karten", "Wenn die Zelle leer ist", "Erste Zeile", "Spalten", "Block", "Chips", "Rahmen", "Übernehmen", "Auswahl aufheben", "Tabellen durchsuchen", "Speichern"],
+	fr: ["Paquet", "Cartes", "Lorsque la cellule est vide", "Première ligne", "colonnes", "Bloc", "Pastilles", "Bordure", "Appliquer", "Tout désélectionner", "Rechercher des tableaux", "Enregistrer"],
+	"pt-BR": ["Baralho", "Cartões", "Quando a célula estiver vazia", "Primeira linha", "colunas", "Bloco", "Chips", "Borda", "Aplicar", "Limpar seleção", "Pesquisar tabelas", "Salvar"],
+	it: ["Mazzo", "Carte", "Quando la cella è vuota", "Prima riga", "colonne", "Blocco", "Chip", "Bordo", "Applica", "Deseleziona tutto", "Cerca tabelle", "Salva"],
+	pl: ["Talia", "Karty", "Gdy komórka jest pusta", "Pierwszy wiersz", "kolumny", "Blok", "Znaczniki", "Obramowanie", "Zastosuj", "Wyczyść wybór", "Szukaj tabel", "Zapisz"],
+	tr: ["Deste", "Kartlar", "Hücre boş olduğunda", "İlk satır", "sütun", "Blok", "Etiket çipleri", "Kenarlık", "Uygula", "Seçimi temizle", "Tablolarda ara", "Kaydet"],
+	"zh-CN": ["卡组", "卡片", "单元格为空时", "第一行", "列", "区块", "标签", "边框", "应用", "清除选择", "搜索表格", "保存"],
+	"zh-TW": ["牌組", "卡片", "儲存格為空時", "第一列", "欄", "區塊", "標籤", "邊框", "套用", "清除選取", "搜尋表格", "儲存"],
+	ja: ["デッキ", "カード", "セルが空の場合", "最初の行", "列", "ブロック", "タグ", "境界線", "適用", "選択を解除", "表を検索", "保存"],
+	ko: ["덱", "카드", "셀이 비어 있을 때", "첫 번째 행", "열", "블록", "태그", "테두리", "적용", "선택 해제", "표 검색", "저장"],
+	ar: ["حزمة", "بطاقات", "عندما تكون الخلية فارغة", "الصف الأول", "أعمدة", "كتلة", "وسوم", "حدود", "تطبيق", "إلغاء التحديد", "البحث في الجداول", "حفظ"],
+	hi: ["डेक", "कार्ड", "जब सेल खाली हो", "पहली पंक्ति", "कॉलम", "ब्लॉक", "टैग", "बॉर्डर", "लागू करें", "चयन हटाएँ", "तालिकाएँ खोजें", "सहेजें"],
 } as const;
 
 const SEMANTIC_KEYS = [
 	"modal.deck",
 	"modal.kicker",
-	"editor.table.label",
 	"editor.empty",
 	"editor.row.first",
 	"editor.summary.columns",
 	"editor.panel.block",
 	"editor.style.chips",
-	"settings.deck.filesDesc",
 	"settings.appearance.border",
 	"scope.apply",
 	"scope.clear",
@@ -123,8 +121,7 @@ const RESIDUAL_SEMANTICS = [
 	["es", "editor.source.pickFile", "Elegir una nota con una tabla"],
 	["es", "editor.source.empty", "Añadir una nota o carpeta para detectar tablas y columnas."],
 	["es", "editor.row.choose", "Elegir una fila de vista previa"],
-	["es", "editor.filesHint", "Rutas de notas con tablas. Después, leer las columnas y arrastrarlas a los bloques."],
-	["es", "editor.noColumns", "Primero, leer las columnas de la tabla."],
+	["es", "editor.noColumns", "Aún no hay columnas. Añadir una nota o carpeta con una tabla."],
 	["es", "editor.pickBlock", "Seleccionar un bloque para cambiar su apariencia."],
 	["es", "launcher.title", "Elegir tarjetas"],
 	["es", "launcher.selectAtLeastOne", "Seleccionar al menos una tabla"],
@@ -223,9 +220,9 @@ describe("localization", () => {
 		expect(createTranslator("uk")("editor.color.fail")).toBe("Нижче AA");
 	});
 
-	it("preserves Hindi punctuation inside the editor file hint", () => {
-		expect(createTranslator("hi")("editor.filesHint"))
-			.toBe("तालिकाओं के साथ नोट्स के पथ। फिर कॉलम पढ़ें और उन्हें ब्लॉक पर खींचें।");
+	it("preserves Hindi punctuation inside the editor source hint", () => {
+		expect(createTranslator("hi")("editor.source.empty"))
+			.toBe("तालिकाओं और कॉलम का पता लगाने के लिए नोट या फ़ोल्डर जोड़ें।");
 	});
 
 	it("uses Hindi sentence punctuation instead of ASCII sentence endings", () => {

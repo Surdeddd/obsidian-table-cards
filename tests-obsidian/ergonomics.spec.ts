@@ -129,6 +129,47 @@ test("the find sheet opens on its search field and Enter opens the top match", a
 	await closeOverlays(page);
 });
 
+test("a session starts with the keyboard on its main action", async () => {
+	const page = await obsidianPage();
+	await closeOverlays(page);
+	await ensureDeck(page);
+	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:open"));
+	await page.waitForSelector(".table-cards-stage");
+	await page.waitForFunction(
+		() => document.activeElement?.classList.contains("table-cards-nav-next") === true,
+	);
+	await closeOverlays(page);
+});
+
+test("the table picker opens on its search box and keeps focus while ticking", async () => {
+	const page = await obsidianPage();
+	await closeOverlays(page);
+	await ensureDeck(page);
+	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:open"));
+	await page.waitForSelector(".table-cards-stage");
+
+	await page.locator("button.table-cards-scope-btn").first().click();
+	await page.waitForSelector(".tc-scope-search");
+	await page.waitForFunction(
+		() => document.activeElement?.classList.contains("tc-scope-search") === true,
+	);
+
+	const checkbox = page.locator(".tc-scope-row input[type=checkbox]").first();
+	const key = await checkbox.getAttribute("data-table-key");
+	await checkbox.click();
+	await page.waitForTimeout(400);
+	const focused = await page.evaluate(() =>
+		document.activeElement instanceof HTMLElement
+			? (document.activeElement.dataset["tableKey"] ?? null)
+			: null,
+	);
+
+	expect(key).not.toBeNull();
+	expect(focused).toBe(key);
+
+	await closeOverlays(page);
+});
+
 test("the first run wizard does not come back after it is dismissed", async () => {
 	const page = await obsidianPage();
 	await closeOverlays(page);

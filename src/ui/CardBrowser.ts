@@ -189,15 +189,18 @@ export class CardBrowser {
 		const version = ++this.renderVersion;
 		const result = browserResults(this.options.index, this.options.catalog, this.scope, this.query);
 		this.resultsEl.empty();
-		if (!this.query.trim()) {
+		const searching = this.query.trim().length > 0;
+		if (!searching) {
 			this.resultsEl.createDiv({ cls: "tc-card-browser-hint", text: this.options.t("browser.empty") });
 		}
-		this.statusEl.setText(result.shown < result.total
-			? this.options.t("browser.showing", {
-				shown: formatUiNumber(result.shown, this.locale),
-				total: formatUiNumber(result.total, this.locale),
-			})
-			: this.options.t("browser.results", { count: formatUiNumber(result.total, this.locale) }));
+		this.statusEl.setText(!searching
+			? ""
+			: result.shown < result.total
+				? this.options.t("browser.showing", {
+					shown: formatUiNumber(result.shown, this.locale),
+					total: formatUiNumber(result.total, this.locale),
+				})
+				: this.options.t("browser.results", { count: formatUiNumber(result.total, this.locale) }));
 		if (result.total === 0) {
 			this.resultsEl.createDiv({ cls: "tc-card-browser-empty", text: this.options.t("browser.noMatches") });
 			return;

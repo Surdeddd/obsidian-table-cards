@@ -3,7 +3,6 @@ import {
 	canStartSession,
 	createLauncherState,
 	launcherCards,
-	launcherWarningCount,
 	reduceLauncherState,
 	selectedTableCount,
 	selectedTableKeys,
@@ -201,12 +200,11 @@ describe("launcher state", () => {
 		expect(state.scope).toEqual({ mode: "tables", tableKeys: ["nouns"] });
 	});
 
-	it("derives selected counts, cards, and warnings without duplicating them in state", () => {
+	it("derives selected counts and cards without duplicating them in state", () => {
 		const state = loadedState({ mode: "tables", tableKeys: ["nouns"] });
 		expect(selectedTableKeys(state)).toEqual(["nouns"]);
 		expect(selectedTableCount(state)).toBe(1);
 		expect(launcherCards(state)).toEqual([result.cards[1]]);
-		expect(launcherWarningCount(state)).toBe(1);
 	});
 
 	it("discards stale asynchronous success and failure by exact object identity", () => {

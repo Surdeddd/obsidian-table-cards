@@ -294,6 +294,11 @@ button.table-cards-icon-btn {
 	align-self: start;
 }
 
+.table-cards-footer > button.table-cards-icon-btn {
+	align-self: center;
+	flex: 0 0 auto;
+}
+
 button.table-cards-nav-btn {
 	flex: 1 1 0;
 }
@@ -1377,7 +1382,6 @@ button.tc-launcher-start {
 	.table-cards-stage {
 		grid-template-columns: minmax(0, 1fr);
 		grid-auto-flow: row;
-		align-content: start;
 	}
 
 	.table-cards-box {

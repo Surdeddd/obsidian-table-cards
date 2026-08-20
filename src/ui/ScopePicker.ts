@@ -134,6 +134,7 @@ export class ScopePicker {
 	private query = "";
 	private root: HTMLElement | null = null;
 	private groupsEl: HTMLElement | null = null;
+	private searchEl: HTMLInputElement | null = null;
 	private bulkButton: HTMLButtonElement | null = null;
 	private sheet: Sheet | null = null;
 
@@ -153,6 +154,7 @@ export class ScopePicker {
 		this.root?.remove();
 		this.root = null;
 		this.groupsEl = null;
+		this.searchEl = null;
 		this.bulkButton = null;
 	}
 
@@ -185,6 +187,10 @@ export class ScopePicker {
 		this.renderActions(parent, false);
 	}
 
+	searchField(): HTMLInputElement | null {
+		return this.searchEl;
+	}
+
 	private renderPicker(root: HTMLElement, withActions = true): void {
 		const searchBar = root.createDiv({ cls: "tc-scope-searchbar" });
 		const search = searchBar.createEl("input", {
@@ -195,6 +201,7 @@ export class ScopePicker {
 				"aria-label": this.options.t("scope.search"),
 			},
 		});
+		this.searchEl = search;
 		search.addEventListener("input", () => {
 			this.query = normalizeSearchText(search.value);
 			this.renderGroups();
@@ -258,6 +265,16 @@ export class ScopePicker {
 		for (const group of groups) this.renderGroup(this.groupsEl, group, selected);
 	}
 
+	private focusTable(key: string): void {
+		const inputs = this.groupsEl?.querySelectorAll<HTMLElement>("input[data-table-key]") ?? [];
+		for (const input of Array.from(inputs)) {
+			if (input.dataset["tableKey"] === key) {
+				input.focus({ preventScroll: true });
+				return;
+			}
+		}
+	}
+
 	private renderGroup(parent: HTMLElement, group: TableGroup, selected: Set<string>): void {
 		const allGroupTables = this.options.catalog.filter((table) => table.sourcePath === group.path);
 		const selectedCount = allGroupTables.filter((table) => selected.has(table.key)).length;
@@ -275,10 +292,13 @@ export class ScopePicker {
 				total: formatUiNumber(allGroupTables.length, this.locale),
 			}),
 		});
+		const groupLabel = selectedCount === allGroupTables.length
+			? this.options.t("scope.clear")
+			: this.options.t("scope.selectAll");
 		const groupToggle = controls.createEl("button", {
 			cls: "tc-scope-group-toggle",
-			text: selectedCount === allGroupTables.length ? this.options.t("scope.clear") : this.options.t("scope.selectAll"),
-			attr: { type: "button" },
+			text: groupLabel,
+			attr: { type: "button", "aria-label": `${groupLabel}: ${path.file}` },
 		});
 		groupToggle.addEventListener("click", () => this.toggleGroup(allGroupTables, selected));
 		for (const table of group.tables) this.renderTable(section, table, selected.has(table.key));
@@ -299,7 +319,7 @@ export class ScopePicker {
 
 	private renderTable(parent: HTMLElement, table: TableCatalogItem, checked: boolean): void {
 		const row = parent.createEl("label", { cls: "tc-scope-row" });
-		const input = row.createEl("input", { type: "checkbox" });
+		const input = row.createEl("input", { type: "checkbox", attr: { "data-table-key": table.key } });
 		input.checked = checked;
 		const content = row.createDiv({ cls: "tc-scope-row-content" });
 		content.createDiv({ cls: "tc-scope-row-title", text: this.tableLabel(table), attr: { dir: "auto" } });
@@ -328,6 +348,7 @@ export class ScopePicker {
 			mode: "tables",
 			tableKeys: this.options.catalog.flatMap((table) => selected.has(table.key) ? [table.key] : []),
 		});
+		this.focusTable(key);
 	}
 
 	private readonly onKeyDown = (event: KeyboardEvent): void => {

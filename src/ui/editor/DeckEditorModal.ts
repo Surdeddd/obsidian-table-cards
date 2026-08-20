@@ -155,6 +155,7 @@ export class DeckEditorModal extends Modal {
 		}
 		this.modalEl.addClass("table-cards-editor");
 		applyUiChromeDirection(this.modalEl, this.host.getLocale());
+		this.modalEl.setAttr("aria-label", this.host.getTranslator()("editor.title"));
 		this.titleEl.setText("");
 		this.contentEl.empty();
 		this.contentEl.addClass("table-cards-editor-body");

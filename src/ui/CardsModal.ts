@@ -241,6 +241,9 @@ export class CardsModal extends Modal {
 			onPrev: () => void this.step(-1),
 		});
 		this.render();
+		if (!Platform.isMobile) {
+			window.setTimeout(() => this.footerEl?.querySelector<HTMLElement>(".table-cards-nav-next")?.focus(), 0);
+		}
 	}
 
 	private buildChrome(): void {
@@ -314,6 +317,7 @@ export class CardsModal extends Modal {
 		next.createSpan({ text: this.t("modal.next") });
 		setIcon(next.createSpan({ cls: "table-cards-nav-icon" }), "chevron-right");
 		next.addEventListener("click", () => void this.step(1));
+		if (Platform.isMobile) this.shuffleBtn.after(this.searchBtn);
 	}
 
 	private scopeSummary(): string {
@@ -467,8 +471,10 @@ export class CardsModal extends Modal {
 		this.progressEl.parentElement?.setAttr("aria-valuemin", "0");
 		this.progressEl.parentElement?.setAttr("aria-valuemax", String(total));
 		this.progressEl.parentElement?.setAttr("aria-valuenow", String(index));
-		this.shuffleBtn.toggleClass("is-active", this.progress?.shuffle ?? false);
-		this.shuffleBtn.setAttr("aria-pressed", String(this.progress?.shuffle ?? false));
+		const shuffled = this.progress?.shuffle ?? false;
+		this.shuffleBtn.toggleClass("is-active", shuffled);
+		this.shuffleBtn.setAttr("aria-pressed", String(shuffled));
+		this.shuffleBtn.setAttr("aria-label", this.t(shuffled ? "modal.shuffleOn" : "modal.shuffle"));
 		this.updateStageColumns();
 		const current = this.currentCard();
 		const resolved = current && this.deck ? resolveCard(current, this.deck.blocks) : null;

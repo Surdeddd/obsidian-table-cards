@@ -1,3 +1,5 @@
+import { lastOf } from "../../../util/lists";
+
 export interface ListboxOption<T extends string> {
 	value: T;
 	label: string;
@@ -145,9 +147,11 @@ export class Listbox<T extends string> {
 		if (!this.popover) return;
 		this.popover.querySelector<HTMLElement>(".tc-listbox-options")?.remove();
 		const query = filter.trim().toLocaleLowerCase();
-		const visibleIndexes = this.options.options.flatMap((option, index) =>
-			query && !option.label.toLocaleLowerCase().includes(query) ? [] : [index],
-		);
+		const visibleIndexes: number[] = [];
+		this.options.options.forEach((option, index) => {
+			if (query && !option.label.toLocaleLowerCase().includes(query)) return;
+			visibleIndexes.push(index);
+		});
 		if (!visibleIndexes.includes(this.activeIndex)) this.activeIndex = visibleIndexes[0] ?? 0;
 		const list = this.popover.createDiv({
 			cls: "tc-listbox-options",
@@ -255,7 +259,7 @@ export class Listbox<T extends string> {
 		if (event.key === "Home" || event.key === "End") {
 			event.preventDefault();
 			event.stopPropagation();
-			const target = event.key === "Home" ? items[0] : items.at(-1);
+			const target = event.key === "Home" ? items[0] : lastOf(items);
 			if (target) {
 				for (const item of items) item.tabIndex = -1;
 				target.tabIndex = 0;

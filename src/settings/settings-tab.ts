@@ -131,6 +131,10 @@ export class TableCardsSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
+		this.render();
+	}
+
+	private render(): void {
 		const { containerEl } = this;
 		const t = this.plugin.getTranslator();
 		const locale = resolveUiLocale(this.plugin.settings.locale, appLanguage());
@@ -163,7 +167,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			.setHeading()
 			.addButton((button) => {
 				button.setButtonText(t("command.createWithSetup")).setCta().onClick(() => {
-					this.plugin.openSetup(() => this.display());
+					this.plugin.openSetup(() => this.render());
 				});
 			})
 			.addButton((button) => {
@@ -229,7 +233,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 			updateSettings: (mutate) => this.plugin.updateSettings(mutate),
 			getTranslator: () => this.plugin.getTranslator(),
 			getLocale: () => this.plugin.getLocale(),
-			onDeckSaved: () => this.display(),
+			onDeckSaved: () => this.render(),
 			onOpenDraftSession: (draft, table) => this.plugin.openDraftSession(draft, table),
 		}, deck).open();
 	}
@@ -237,7 +241,7 @@ export class TableCardsSettingTab extends PluginSettingTab {
 	private updateAndDisplay(mutate: SettingsMutation, onSuccess?: () => void): void {
 		void runSettingsUpdate({
 			update: () => this.plugin.updateSettings(mutate),
-			refresh: () => this.display(),
+			refresh: () => this.render(),
 			t: this.plugin.getTranslator(),
 			onSuccess,
 		}).catch(() => undefined);

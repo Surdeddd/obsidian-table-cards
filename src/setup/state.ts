@@ -1,5 +1,6 @@
 import {
 	cloneJson,
+	type ColumnDataType,
 	type ColumnProfile,
 	type DeckLoadResult,
 	type DeckSource,
@@ -132,9 +133,8 @@ export function finishSetup(
 		throw new Error("Setup draft is incomplete");
 	}
 	const next = cloneJson(settings);
-	const columnTypes = Object.fromEntries(
-		profiles.map((profile) => [normalizeHeader(profile.header), profile.inferredType]),
-	);
+	const columnTypes: Record<string, ColumnDataType> = {};
+	for (const profile of profiles) columnTypes[normalizeHeader(profile.header)] = profile.inferredType;
 	const deck = createDeck({
 		id: identifiers.deckId,
 		name: state.deckName.trim(),

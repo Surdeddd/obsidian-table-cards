@@ -29,7 +29,8 @@ function isExternalSource(source: string): boolean {
 
 export function parseImageRefs(markdown: string): ImageRef[] {
 	const images: ImageRef[] = [];
-	for (const match of markdown.matchAll(OBSIDIAN_IMAGE)) {
+	OBSIDIAN_IMAGE.lastIndex = 0;
+	for (let match = OBSIDIAN_IMAGE.exec(markdown); match; match = OBSIDIAN_IMAGE.exec(markdown)) {
 		const payload = (match[1] ?? "").trim();
 		const [rawSource = "", ...aliasParts] = payload.split("|");
 		const source = rawSource.trim();
@@ -45,7 +46,8 @@ export function parseImageRefs(markdown: string): ImageRef[] {
 			external: false,
 		});
 	}
-	for (const match of markdown.matchAll(MARKDOWN_IMAGE)) {
+	MARKDOWN_IMAGE.lastIndex = 0;
+	for (let match = MARKDOWN_IMAGE.exec(markdown); match; match = MARKDOWN_IMAGE.exec(markdown)) {
 		const source = (match[2] ?? "").replace(/^<|>$/g, "").trim();
 		if (!source) {
 			continue;

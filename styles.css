@@ -37,7 +37,7 @@
 .modal.table-cards-modal .modal-close-button,
 .modal.table-cards-modal > .modal-close-button,
 .modal.table-cards-modal > .modal-header-button {
-	display: none !important;
+	display: none;
 }
 
 .modal.table-cards-modal .modal-content,
@@ -422,7 +422,7 @@ button.table-cards-shuffle-btn.is-active {
 }
 
 .table-cards-stage.is-single-column .table-cards-box {
-	grid-column: 1 !important;
+	grid-column: 1;
 }
 
 .table-cards-box[data-height="min"] {
@@ -1413,7 +1413,7 @@ button.tc-launcher-start {
 	}
 
 	.table-cards-box {
-		grid-column: 1 !important;
+		grid-column: 1;
 	}
 
 	.table-cards-box[data-mobile="compact"] {
@@ -1452,7 +1452,7 @@ button.tc-launcher-start {
 .modal.table-cards-editor .modal-close-button,
 .modal.table-cards-editor > .modal-close-button,
 .modal.table-cards-editor > .modal-header-button {
-	display: none !important;
+	display: none;
 }
 
 .modal.table-cards-editor .modal-content,
@@ -1729,7 +1729,7 @@ button.tc-editor-save:disabled {
 }
 
 .tc-editor-preview.is-phone .table-cards-box {
-	grid-column: 1 !important;
+	grid-column: 1;
 }
 
 .tc-editor-preview .table-cards-box[role="button"] {
@@ -1837,11 +1837,11 @@ button.tc-editor-save:disabled {
 }
 
 .table-cards-box[data-preview-width="full"] {
-	grid-column: 1 / -1 !important;
+	grid-column: 1 / -1;
 }
 
 .table-cards-box[data-preview-width="half"] {
-	grid-column: span 1 !important;
+	grid-column: span 1;
 }
 
 .tc-editor-block-toolbar {
@@ -2536,15 +2536,15 @@ button.tc-inspector-move {
 
 .modal .tc-range-line input[type="range"],
 .tc-range-line input[type="range"] {
-	-webkit-appearance: none !important;
-	appearance: none !important;
+	-webkit-appearance: none;
+	appearance: none;
 	width: 100%;
 	height: 44px;
 	margin: 0;
 	padding: 0;
-	border: 0 !important;
-	background: transparent !important;
-	box-shadow: none !important;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
 	accent-color: var(--text-normal);
 }
 
@@ -2861,7 +2861,7 @@ button.tc-sheet-scrim:focus-visible,
 	}
 
 	.tc-editor-preview .table-cards-box {
-		grid-column: 1 !important;
+		grid-column: 1;
 	}
 
 	.tc-editor-block-toolbar {
@@ -2980,7 +2980,7 @@ button.tc-sheet-scrim:focus-visible,
 .modal.table-cards-setup > .modal-close-button,
 .modal.table-cards-setup > .modal-header-button,
 .table-cards-setup .modal-header {
-	display: none !important;
+	display: none;
 }
 
 .table-cards-setup .modal-content,

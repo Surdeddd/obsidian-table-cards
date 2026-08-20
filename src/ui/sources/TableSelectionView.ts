@@ -13,6 +13,7 @@ import {
 	stableTableSelectionKey,
 	type TableSelectionInteraction,
 } from "./table-selection-state";
+import { lastOf } from "../../util/lists";
 
 export interface TableSelectionViewOptions {
 	source: DeckSource;
@@ -247,7 +248,7 @@ export class TableSelectionView {
 
 	private tableLabel(table: ParsedTable): string {
 		return this.tableLabels.get(stableTableSelectionKey(table.sourcePath, table.selector)) ??
-			(table.headingPath.at(-1) || this.options.t("table.untitled", {
+			(lastOf(table.headingPath) || this.options.t("table.untitled", {
 				number: formatUiNumber(table.index + 1, this.locale),
 			}));
 	}
@@ -273,7 +274,7 @@ export class TableSelectionView {
 			selector: table.selector,
 			sourcePath: table.sourcePath,
 			sourceIds: [this.source.id],
-			label: table.headingPath.at(-1) || this.options.t("table.untitled", {
+			label: lastOf(table.headingPath) || this.options.t("table.untitled", {
 				number: formatUiNumber(table.index + 1, this.locale),
 			}),
 			tableNumber: table.index + 1,

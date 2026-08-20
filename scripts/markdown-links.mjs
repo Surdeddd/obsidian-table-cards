@@ -21,12 +21,14 @@ function referenceId(value) {
 /** @param {string} markdown */
 export function markdownLinks(markdown) {
 	const source = withoutFencedCode(markdown);
+	/** @type {Map<string, string>} */
 	const definitions = new Map();
 	const definitionPattern = /^\s{0,3}\[([^\]]+)\]:\s*(?:<([^>]+)>|(\S+))(?:\s+.*)?$/gmu;
 	for (const match of source.matchAll(definitionPattern)) {
 		definitions.set(referenceId(match[1] ?? ""), match[2] ?? match[3] ?? "");
 	}
 
+	/** @type {string[]} */
 	const links = [];
 	const inlinePattern = /!?\[[^\]]*\]\(\s*(?:<([^>]+)>|((?:\\.|[^()\s]|\([^()]*\))+))(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/gu;
 	for (const match of source.matchAll(inlinePattern)) links.push(match[1] ?? match[2] ?? "");
@@ -75,6 +77,7 @@ export function markdownAnchors(markdown) {
 		}
 	}
 
+	/** @type {Map<string, number>} */
 	const counts = new Map();
 	return new Set(headings.map((heading) => {
 		const slug = headingSlug(heading);

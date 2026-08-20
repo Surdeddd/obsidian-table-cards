@@ -25,7 +25,7 @@ export function buildCardImageCache(
 	for (const card of cards) {
 		for (const resolved of resolveCard(card, blocks).blocks) {
 			if (!resolved.visible || resolved.block.kind !== "image") continue;
-			for (const image of resolved.values.flatMap((value) => value.images)) {
+			for (const value of resolved.values) for (const image of value.images) {
 				if (image.external) continue;
 				const key = imageKey(card.origin.sourcePath, image.source);
 				if (!localSources.has(key)) localSources.set(key, resolveLocal(card.origin.sourcePath, image));

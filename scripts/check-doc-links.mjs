@@ -46,6 +46,7 @@ function curlStatus(url) {
 }
 
 await collectMarkdown(join(root, "docs"));
+/** @type {{ anchor: string, label: string, path: string }[]} */
 const localLinks = [];
 const externalLinks = new Set();
 for (const file of markdownFiles) {

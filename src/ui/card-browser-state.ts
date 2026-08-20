@@ -1,5 +1,6 @@
 import { normalizeSearchText, searchCards, type SearchEntry } from "../deck/filter";
 import type { StudyScope, TableCatalogItem } from "../model";
+import { lastOf } from "../util/lists";
 
 export const CARD_BROWSER_LIMIT = 100;
 
@@ -98,7 +99,7 @@ export function browserResults(
 	const groups: BrowserGroup[] = [];
 	for (const entry of result.matches) {
 		const tableKey = entry.card.origin.tableKey;
-		let group = groups.at(-1);
+		let group = lastOf(groups);
 		if (!group || group.tableKey !== tableKey) {
 			group = { tableKey, table: tables.get(tableKey) ?? null, matches: [] };
 			groups.push(group);

@@ -3,6 +3,7 @@ import { formatUiNumber, type Translator } from "../i18n";
 import { UI_LOCALES, type StudyScope, type TableCatalogItem, type UiLocale } from "../model";
 import { Sheet } from "./editor/controls/Sheet";
 import { metaSeparator } from "./meta-separator";
+import { lastOf } from "../util/lists";
 
 export interface ScopePickerOptions {
 	catalog: TableCatalogItem[];
@@ -30,7 +31,7 @@ function localeAt(element: HTMLElement): UiLocale {
 
 function pathParts(path: string): { file: string; parent: string } {
 	const parts = path.split("/").filter(Boolean);
-	const file = parts.at(-1) ?? path;
+	const file = lastOf(parts) ?? path;
 	const parent = parts.slice(-3, -1).join("/");
 	return { file, parent };
 }
@@ -314,7 +315,7 @@ export class ScopePicker {
 		}
 		this.setScope({
 			mode: "tables",
-			tableKeys: this.options.catalog.flatMap((table) => next.has(table.key) ? [table.key] : []),
+			tableKeys: this.options.catalog.filter((table) => next.has(table.key)).map((table) => table.key),
 		});
 	}
 
@@ -349,7 +350,7 @@ export class ScopePicker {
 		else selected.add(key);
 		this.setScope({
 			mode: "tables",
-			tableKeys: this.options.catalog.flatMap((table) => selected.has(table.key) ? [table.key] : []),
+			tableKeys: this.options.catalog.filter((table) => selected.has(table.key)).map((table) => table.key),
 		});
 		this.focusTable(key);
 	}

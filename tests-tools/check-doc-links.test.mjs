@@ -7,7 +7,10 @@ import test from "node:test";
 
 const checker = resolve("scripts/check-doc-links.mjs");
 
-/** @param {string} cwd */
+/**
+ * @param {string} cwd
+ * @returns {Promise<{ code: number | null, output: string }>}
+ */
 function runChecker(cwd) {
 	return new Promise((resolveRun, reject) => {
 		const child = spawn(process.execPath, [checker], { cwd });
@@ -30,7 +33,7 @@ async function fixture(markdown, docs = {}) {
 	return root;
 }
 
-test("rejects a missing same-document anchor", async () => {
+void test("rejects a missing same-document anchor", async () => {
 	const root = await fixture("# Home\n\n[Jump](#missing)\n");
 	try {
 		const result = await runChecker(root);
@@ -41,7 +44,7 @@ test("rejects a missing same-document anchor", async () => {
 	}
 });
 
-test("resolves reference links and rejects a missing target anchor", async () => {
+void test("resolves reference links and rejects a missing target anchor", async () => {
 	const root = await fixture(
 		"# Home\n\n[Guide][guide]\n\n[guide]: docs/guide.md#details\n",
 		{ "guide.md": "# Other heading\n" },
@@ -55,7 +58,7 @@ test("resolves reference links and rejects a missing target anchor", async () =>
 	}
 });
 
-test("accepts inline, reference, angled-space, and duplicate-heading anchors", async () => {
+void test("accepts inline, reference, angled-space, and duplicate-heading anchors", async () => {
 	const root = await fixture(
 		[
 			"# Home",

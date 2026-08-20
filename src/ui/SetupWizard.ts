@@ -36,6 +36,7 @@ import { applySetupDirection } from "./setup/setup-a11y";
 import { tableSelectedBySource } from "../deck/selectors";
 import { noteHasTable } from "../deck/vault-tables";
 import type { SettingsMutation } from "../settings/persistence";
+import { lastOf } from "../util/lists";
 
 export interface SetupWizardHost {
 	settings: PluginSettings;
@@ -47,7 +48,7 @@ export interface SetupWizardHost {
 }
 
 function sourceName(path: string): string {
-	const name = path.split("/").filter(Boolean).at(-1) ?? path;
+	const name = lastOf(path.split("/").filter(Boolean)) ?? path;
 	return name.replace(/\.md$/i, "");
 }
 

@@ -1,6 +1,7 @@
 import type { TranslationKey } from "../i18n";
 import { createBlock, type BlockKind, type Card, type CardBlock, type ColumnDataType, type ColumnProfile, type RibbonIcon } from "../model";
 import { normalizeHeader } from "../parse/table-scanner";
+import { lastOf } from "../util/lists";
 
 export type PresetId = "vocabulary" | "phrases" | "qa" | "gallery" | "reference" | "universal";
 
@@ -59,7 +60,7 @@ function isWordContinuation(value: string): boolean {
 }
 
 function neighboringCodePoint(source: string, index: number, direction: "before" | "after"): string {
-	if (direction === "before") return Array.from(source.slice(0, index)).at(-1) ?? "";
+	if (direction === "before") return lastOf(Array.from(source.slice(0, index))) ?? "";
 	return Array.from(source.slice(index))[0] ?? "";
 }
 

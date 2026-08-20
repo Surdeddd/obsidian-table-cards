@@ -14,7 +14,7 @@ const contentTypes = {
 	".png": "image/png",
 };
 
-createServer(async (request, response) => {
+createServer((request, response) => void (async () => {
 	try {
 		const pathname = decodeURIComponent(new URL(request.url ?? "/", "http://localhost").pathname);
 		let target = resolve(root, `.${pathname}`);
@@ -31,6 +31,6 @@ createServer(async (request, response) => {
 		response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
 		response.end("Not found");
 	}
-}).listen(port, "127.0.0.1", () => {
+})()).listen(port, "127.0.0.1", () => {
 	process.stdout.write(`Table Cards preview: http://127.0.0.1:${port}/preview/\n`);
 });

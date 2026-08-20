@@ -7,6 +7,7 @@ import type {
 	TableSelector,
 } from "../model";
 import { normalizeHeader } from "../parse/table-scanner";
+import { lastOf } from "../util/lists";
 
 export interface SourceTableEntry {
 	sourceId: string;
@@ -42,7 +43,7 @@ export function tableLabel(
 	table: ParsedTable,
 	untitledTableLabel: (ordinal: number) => string = (ordinal) => `Table ${ordinal}`,
 ): string {
-	return table.headingPath.at(-1) || untitledTableLabel(table.index + 1);
+	return lastOf(table.headingPath) || untitledTableLabel(table.index + 1);
 }
 
 function canonicalRow(cells: Record<string, CellValue>): string {

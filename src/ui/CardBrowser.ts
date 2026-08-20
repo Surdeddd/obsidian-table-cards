@@ -11,6 +11,7 @@ import {
 import { Sheet } from "./editor/controls/Sheet";
 import { metaSeparator } from "./meta-separator";
 import { ScopeSheet } from "./ScopeSheet";
+import { lastOf } from "../util/lists";
 
 export interface CardBrowserOptions {
 	index: SearchEntry[];
@@ -32,7 +33,7 @@ function localeAt(element: HTMLElement): UiLocale {
 }
 
 function fileBasename(path: string): string {
-	return (path.split("/").at(-1) ?? path).replace(/\.md$/i, "");
+	return (lastOf(path.split("/")) ?? path).replace(/\.md$/i, "");
 }
 
 export class CardBrowser {

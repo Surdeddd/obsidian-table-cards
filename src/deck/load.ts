@@ -250,7 +250,9 @@ export function buildDeckDataFromScan(
 			sourcePaths.some((sourcePath) => resolveImageFile(app, sourcePath, source) !== null),
 	});
 	const cards: Card[] = [];
-	for (const card of selectedCatalog.flatMap(tableCards)) {
+	const allCards: Card[] = [];
+	for (const canonical of selectedCatalog) allCards.push(...tableCards(canonical));
+	for (const card of allCards) {
 		const resolved = resolveCard(card, deck.blocks);
 		if (!resolved.skipReason) {
 			cards.push(card);

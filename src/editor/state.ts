@@ -145,7 +145,10 @@ function setColumnEnabled(
 	if (enabled) {
 		if (contains) return { deck, retired };
 		const saved = retired[key];
-		const rest = Object.fromEntries(Object.entries(retired).filter(([entry]) => entry !== key));
+		const rest: Record<string, RetiredBlock> = {};
+		for (const [entry, value] of Object.entries(retired)) {
+			if (entry !== key) rest[entry] = value;
+		}
 		if (saved) {
 			const blocks = deck.blocks.slice();
 			blocks.splice(Math.min(saved.index, blocks.length), 0, cloneJson(saved.block));

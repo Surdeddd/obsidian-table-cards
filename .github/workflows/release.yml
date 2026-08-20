@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -34,6 +36,14 @@ jobs:
             echo "tag ${GITHUB_REF_NAME} does not match manifest version ${manifest_version}"
             exit 1
           fi
+
+      - name: Attest the build provenance of the release assets
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
 
       - uses: softprops/action-gh-release@v2
         with:

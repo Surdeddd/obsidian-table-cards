@@ -4,6 +4,7 @@ import type { AppearanceSettings, CardBlock, CellValue, ImageRef } from "../mode
 import type { ResolvedBlock, ResolvedCard } from "../layout/resolve";
 import type { Translator } from "../i18n";
 import { ImageLightbox } from "./ImageLightbox";
+import { lastOf } from "../util/lists";
 
 export interface CardRenderOptions {
 	selectedBlockId?: string | null;
@@ -213,7 +214,7 @@ async function renderTextBlock(
 }
 
 function fileBasename(path: string): string {
-	return (path.split("/").at(-1) ?? path).replace(/\.md$/i, "");
+	return (lastOf(path.split("/")) ?? path).replace(/\.md$/i, "");
 }
 
 function renderSource(root: HTMLElement, card: ResolvedCard, context: CardRenderContext): void {
@@ -257,7 +258,8 @@ export async function renderCard(
 			box.createDiv({ cls: "table-cards-label", text: label, attr: { dir: "auto" } });
 		}
 		if (block.kind === "image") {
-			const refs = resolved.values.flatMap((value) => value.images);
+			const refs: ImageRef[] = [];
+			for (const value of resolved.values) refs.push(...value.images);
 			if (refs.length === 0) {
 				for (const value of resolved.values) {
 					await renderValue(box, value, card, context, "table-cards-translation");

@@ -50,6 +50,7 @@ export default tseslint.config(
 			},
 		},
 	},
+	...tseslint.configs.recommendedTypeChecked,
 	...obsidianmd.configs.recommended,
 	{
 		files: toolFiles,
@@ -74,17 +75,28 @@ export default tseslint.config(
 		},
 	},
 	{
-		files: ["tests-ui/**/*.ts"],
+		files: ["tests-ui/**/*.ts", "tests-obsidian/**/*.ts", "tests-obsidian/**/*.mts"],
 		rules: {
 			// Browser globals only occur inside typed page.evaluate callbacks.
 			"no-undef": "off",
 		},
 	},
 	{
-		files: ["src/**/*.ts"],
+		files: ["tests-obsidian/**/*.mjs", "tests-obsidian/**/*.mts", "scripts/**/*.mjs", "tests-tools/**/*.mjs"],
 		rules: {
-			"obsidianmd/settings-tab/prefer-setting-definitions": "off",
+			"obsidianmd/prefer-file-manager-trash-file": "off",
+			"obsidianmd/no-plugin-as-component": "off",
+			"no-restricted-globals": "off",
+		},
+	},
+	{
+		files: ["src/settings/settings-tab.ts"],
+		rules: {
+			// Obsidian deprecated display() and setWarning() in 1.13 in favour of the
+			// declarative settings API; the supported floor here is 1.6.7, where the
+			// replacements do not exist.
 			"@typescript-eslint/no-deprecated": "off",
+			"obsidianmd/settings-tab/prefer-setting-definitions": "off",
 		},
 	},
 	globalIgnores([

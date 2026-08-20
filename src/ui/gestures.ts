@@ -14,6 +14,42 @@ export function isHorizontalSwipe(dx: number, dy: number): boolean {
 	return Math.abs(dx) >= 56 && Math.abs(dx) > Math.abs(dy) * 1.5;
 }
 
+export function isDismissSwipe(dx: number, dy: number): boolean {
+	return dy >= 64 && dy > Math.abs(dx) * 1.5;
+}
+
+export function attachDismissSwipe(el: HTMLElement, onDismiss: () => void): () => void {
+	let startX = 0;
+	let startY = 0;
+	let tracking = false;
+
+	const onStart = (event: PointerEvent): void => {
+		if (event.pointerType === "mouse") return;
+		tracking = true;
+		startX = event.clientX;
+		startY = event.clientY;
+	};
+
+	const onEnd = (event: PointerEvent): void => {
+		if (!tracking) return;
+		tracking = false;
+		if (isDismissSwipe(event.clientX - startX, event.clientY - startY)) onDismiss();
+	};
+
+	const onCancel = (): void => {
+		tracking = false;
+	};
+
+	el.addEventListener("pointerdown", onStart);
+	el.addEventListener("pointerup", onEnd);
+	el.addEventListener("pointercancel", onCancel);
+	return () => {
+		el.removeEventListener("pointerdown", onStart);
+		el.removeEventListener("pointerup", onEnd);
+		el.removeEventListener("pointercancel", onCancel);
+	};
+}
+
 export function startsInHorizontalScroller(target: unknown): boolean {
 	let node = target as ScrollTarget | null;
 	while (node) {

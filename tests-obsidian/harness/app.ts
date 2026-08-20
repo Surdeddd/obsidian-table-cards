@@ -36,7 +36,10 @@ export async function deckCount(page: Page): Promise<number> {
 }
 
 export async function ensureDeck(page: Page): Promise<void> {
-	if ((await deckCount(page)) > 0) return;
+	if ((await deckCount(page)) > 0) {
+		await useVocabDeck(page);
+		return;
+	}
 	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:create-with-setup"));
 	await page.waitForSelector(".table-cards-setup");
 	await page.getByText("Add file", { exact: false }).first().click();
@@ -50,6 +53,32 @@ export async function ensureDeck(page: Page): Promise<void> {
 		return Array.isArray(decks) && decks.length > 0;
 	});
 	await closeOverlays(page);
+}
+
+export async function useVocabDeck(page: Page): Promise<void> {
+	await page.evaluate(() => {
+		const plugin = window.app.plugins.plugins["table-cards"] as unknown as {
+			updateSettings(mutate: (settings: unknown) => unknown): Promise<void>;
+		};
+		return plugin.updateSettings((settings) => {
+			const typed = settings as {
+				decks: { id: string; name: string }[];
+				lastDeckId: string | null;
+				perDeck: Record<string, unknown>;
+			};
+			const vocab = typed.decks.find((deck) => deck.name === "Vocab") ?? typed.decks[0];
+			if (!vocab) return typed;
+			typed.lastDeckId = vocab.id;
+			typed.perDeck[vocab.id] = {
+				index: 0,
+				shuffle: false,
+				seed: 1,
+				scope: { mode: "all" },
+				cardKey: null,
+			};
+			return typed;
+		});
+	});
 }
 
 export async function createDeckFromFile(page: Page, fileName: string): Promise<void> {

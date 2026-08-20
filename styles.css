@@ -2884,7 +2884,8 @@ button.tc-sheet-scrim:focus-visible,
 	}
 
 	.tc-sheet[data-variant="full"] .tc-sheet-handle {
-		display: none;
+		display: block;
+		margin-block-start: calc(6px + var(--safe-area-inset-top, env(safe-area-inset-top)));
 	}
 
 	.tc-sheet[data-variant="full"] .tc-sheet-body {
@@ -2892,7 +2893,7 @@ button.tc-sheet-scrim:focus-visible,
 	}
 
 	.table-cards-modal .tc-sheet[data-variant="full"] .tc-sheet-header {
-		padding-block-start: calc(4px + var(--safe-area-inset-top, env(safe-area-inset-top)));
+		padding-block-start: 4px;
 	}
 
 	.table-cards-modal .tc-sheet[data-variant="full"] .tc-card-browser {

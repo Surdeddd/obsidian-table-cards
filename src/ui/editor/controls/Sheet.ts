@@ -1,3 +1,5 @@
+import { attachDismissSwipe } from "../../gestures";
+
 export type SheetMode = "responsive" | "side" | "bottom";
 export type SheetVariant = "default" | "full";
 
@@ -47,6 +49,7 @@ export class Sheet {
 	private readonly options: SheetOptions;
 	private root: HTMLElement | null = null;
 	private dialog: HTMLElement | null = null;
+	private detachDismiss: (() => void) | null = null;
 
 	constructor(host: HTMLElement, options: SheetOptions) {
 		this.host = host;
@@ -75,6 +78,7 @@ export class Sheet {
 		this.dialog.addEventListener("keydown", this.onKeyDown);
 		this.dialog.createDiv({ cls: "tc-sheet-handle", attr: { "aria-hidden": "true" } });
 		const header = this.dialog.createDiv({ cls: "tc-sheet-header" });
+		this.detachDismiss = attachDismissSwipe(header, () => this.close());
 		header.createEl("h2", { text: this.options.title, attr: { id: `${this.options.id}-title` } });
 		const close = header.createEl("button", {
 			cls: "tc-sheet-close",
@@ -100,6 +104,8 @@ export class Sheet {
 	}
 
 	destroy(restoreFocus = false): void {
+		this.detachDismiss?.();
+		this.detachDismiss = null;
 		this.dialog?.removeEventListener("keydown", this.onKeyDown);
 		this.root?.remove();
 		this.root = null;

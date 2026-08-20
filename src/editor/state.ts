@@ -15,6 +15,11 @@ import { normalizeHeader } from "../parse/table-scanner";
 
 export type EditorPanel = null | "fields" | "block" | "card" | "reorder";
 
+export interface RetiredBlock {
+	block: CardBlock;
+	index: number;
+}
+
 export interface EditorState {
 	baseline: Deck;
 	draft: Deck;
@@ -23,6 +28,7 @@ export interface EditorState {
 	selectedBlockId: string | null;
 	previewRow: number;
 	activePanel: EditorPanel;
+	retired: Record<string, RetiredBlock>;
 }
 
 export type BlockPatch = Omit<
@@ -62,6 +68,7 @@ export function createEditorState(deck: Deck): EditorState {
 		selectedBlockId: deck.blocks[0]?.id ?? null,
 		previewRow: 0,
 		activePanel: null,
+		retired: {},
 	};
 }
 
@@ -120,31 +127,60 @@ function blockKindFor(dataType: ColumnDataType | undefined): CardBlock["kind"] {
 	return "text";
 }
 
-function setColumnEnabled(deck: Deck, header: string, enabled: boolean): Deck {
+interface ColumnToggle {
+	deck: Deck;
+	retired: Record<string, RetiredBlock>;
+}
+
+function setColumnEnabled(
+	deck: Deck,
+	retired: Record<string, RetiredBlock>,
+	header: string,
+	enabled: boolean,
+): ColumnToggle {
 	const key = normalizeHeader(header);
 	const contains = deck.blocks.some((block) =>
 		block.columns.some((column) => normalizeHeader(column) === key),
 	);
 	if (enabled) {
-		if (contains) return deck;
+		if (contains) return { deck, retired };
+		const saved = retired[key];
+		const rest = Object.fromEntries(Object.entries(retired).filter(([entry]) => entry !== key));
+		if (saved) {
+			const blocks = deck.blocks.slice();
+			blocks.splice(Math.min(saved.index, blocks.length), 0, cloneJson(saved.block));
+			return { deck: { ...deck, blocks }, retired: rest };
+		}
 		const dataType = deck.columnTypes[key];
 		return {
-			...deck,
-			blocks: [
-				...deck.blocks,
-				createBlock({ kind: blockKindFor(dataType), columns: [header], width: "full" }),
-			],
+			deck: {
+				...deck,
+				blocks: [
+					...deck.blocks,
+					createBlock({ kind: blockKindFor(dataType), columns: [header], width: "full" }),
+				],
+			},
+			retired: rest,
 		};
 	}
-	if (!contains) return deck;
+	if (!contains) return { deck, retired };
+	const emptied = deck.blocks.findIndex((block) =>
+		block.columns.every((column) => normalizeHeader(column) === key),
+	);
+	const removed = emptied >= 0 ? deck.blocks[emptied] : undefined;
 	return {
-		...deck,
-		blocks: deck.blocks
-			.map((block) => ({
-				...block,
-				columns: block.columns.filter((column) => normalizeHeader(column) !== key),
-			}))
-			.filter((block) => block.columns.length > 0),
+		deck: {
+			...deck,
+			blocks: deck.blocks
+				.map((block) => ({
+					...block,
+					columns: block.columns.filter((column) => normalizeHeader(column) !== key),
+				}))
+				.filter((block) => block.columns.length > 0),
+		},
+		retired: removed
+			? { ...retired, [key]: { block: cloneJson(removed), index: emptied } }
+			: retired,
 	};
 }
 
@@ -202,8 +238,10 @@ export function reduceEditorState(state: EditorState, action: EditorAction): Edi
 				columnTypes: { ...state.draft.columnTypes, [key]: action.dataType },
 			});
 		}
-		case "setColumnEnabled":
-			return withDraft(state, setColumnEnabled(state.draft, action.header, action.enabled));
+		case "setColumnEnabled": {
+			const toggled = setColumnEnabled(state.draft, state.retired, action.header, action.enabled);
+			return { ...withDraft(state, toggled.deck), retired: toggled.retired };
+		}
 		case "setDeckName":
 			return withDraft(state, { ...state.draft, name: action.name });
 	}

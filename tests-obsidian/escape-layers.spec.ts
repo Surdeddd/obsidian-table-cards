@@ -69,6 +69,8 @@ test("escape closes an open listbox without closing the picker", async () => {
 
 test("escape closes the card search without closing the session", async () => {
 	const page = await obsidianPage();
+	await closeOverlays(page);
+	await ensureDeck(page);
 	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:open"));
 	await page.waitForSelector(".table-cards-stage", { timeout: 15_000 });
 	await page.locator("button.table-cards-search-btn").first().click();

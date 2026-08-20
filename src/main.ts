@@ -11,6 +11,7 @@ import { shouldAutoOpenSetup, shouldOpenSetupForCards } from "./setup/state";
 import { SetupSavedCallbacks } from "./setup/session";
 import type { DeckOpenRequest } from "./session/launcher-state";
 import { exactTableOpenRequest } from "./editor/draft-session";
+import { renamedDeckSources } from "./deck/paths";
 import {
 	SettingsPersistence,
 	type SettingsMutation,
@@ -60,6 +61,10 @@ export default class TableCardsPlugin extends Plugin {
 
 		this.addSettingTab(new TableCardsSettingTab(this.app, this));
 
+		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
+			void this.followVaultRename(oldPath, file.path);
+		}));
+
 		if (shouldAutoOpenSetup(this.settings)) {
 			this.app.workspace.onLayoutReady(() => this.openSetup());
 		}
@@ -68,6 +73,17 @@ export default class TableCardsPlugin extends Plugin {
 	onunload(): void {
 		this.ribbonDecks?.destroy();
 		this.ribbonDecks = null;
+	}
+
+	private async followVaultRename(oldPath: string, newPath: string): Promise<void> {
+		const affected = this.settings.decks.some((deck) => renamedDeckSources(deck.sources, oldPath, newPath));
+		if (!affected) return;
+		await this.updateSettings((settings) => {
+			for (const deck of settings.decks) {
+				const moved = renamedDeckSources(deck.sources, oldPath, newPath);
+				if (moved) deck.sources = moved;
+			}
+		}).catch(() => undefined);
 	}
 
 	openCards(request: DeckOpenRequest = { lockedDeck: false }): void {

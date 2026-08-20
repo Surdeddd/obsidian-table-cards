@@ -13,10 +13,19 @@ interface ObsidianPlugins {
 	disablePlugin(id: string): Promise<void>;
 }
 
+interface ObsidianVaultFile {
+	path: string;
+	name: string;
+}
+
 interface ObsidianApp {
 	commands: ObsidianCommands;
 	plugins: ObsidianPlugins;
-	vault: { getName(): string };
+	vault: {
+		getName(): string;
+		getAbstractFileByPath(path: string): ObsidianVaultFile | null;
+		rename(file: ObsidianVaultFile, path: string): Promise<void>;
+	};
 	setting?: { close(): void };
 }
 

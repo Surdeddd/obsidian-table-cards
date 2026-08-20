@@ -108,6 +108,28 @@ describe("editor state", () => {
 		expect(createEditorState(next.baseline).draft.blocks[0]?.label).toBe("");
 	});
 
+	it("gives a column its own block back when it is switched on again", () => {
+		let state = stateWithBlocks("a", "b");
+		state = reduceEditorState(state, {
+			type: "patchBlock",
+			blockId: "a",
+			patch: { label: "Word", kind: "title" },
+		});
+		state = reduceEditorState(state, { type: "setColumnEnabled", header: "A", enabled: false });
+		expect(state.draft.blocks.map((block) => block.id)).toEqual(["b"]);
+
+		state = reduceEditorState(state, { type: "setColumnEnabled", header: "A", enabled: true });
+
+		expect(state.draft.blocks.map((block) => block.id)).toEqual(["a", "b"]);
+		expect(state.draft.blocks[0]).toMatchObject({ label: "Word", kind: "title", width: "half" });
+	});
+
+	it("builds a default block for a column it has never seen", () => {
+		let state = stateWithBlocks("a");
+		state = reduceEditorState(state, { type: "setColumnEnabled", header: "Picture", enabled: true });
+		expect(state.draft.blocks.map((block) => block.columns)).toEqual([["A"], ["Picture"]]);
+	});
+
 	it("clears dirty on save without losing history, selection or preview row", () => {
 		let state = stateWithBlocks("a", "b");
 		state = reduceEditorState(state, { type: "selectBlock", blockId: "b" });

@@ -1,4 +1,5 @@
 import { FuzzySuggestModal, TFile, TFolder, type App } from "obsidian";
+import { noteHasTable, tableNotesFirst } from "../../deck/vault-tables";
 
 export class MarkdownFilePicker extends FuzzySuggestModal<TFile> {
 	constructor(
@@ -11,7 +12,7 @@ export class MarkdownFilePicker extends FuzzySuggestModal<TFile> {
 	}
 
 	getItems(): TFile[] {
-		return this.app.vault.getMarkdownFiles();
+		return tableNotesFirst(this.app.vault.getMarkdownFiles(), (file) => noteHasTable(this.app, file));
 	}
 
 	getItemText(file: TFile): string {

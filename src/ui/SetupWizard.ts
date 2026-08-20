@@ -34,6 +34,7 @@ import { SetupCloseConfirm } from "./setup/SetupCloseConfirm";
 import { closeOpenListbox } from "./editor/controls/Listbox";
 import { applySetupDirection } from "./setup/setup-a11y";
 import { tableSelectedBySource } from "../deck/selectors";
+import { noteHasTable } from "../deck/vault-tables";
 import type { SettingsMutation } from "../settings/persistence";
 
 export interface SetupWizardHost {
@@ -97,7 +98,18 @@ export class SetupWizard extends Modal {
 		this.titleEl.setText("");
 		this.contentEl.empty();
 		this.contentEl.addClass("tc-setup-shell");
+		this.seedFromOpenNote();
 		this.render();
+	}
+
+	private seedFromOpenNote(): void {
+		if (this.state.sources.length > 0) return;
+		const open = this.app.workspace.getActiveFile();
+		if (!open || open.extension !== "md" || !noteHasTable(this.app, open)) return;
+		this.state = {
+			...this.state,
+			sources: [{ id: newId("source"), kind: "file", path: open.path, tables: { mode: "all" } }],
+		};
 	}
 
 	close(): void {

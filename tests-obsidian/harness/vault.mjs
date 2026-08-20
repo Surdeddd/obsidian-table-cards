@@ -32,6 +32,34 @@ const FACTS = [
 	"",
 ].join("\n");
 
+const EDGE = [
+	"# Edge cases",
+	"",
+	"| Term | Note | Picture | Link |",
+	"| --- | --- | --- | --- |",
+	"| empty note |  | | |",
+	"| very long token | Kraftfahrzeughaftpflichtversicherungsvertragsbedingungen | | |",
+	"| missing picture | the file is not in the vault | ![[definitely-missing.png]] | |",
+	"| arabic | نص عربي داخل جدول إنجليزي | | |",
+	"| markdown | **bold**, `code | with pipe`, [link](https://obsidian.md) | | [[Vocab]] |",
+	"| single column table follows | | | |",
+	"",
+	"| Only |",
+	"| --- |",
+	"| one column |",
+	"",
+].join("\n");
+
+/** @param {number} rows */
+function largeTable(rows) {
+	const lines = ["# Large", "", "| Index | Word | Meaning | Tag |", "| --- | --- | --- | --- |"];
+	for (let index = 1; index <= rows; index += 1) {
+		lines.push(`| ${index} | word-${index} | meaning number ${index} | tag-${index % 12} |`);
+	}
+	lines.push("");
+	return lines.join("\n");
+}
+
 /** @param {string} harnessRoot */
 export async function createFixtureVault(harnessRoot) {
 	const vaultPath = join(harnessRoot, "vault");
@@ -41,6 +69,8 @@ export async function createFixtureVault(harnessRoot) {
 	await mkdir(userDataPath, { recursive: true });
 	await writeFile(join(vaultPath, "Vocab.md"), VOCAB, "utf8");
 	await writeFile(join(vaultPath, "Facts.md"), FACTS, "utf8");
+	await writeFile(join(vaultPath, "Edge.md"), EDGE, "utf8");
+	await writeFile(join(vaultPath, "Large.md"), largeTable(500), "utf8");
 	await writeFile(join(vaultPath, ".obsidian", "community-plugins.json"), '["table-cards"]\n', "utf8");
 	for (const artifact of ["main.js", "manifest.json", "styles.css"]) {
 		await cp(join(root, artifact), join(vaultPath, ".obsidian", "plugins", "table-cards", artifact));

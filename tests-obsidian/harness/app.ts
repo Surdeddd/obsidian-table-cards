@@ -52,6 +52,27 @@ export async function ensureDeck(page: Page): Promise<void> {
 	await closeOverlays(page);
 }
 
+export async function createDeckFromFile(page: Page, fileName: string): Promise<void> {
+	await closeOverlays(page);
+	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:create-with-setup"));
+	await page.waitForSelector(".table-cards-setup");
+	const back = page.locator(".table-cards-setup button", { hasText: "Back" });
+	for (let guard = 0; guard < 4 && (await back.count()) > 0; guard += 1) {
+		await back.first().click();
+		await page.waitForTimeout(300);
+	}
+	await page.getByText("Add file", { exact: false }).first().click();
+	await page.getByText(fileName, { exact: true }).first().click();
+	await page.waitForTimeout(500);
+	for (let step = 0; step < 2; step += 1) {
+		await page.locator(".table-cards-setup button", { hasText: "Continue" }).first().click();
+		await page.waitForTimeout(600);
+	}
+	await page.locator(".table-cards-setup button", { hasText: "Create deck" }).first().click();
+	await page.waitForTimeout(1200);
+	await closeOverlays(page);
+}
+
 export async function openEditor(page: Page): Promise<void> {
 	await closeOverlays(page);
 	await ensureDeck(page);

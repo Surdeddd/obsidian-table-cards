@@ -314,7 +314,7 @@ export class CardsModal extends Modal {
 		this.footerEl = this.contentEl.createDiv({ cls: "table-cards-footer" });
 		const prev = this.footerEl.createEl("button", {
 			cls: "table-cards-nav-btn",
-			attr: { "aria-label": this.t("modal.prev") },
+			attr: { "aria-label": this.t("modal.prev"), "aria-keyshortcuts": "ArrowLeft" },
 		});
 		setIcon(prev, "chevron-left");
 		prev.createSpan({ text: this.t("modal.prev") });
@@ -322,14 +322,14 @@ export class CardsModal extends Modal {
 
 		this.shuffleBtn = this.footerEl.createEl("button", {
 			cls: "table-cards-shuffle-btn",
-			attr: { "aria-label": this.t("modal.shuffle"), "aria-pressed": "false" },
+			attr: { "aria-label": this.t("modal.shuffle"), "aria-pressed": "false", "aria-keyshortcuts": "S" },
 		});
 		setIcon(this.shuffleBtn, "shuffle");
 		this.shuffleBtn.addEventListener("click", () => void this.toggleShuffle());
 
 		const next = this.footerEl.createEl("button", {
 			cls: "table-cards-nav-btn table-cards-nav-next",
-			attr: { "aria-label": this.t("modal.next") },
+			attr: { "aria-label": this.t("modal.next"), "aria-keyshortcuts": "ArrowRight" },
 		});
 		next.createSpan({ text: this.t("modal.next") });
 		setIcon(next.createSpan({ cls: "table-cards-nav-icon" }), "chevron-right");

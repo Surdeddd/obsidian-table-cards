@@ -45,7 +45,6 @@ export function renderReorderSheet(parent: HTMLElement, context: ReorderSheetCon
 		const block = context.state.draft.blocks[index];
 		if (!block) continue;
 		const row = list.createEl("li", { cls: "tc-reorder-row" });
-		row.createDiv({ cls: "tc-reorder-handle", text: "⠿", attr: { "aria-hidden": "true" } });
 		const identity = row.createEl("button", {
 			cls: "tc-reorder-identity",
 			attr: {

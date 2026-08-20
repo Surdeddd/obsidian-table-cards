@@ -23,6 +23,7 @@ All notable changes to Table Cards are documented here.
 - A block that renders nothing on the previewed row can be selected from the block list.
 - The find sheet opens on its search field and `Enter` opens the top match; the table picker keeps focus on the row being ticked.
 - Arabic keeps card counts left to right, mirrors navigation icons, and separates metadata correctly.
+- The block height handle is reachable from a block's default state, the block list drops its undraggable grip, and the study controls announce their keyboard shortcuts.
 
 ## 0.1.0 — 2026-08-19
 

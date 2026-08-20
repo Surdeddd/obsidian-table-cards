@@ -1836,10 +1836,6 @@ button.tc-editor-save:disabled {
 	);
 }
 
-.table-cards-box[data-height="auto"] > .tc-resize-handle.is-height {
-	display: none;
-}
-
 .table-cards-box[data-preview-width="full"] {
 	grid-column: 1 / -1 !important;
 }
@@ -2339,19 +2335,12 @@ button.tc-reorder-add {
 	min-height: 56px;
 	padding: 7px;
 	display: grid;
-	grid-template-columns: auto minmax(0, 1fr) auto;
+	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 9px;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 12px;
 	background: var(--background-secondary);
-}
-
-.tc-reorder-handle {
-	width: 28px;
-	color: var(--text-faint);
-	font-size: 21px;
-	text-align: center;
 }
 
 button.tc-reorder-identity {

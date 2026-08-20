@@ -263,6 +263,7 @@ export const AR = {
 	"launcher.loadFailed": "تعذر قراءة هذه الحزمة",
 	"launcher.saveFailed": "لا يمكن حفظ هذه الجلسة",
 	"launcher.deckUnavailable": "هذه الحزمة لم تعد متاحة",
+	"launcher.decksOff": "جميع الحزم متوقفة في إعدادات Table Cards.",
 	"launcher.retry": "أعد المحاولة",
 	"launcher.warnings": "التحذيرات: {count}",
 	"scope.label": "الجداول",

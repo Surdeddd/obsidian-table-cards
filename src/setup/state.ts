@@ -86,7 +86,11 @@ export function shouldAutoOpenSetup(settings: PluginSettings): boolean {
 }
 
 export function shouldOpenSetupForCards(settings: PluginSettings): boolean {
-	return !settings.decks.some((deck) => deck.enabled);
+	return settings.decks.length === 0;
+}
+
+export function everyDeckOff(settings: PluginSettings): boolean {
+	return settings.decks.length > 0 && !settings.decks.some((deck) => deck.enabled);
 }
 
 export function reduceSetupState(state: SetupState, action: SetupAction): SetupState {

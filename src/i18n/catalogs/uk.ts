@@ -263,6 +263,7 @@ export const UK = {
 	"launcher.loadFailed": "Не вдалося прочитати цю колоду",
 	"launcher.saveFailed": "Не вдалося зберегти цей сеанс",
 	"launcher.deckUnavailable": "Ця колода більше не доступна",
+	"launcher.decksOff": "Усі колоди вимкнено в налаштуваннях Table Cards.",
 	"launcher.retry": "Повторити",
 	"launcher.warnings": "Попередження: {count}",
 	"scope.label": "Таблиці",

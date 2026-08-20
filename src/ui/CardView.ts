@@ -17,6 +17,7 @@ export interface CardRenderContext {
 	appearance: AppearanceSettings;
 	t: Translator;
 	sourceLabel?: string;
+	emptyMessage?: string;
 	resolveImageSource?: (sourcePath: string, image: ImageRef) => string | null;
 	isCurrent?: () => boolean;
 	options?: CardRenderOptions;
@@ -239,7 +240,7 @@ export async function renderCard(
 	if (!card) {
 		const empty = root.createDiv({ cls: "table-cards-empty" });
 		empty.createDiv({ cls: "table-cards-empty-kicker", text: context.t("modal.kicker") });
-		empty.createDiv({ text: context.t("modal.empty") });
+		empty.createDiv({ text: context.emptyMessage ?? context.t("modal.empty") });
 		return;
 	}
 	for (const resolved of card.blocks) {

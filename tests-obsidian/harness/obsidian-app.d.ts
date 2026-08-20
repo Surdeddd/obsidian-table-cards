@@ -25,6 +25,8 @@ interface ObsidianApp {
 		getName(): string;
 		getAbstractFileByPath(path: string): ObsidianVaultFile | null;
 		rename(file: ObsidianVaultFile, path: string): Promise<void>;
+		read(file: ObsidianVaultFile): Promise<string>;
+		modify(file: ObsidianVaultFile, data: string): Promise<void>;
 	};
 	workspace: {
 		getLeaf(newLeaf?: boolean): { openFile(file: ObsidianVaultFile): Promise<void> };

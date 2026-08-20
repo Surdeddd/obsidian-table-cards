@@ -263,6 +263,7 @@ export const FR = {
 	"launcher.loadFailed": "Impossible de lire ce paquet",
 	"launcher.saveFailed": "Impossible d'enregistrer cette session",
 	"launcher.deckUnavailable": "Ce paquet n’est plus disponible",
+	"launcher.decksOff": "Tous les paquets sont désactivés dans les réglages de Table Cards.",
 	"launcher.retry": "Réessayer",
 	"launcher.warnings": "Avertissements : {count}",
 	"scope.label": "Tableaux",

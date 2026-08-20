@@ -8,6 +8,7 @@ import type {
 	ImageRef,
 	ParsedTable,
 	TableCatalogItem,
+	TableSelector,
 } from "../model";
 import { resolveCard } from "../layout/resolve";
 import { normalizeHeader, scanMarkdownTables } from "../parse/tables";
@@ -22,6 +23,7 @@ import {
 } from "./catalog";
 import { shuffleItems, wrapIndex } from "./shuffle";
 import { selectorDiagnosticDetail, selectorMatchesTable } from "./selectors";
+import { matchStaleTables, type TableIdentity } from "./table-identity";
 
 function sourceFiles(app: App, source: DeckSource, diagnostics: DeckDiagnostic[]): TFile[] {
 	const path = source.path.trim();
@@ -151,9 +153,64 @@ export async function scanDeckSources(
 	return { tables: canonicalizeTables(entries, options), diagnostics };
 }
 
-function sourceSelects(source: DeckSource, table: ParsedTable): boolean {
-	if (source.tables.mode === "all") return true;
-	return source.tables.selectors.some((selector) => selectorMatchesTable(selector, table));
+function tableIdentityOf(item: CanonicalTable): TableIdentity {
+	return {
+		path: item.table.sourcePath,
+		signature: item.table.selector.headerSignature,
+		occurrence: item.table.selector.occurrence,
+	};
+}
+
+function selectorIdentity(selector: TableSelector, source: DeckSource): TableIdentity {
+	return {
+		path: selector.sourcePath ?? (source.kind === "folder" ? null : source.path),
+		signature: selector.headerSignature,
+		occurrence: selector.occurrence,
+	};
+}
+
+function selectedKeysForSource(
+	source: DeckSource,
+	liveTables: CanonicalTable[],
+	diagnostics: DeckDiagnostic[],
+): Set<string> {
+	const keys = new Set<string>();
+	if (source.tables.mode !== "include") return keys;
+
+	const taken = new Set<number>();
+	const unmatched: TableSelector[] = [];
+	for (const selector of source.tables.selectors) {
+		let matched = false;
+		liveTables.forEach((item, index) => {
+			if (!selectorMatchesTable(selector, item.table)) return;
+			matched = true;
+			taken.add(index);
+			keys.add(item.key);
+		});
+		if (!matched) unmatched.push(selector);
+	}
+
+	for (const selector of unmatched) {
+		const candidates = liveTables
+			.map((item, index) => ({ item, index }))
+			.filter((candidate) => !taken.has(candidate.index));
+		const [match] = matchStaleTables(
+			[selectorIdentity(selector, source)],
+			candidates.map((candidate) => tableIdentityOf(candidate.item)),
+		);
+		const chosen = match === null || match === undefined ? undefined : candidates[match];
+		if (!chosen) {
+			diagnostics.push({
+				code: "tableMissing",
+				sourcePath: source.path.trim(),
+				detail: selectorDiagnosticDetail(selector),
+			});
+			continue;
+		}
+		taken.add(chosen.index);
+		keys.add(chosen.item.key);
+	}
+	return keys;
 }
 
 function catalogItem(table: CanonicalTable): TableCatalogItem {
@@ -168,22 +225,17 @@ export function buildDeckDataFromScan(
 ): DeckLoadResult {
 	const diagnostics = scan.diagnostics.slice();
 	const sourcesById = new Map(deck.sources.map((source) => [source.id, source]));
+	const selectedKeys = new Map<string, Set<string>>();
 	for (const source of deck.sources) {
 		if (source.tables.mode !== "include") continue;
 		const liveTables = scan.tables.filter((table) => table.sourceIds.includes(source.id));
-		for (const selector of source.tables.selectors) {
-			if (liveTables.some((table) => selectorMatchesTable(selector, table.table))) continue;
-			diagnostics.push({
-				code: "tableMissing",
-				sourcePath: source.path.trim(),
-				detail: selectorDiagnosticDetail(selector),
-			});
-		}
+		selectedKeys.set(source.id, selectedKeysForSource(source, liveTables, diagnostics));
 	}
 	const selectedCatalog = scan.tables.filter((table) =>
 		table.sourceIds.some((sourceId) => {
 			const source = sourcesById.get(sourceId);
-			return source ? sourceSelects(source, table.table) : false;
+			if (!source) return false;
+			return source.tables.mode === "all" || (selectedKeys.get(sourceId)?.has(table.key) ?? false);
 		}),
 	);
 	const selectedTables = selectedCatalog.map((item) => item.table);

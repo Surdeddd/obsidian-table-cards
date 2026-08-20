@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Notice, Plugin } from "obsidian";
 import { appLanguage, createTranslator, resolveUiLocale, type Translator } from "./i18n";
 import { DEFAULT_SETTINGS, mergeSettings } from "./settings/defaults";
 import { TableCardsSettingTab } from "./settings/settings-tab";
@@ -7,7 +7,7 @@ import { CardsModal } from "./ui/CardsModal";
 import { DeckEditorModal } from "./ui/DeckEditorModal";
 import { SetupWizard } from "./ui/SetupWizard";
 import { RibbonDecks } from "./ui/RibbonDecks";
-import { shouldAutoOpenSetup, shouldOpenSetupForCards } from "./setup/state";
+import { everyDeckOff, shouldAutoOpenSetup, shouldOpenSetupForCards } from "./setup/state";
 import { SetupSavedCallbacks } from "./setup/session";
 import type { DeckOpenRequest } from "./session/launcher-state";
 import { exactTableOpenRequest } from "./editor/draft-session";
@@ -89,6 +89,10 @@ export default class TableCardsPlugin extends Plugin {
 	openCards(request: DeckOpenRequest = { lockedDeck: false }): void {
 		if (shouldOpenSetupForCards(this.settings)) {
 			this.openSetup();
+			return;
+		}
+		if (everyDeckOff(this.settings)) {
+			new Notice(this.getTranslator()("launcher.decksOff"));
 			return;
 		}
 		new CardsModal(this.app, this, request).open();

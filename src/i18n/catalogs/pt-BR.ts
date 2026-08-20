@@ -263,6 +263,7 @@ export const PT_BR = {
 	"launcher.loadFailed": "Não foi possível ler este baralho",
 	"launcher.saveFailed": "Não foi possível salvar esta sessão",
 	"launcher.deckUnavailable": "Este baralho não está mais disponível",
+	"launcher.decksOff": "Todos os baralhos estão desativados nas configurações do Table Cards.",
 	"launcher.retry": "Tentar novamente",
 	"launcher.warnings": "Avisos: {count}",
 	"scope.label": "Tabelas",

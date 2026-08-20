@@ -263,6 +263,7 @@ export const DE = {
 	"launcher.loadFailed": "Dieser Stapel konnte nicht gelesen werden",
 	"launcher.saveFailed": "Diese Sitzung konnte nicht gespeichert werden",
 	"launcher.deckUnavailable": "Dieser Stapel ist nicht mehr verfügbar",
+	"launcher.decksOff": "Alle Stapel sind in den Einstellungen von Table Cards deaktiviert.",
 	"launcher.retry": "Erneut versuchen",
 	"launcher.warnings": "Warnungen: {count}",
 	"scope.label": "Tabellen",

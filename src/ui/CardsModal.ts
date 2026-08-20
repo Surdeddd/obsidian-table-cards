@@ -502,11 +502,13 @@ export class CardsModal extends Modal {
 		const current = this.currentCard();
 		const resolved = current && this.deck ? resolveCard(current, this.deck.blocks) : null;
 		if (!this.component) return;
+		const emptyScope = this.progress?.scope.mode === "tables" && this.progress.scope.tableKeys.length === 0;
 		void renderCard(this.stageEl, resolved, {
 			app: this.app,
 			component: this.component,
 			appearance: resolveDeckAppearance(this.host.settings.appearance, this.deck?.appearance),
 			t: this.t,
+			emptyMessage: emptyScope ? this.t("launcher.selectAtLeastOne") : undefined,
 			sourceLabel: current ? this.tableLabels.get(current.origin.tableKey) ?? current.origin.tableLabel : undefined,
 			resolveImageSource: (sourcePath, image) => this.imageCache?.resolve(sourcePath, image) ?? null,
 			isCurrent: () => version === this.renderVersion,

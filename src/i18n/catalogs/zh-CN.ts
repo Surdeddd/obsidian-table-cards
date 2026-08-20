@@ -263,6 +263,7 @@ export const ZH_CN = {
 	"launcher.loadFailed": "无法读取此卡组",
 	"launcher.saveFailed": "无法保存本次会话",
 	"launcher.deckUnavailable": "此卡组已不可用",
+	"launcher.decksOff": "Table Cards 设置中的所有卡组都已关闭。",
 	"launcher.retry": "重试",
 	"launcher.warnings": "警告：{count}",
 	"scope.label": "表格",

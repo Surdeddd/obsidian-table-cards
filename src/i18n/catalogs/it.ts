@@ -263,6 +263,7 @@ export const IT = {
 	"launcher.loadFailed": "Impossibile leggere questo mazzo",
 	"launcher.saveFailed": "Impossibile salvare questa sessione",
 	"launcher.deckUnavailable": "Questo mazzo non è più disponibile",
+	"launcher.decksOff": "Tutti i mazzi sono disattivati nelle impostazioni di Table Cards.",
 	"launcher.retry": "Riprova",
 	"launcher.warnings": "Avvertenze: {count}",
 	"scope.label": "Tabelle",

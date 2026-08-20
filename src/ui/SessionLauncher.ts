@@ -2,6 +2,7 @@ import { Platform, setIcon } from "obsidian";
 import { formatUiNumber, type Translator } from "../i18n";
 import type { Deck, DeckLoadResult, PluginSettings, StudyScope, UiLocale } from "../model";
 import { describeDiagnostics } from "../deck/diagnostics";
+import { repairScope } from "../deck/table-identity";
 import {
 	canStartSession,
 	createLauncherState,
@@ -334,13 +335,11 @@ export class SessionLauncher {
 		try {
 			const result = await this.options.loadDeck(deck);
 			if (this.destroyed) return;
-			const savedScope = this.options.settings.perDeck[deck.id]?.scope ?? { mode: "all" };
+			const stored = this.options.settings.perDeck[deck.id]?.scope ?? { mode: "all" };
+			const savedScope = repairScope(stored, result.catalog).scope;
 			if (this.state.phase === "loading" && this.state.deckId === deck.id && this.state.requestId === requestId) {
 				const requestedScope = scopeForLauncherContext(this.state, this.options.settings);
-				const liveKeys = new Set(result.catalog.map((table) => table.key));
-				this.missingScopeCount = requestedScope.mode === "tables"
-					? new Set(requestedScope.tableKeys.filter((key) => !liveKeys.has(key))).size
-					: 0;
+				this.missingScopeCount = repairScope(requestedScope, result.catalog).missing;
 			}
 			const next = reduceLauncherState(this.state, {
 				type: "loaded",

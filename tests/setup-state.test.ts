@@ -10,6 +10,7 @@ import {
 	reduceSetupState,
 	shouldAutoOpenSetup,
 	shouldOpenSetupForCards,
+	everyDeckOff,
 	type SetupState,
 } from "../src/setup/state";
 import { SetupScanCache, sourceTopologyKey } from "../src/setup/scan-cache";
@@ -144,7 +145,7 @@ describe("setup draft", () => {
 		expect(result.lastDeckId).toBe("new");
 	});
 
-	it("auto-opens only for a fresh install and routes zero enabled decks to setup", () => {
+	it("auto-opens only for a fresh install and routes an empty deck list to setup", () => {
 		expect(shouldAutoOpenSetup(mergeSettings(null))).toBe(true);
 		expect(shouldAutoOpenSetup(mergeSettings({}))).toBe(false);
 		expect(shouldOpenSetupForCards(mergeSettings({ schemaVersion: 3, setupVersion: 1, decks: [] }))).toBe(true);
@@ -152,11 +153,28 @@ describe("setup draft", () => {
 			schemaVersion: 3,
 			setupVersion: 1,
 			decks: [{ id: "disabled", name: "Disabled", enabled: false }],
-		}))).toBe(true);
+		}))).toBe(false);
 		expect(shouldOpenSetupForCards(mergeSettings({
 			schemaVersion: 3,
 			setupVersion: 1,
 			decks: [{ id: "enabled", name: "Enabled", enabled: true }],
+		}))).toBe(false);
+	});
+
+	it("separates a deck that is turned off from having no deck at all", () => {
+		expect(everyDeckOff(mergeSettings({ schemaVersion: 3, setupVersion: 1, decks: [] }))).toBe(false);
+		expect(everyDeckOff(mergeSettings({
+			schemaVersion: 3,
+			setupVersion: 1,
+			decks: [{ id: "disabled", name: "Disabled", enabled: false }],
+		}))).toBe(true);
+		expect(everyDeckOff(mergeSettings({
+			schemaVersion: 3,
+			setupVersion: 1,
+			decks: [
+				{ id: "disabled", name: "Disabled", enabled: false },
+				{ id: "enabled", name: "Enabled", enabled: true },
+			],
 		}))).toBe(false);
 	});
 

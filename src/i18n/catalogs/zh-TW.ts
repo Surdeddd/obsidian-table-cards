@@ -263,6 +263,7 @@ export const ZH_TW = {
 	"launcher.loadFailed": "無法讀取此牌組",
 	"launcher.saveFailed": "無法儲存此工作階段",
 	"launcher.deckUnavailable": "此牌組已無法使用",
+	"launcher.decksOff": "Table Cards 設定中的所有牌組都已關閉。",
 	"launcher.retry": "重試",
 	"launcher.warnings": "警告：{count}",
 	"scope.label": "表格",

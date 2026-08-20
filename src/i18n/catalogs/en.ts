@@ -262,6 +262,7 @@ export const EN = {
 	"launcher.loadFailed": "Could not read this deck",
 	"launcher.saveFailed": "Could not save this session",
 	"launcher.deckUnavailable": "This deck is no longer available",
+	"launcher.decksOff": "Every deck is turned off in Table Cards settings.",
 	"launcher.retry": "Retry",
 	"launcher.warnings": "Warnings: {count}",
 	"scope.label": "Tables",

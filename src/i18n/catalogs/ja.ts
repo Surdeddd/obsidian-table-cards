@@ -263,6 +263,7 @@ export const JA = {
 	"launcher.loadFailed": "このデッキを読み取れませんでした",
 	"launcher.saveFailed": "このセッションを保存できませんでした",
 	"launcher.deckUnavailable": "このデッキは利用できません",
+	"launcher.decksOff": "Table Cards の設定ですべてのデッキがオフになっています。",
 	"launcher.retry": "再試行",
 	"launcher.warnings": "警告: {count}",
 	"scope.label": "表",

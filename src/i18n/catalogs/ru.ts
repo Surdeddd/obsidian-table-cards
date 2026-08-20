@@ -263,6 +263,7 @@ export const RU = {
 	"launcher.loadFailed": "Не удалось прочитать эту колоду",
 	"launcher.saveFailed": "Не удалось сохранить этот сеанс",
 	"launcher.deckUnavailable": "Эта колода больше не доступна",
+	"launcher.decksOff": "Все колоды выключены в настройках Table Cards.",
 	"launcher.retry": "Повторить попытку",
 	"launcher.warnings": "Предупреждения: {count}",
 	"scope.label": "Таблицы",

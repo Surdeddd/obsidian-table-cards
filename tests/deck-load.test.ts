@@ -209,6 +209,48 @@ describe("deck loading", () => {
 		expect(result.cards).toEqual([]);
 	});
 
+	it("keeps a pinned table after a column is added to it", async () => {
+		const deck = createDeck({
+			sources: [{
+				id: "source",
+				kind: "file",
+				path: "cards.md",
+				tables: {
+					mode: "include",
+					selectors: [{ headerSignature: headerSignature(["Term", "RU"]), occurrence: 0 }],
+				},
+			}],
+		});
+		const result = await loadDeckData(
+			fakeApp({ "cards.md": "| Term | RU | Note |\n|---|---|---|\n|one|один|first|" }),
+			deck,
+		);
+
+		expect(result.cards.map((card) => card.cells.Term?.text)).toEqual(["one"]);
+		expect(result.diagnostics.some((item) => item.code === "tableMissing")).toBe(false);
+	});
+
+	it("does not adopt an unrelated table when the pinned one disappears", async () => {
+		const deck = createDeck({
+			sources: [{
+				id: "source",
+				kind: "file",
+				path: "cards.md",
+				tables: {
+					mode: "include",
+					selectors: [{ headerSignature: headerSignature(["Term", "RU"]), occurrence: 0 }],
+				},
+			}],
+		});
+		const result = await loadDeckData(
+			fakeApp({ "cards.md": "| Date | Amount | Category |\n|---|---|---|\n|1|2|3|" }),
+			deck,
+		);
+
+		expect(result.cards).toEqual([]);
+		expect(result.diagnostics.some((item) => item.code === "tableMissing")).toBe(true);
+	});
+
 	it("selects one path-aware table from identical folder tables", async () => {
 		const deck = createDeck({
 			sources: [{

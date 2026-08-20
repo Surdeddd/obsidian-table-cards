@@ -263,6 +263,7 @@ export const KO = {
 	"launcher.loadFailed": "이 덱을 읽을 수 없습니다.",
 	"launcher.saveFailed": "이 세션을 저장할 수 없습니다.",
 	"launcher.deckUnavailable": "이 덱은 더 이상 사용할 수 없습니다.",
+	"launcher.decksOff": "Table Cards 설정에서 모든 덱이 꺼져 있습니다.",
 	"launcher.retry": "재시도",
 	"launcher.warnings": "경고: {count}",
 	"scope.label": "표",

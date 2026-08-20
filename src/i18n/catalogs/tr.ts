@@ -263,6 +263,7 @@ export const TR = {
 	"launcher.loadFailed": "Bu deste okunamadı",
 	"launcher.saveFailed": "Bu oturum kaydedilemedi",
 	"launcher.deckUnavailable": "Bu deste artık mevcut değil",
+	"launcher.decksOff": "Table Cards ayarlarında tüm desteler kapalı.",
 	"launcher.retry": "Yeniden dene",
 	"launcher.warnings": "Uyarılar: {count}",
 	"scope.label": "Tablolar",

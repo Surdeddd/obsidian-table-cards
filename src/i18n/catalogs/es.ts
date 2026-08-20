@@ -263,6 +263,7 @@ export const ES = {
 	"launcher.loadFailed": "No se pudo leer este mazo",
 	"launcher.saveFailed": "No se pudo guardar esta sesión",
 	"launcher.deckUnavailable": "Este mazo ya no está disponible",
+	"launcher.decksOff": "Todos los mazos están desactivados en la configuración de Table Cards.",
 	"launcher.retry": "Reintentar",
 	"launcher.warnings": "Advertencias: {count}",
 	"scope.label": "Tablas",

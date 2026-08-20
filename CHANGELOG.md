@@ -19,6 +19,9 @@ All notable changes to Table Cards are documented here.
 ### Fixed
 
 - Decks follow notes that the vault renames or moves.
+- A deck pinned to specific tables survives an edit to those tables: adding, renaming or removing a column re-identifies the table instead of dropping it, and the saved study scope follows it.
+- Turning every deck off says so instead of opening the setup wizard and building another deck.
+- An empty table scope says that no table is selected instead of blaming file paths.
 - Switching a column off keeps its block; switching it back on restores it in place.
 - A block that renders nothing on the previewed row can be selected from the block list.
 - The find sheet opens on its search field and `Enter` opens the top match; the table picker keeps focus on the row being ticked.

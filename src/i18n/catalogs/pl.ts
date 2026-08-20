@@ -263,6 +263,7 @@ export const PL = {
 	"launcher.loadFailed": "Nie udało się przeczytać tej talii",
 	"launcher.saveFailed": "Nie udało się zapisać tej sesji",
 	"launcher.deckUnavailable": "Ta talia nie jest już dostępna",
+	"launcher.decksOff": "Wszystkie talie są wyłączone w ustawieniach Table Cards.",
 	"launcher.retry": "Spróbuj ponownie",
 	"launcher.warnings": "Ostrzeżenia: {count}",
 	"scope.label": "tabele",

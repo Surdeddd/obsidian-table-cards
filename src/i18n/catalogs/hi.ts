@@ -263,6 +263,7 @@ export const HI = {
 	"launcher.loadFailed": "इस डेक को पढ़ा नहीं जा सका",
 	"launcher.saveFailed": "इस सत्र को सहेजा नहीं जा सका",
 	"launcher.deckUnavailable": "यह डेक अब उपलब्ध नहीं है",
+	"launcher.decksOff": "Table Cards की सेटिंग में सभी डेक बंद हैं।",
 	"launcher.retry": "पुनः प्रयास करें",
 	"launcher.warnings": "चेतावनियाँ: {count}",
 	"scope.label": "तालिकाएँ",

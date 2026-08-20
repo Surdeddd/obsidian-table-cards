@@ -350,7 +350,8 @@ export class SessionLauncher {
 				savedScope,
 			});
 			if (!this.commitState(next)) return;
-			if (shouldAutoStart(this.state, { hasLastDeck: Boolean(this.options.settings.lastDeckId) })) {
+			const hasLastDeck = Boolean(this.options.settings.lastDeckId) && this.options.request.chooseDeck !== true;
+			if (shouldAutoStart(this.state, { hasLastDeck })) {
 				void this.start();
 			}
 		} catch (error) {

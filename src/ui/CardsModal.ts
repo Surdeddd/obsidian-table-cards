@@ -37,6 +37,7 @@ export interface CardsModalHost {
 	updateSettings: (mutate: SettingsMutation) => Promise<void>;
 	getTranslator: () => Translator;
 	getLocale: () => UiLocale;
+	openCards?: (request: DeckOpenRequest) => void;
 }
 
 interface SessionSelection {
@@ -251,7 +252,23 @@ export class CardsModal extends Modal {
 		const lead = this.headerEl.createDiv({ cls: "table-cards-header-lead" });
 		const identity = lead.createDiv({ cls: "table-cards-study-identity" });
 		identity.createDiv({ cls: "table-cards-kicker", text: this.t("modal.kicker") });
-		identity.createDiv({ cls: "table-cards-study-deck", text: this.deck?.name ?? "", attr: { dir: "auto" } });
+		const otherDecks = this.host.settings.decks.filter((deck) => deck.enabled && deck.id !== this.deck?.id);
+		if (otherDecks.length > 0 && this.host.openCards) {
+			const switcher = identity.createEl("button", {
+				cls: "table-cards-study-deck is-switch",
+				text: this.deck?.name ?? "",
+				attr: {
+					type: "button",
+					dir: "auto",
+					"aria-haspopup": "dialog",
+					"aria-label": `${this.t("modal.deck")}: ${this.deck?.name ?? ""}`,
+				},
+			});
+			setIcon(switcher.createSpan({ cls: "table-cards-deck-caret" }), "chevron-down");
+			switcher.addEventListener("click", () => this.chooseAnotherDeck());
+		} else {
+			identity.createDiv({ cls: "table-cards-study-deck", text: this.deck?.name ?? "", attr: { dir: "auto" } });
+		}
 		const tools = lead.createDiv({ cls: "table-cards-study-tools" });
 		this.scopeBtn = tools.createEl("button", {
 			cls: "table-cards-scope-btn",
@@ -318,6 +335,12 @@ export class CardsModal extends Modal {
 		setIcon(next.createSpan({ cls: "table-cards-nav-icon" }), "chevron-right");
 		next.addEventListener("click", () => void this.step(1));
 		if (Platform.isMobile) this.shuffleBtn.after(this.searchBtn);
+	}
+
+	private chooseAnotherDeck(): void {
+		if (!this.host.openCards) return;
+		super.close();
+		this.host.openCards({ lockedDeck: false, chooseDeck: true });
 	}
 
 	private scopeSummary(): string {

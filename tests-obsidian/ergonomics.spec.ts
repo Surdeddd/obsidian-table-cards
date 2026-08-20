@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { closeOverlays, ensureDeck, obsidianPage, openEditor, selectBlock } from "./harness/app";
+import { closeOverlays, createDeckFromFile, ensureDeck, obsidianPage, openEditor, selectBlock } from "./harness/app";
 
 test.skip(process.env["TABLE_CARDS_OBSIDIAN"] !== "ready", "Obsidian binary not available");
 
@@ -168,6 +168,53 @@ test("the table picker opens on its search box and keeps focus while ticking", a
 	expect(focused).toBe(key);
 
 	await closeOverlays(page);
+});
+
+test("a session with more than one deck can switch decks from its header", async () => {
+	const page = await obsidianPage();
+	await closeOverlays(page);
+	await ensureDeck(page);
+	const named = async (): Promise<string[]> =>
+		page.evaluate(() => {
+			const plugin = window.app.plugins.plugins["table-cards"];
+			return (plugin?.settings["decks"] as { name: string }[]).map((deck) => deck.name);
+		});
+	if ((await named()).length < 2) await createDeckFromFile(page, "Facts.md");
+	await ensureDeck(page);
+	const decks = await named();
+	expect(decks.length).toBeGreaterThan(1);
+
+	await page.evaluate(() => window.app.commands.executeCommandById("table-cards:open"));
+	await page.waitForSelector(".table-cards-stage");
+	const switcher = page.locator("button.table-cards-study-deck");
+	expect(await switcher.count()).toBe(1);
+	const current = ((await switcher.textContent()) ?? "").trim();
+
+	await switcher.click();
+	await page.waitForSelector(".tc-launcher");
+	const other = decks.find((name) => name !== current) ?? "";
+	await page.locator("button.tc-listbox-trigger").first().click();
+	await page.waitForSelector("button.tc-listbox-option");
+	await page.locator(".tc-listbox-option", { hasText: other }).first().click();
+	await page.waitForTimeout(800);
+	await page.locator("button.tc-launcher-start").click();
+	await page.waitForSelector(".table-cards-stage");
+
+	const after = ((await page.locator("button.table-cards-study-deck, .table-cards-study-deck").first().textContent()) ?? "").trim();
+	expect(after).toBe(other);
+
+	await closeOverlays(page);
+	await page.evaluate((keep) => {
+		const plugin = window.app.plugins.plugins["table-cards"] as unknown as {
+			updateSettings(mutate: (settings: unknown) => unknown): Promise<void>;
+		};
+		return plugin.updateSettings((settings) => {
+			const typed = settings as { decks: { name: string }[] };
+			typed.decks = typed.decks.filter((deck) => deck.name === keep);
+			return typed;
+		});
+	}, current);
+	await ensureDeck(page);
 });
 
 test("the first run wizard does not come back after it is dismissed", async () => {

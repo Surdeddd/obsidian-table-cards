@@ -7,6 +7,7 @@ export interface DeckOpenRequest {
 	initialScope?: StudyScope;
 	deckOverride?: Deck;
 	persistProgress?: boolean;
+	chooseDeck?: boolean;
 }
 
 export interface LauncherState {

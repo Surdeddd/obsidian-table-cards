@@ -113,6 +113,39 @@
 	white-space: nowrap;
 }
 
+button.table-cards-study-deck.is-switch {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	max-width: 100%;
+	padding: 2px 6px;
+	margin-inline-start: -6px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	box-shadow: none;
+	color: inherit;
+	font-size: 1.15rem;
+	font-weight: 650;
+	cursor: pointer;
+}
+
+button.table-cards-study-deck.is-switch:hover,
+button.table-cards-study-deck.is-switch:focus-visible {
+	background: color-mix(in srgb, var(--tc-text) 8%, transparent);
+}
+
+.table-cards-deck-caret {
+	display: inline-flex;
+	flex: 0 0 auto;
+	color: var(--tc-text-muted);
+}
+
+.table-cards-deck-caret svg {
+	width: 16px;
+	height: 16px;
+}
+
 .table-cards-kicker {
 	font-size: 11px;
 	letter-spacing: 0.16em;

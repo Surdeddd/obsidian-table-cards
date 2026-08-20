@@ -46,6 +46,21 @@ Obsidian no longer takes plugin submissions as a pull request against `obsidianm
 | `!important` | None left. Specificity and source order carry every override, including the visually-hidden helper and the `prefers-reduced-motion` reset. |
 | `:has()` | Replaced by state classes the plugin sets itself (`is-launcher`, `is-scope-open`, `is-sheet-open`). No `:has()` remains in `styles.css`. |
 
+## The two findings that stay open, and why
+
+Both come from one decision: `minAppVersion` is `1.6.7`.
+
+- **`getSettingDefinitions()` is not implemented.** The declarative settings API landed in 1.13.0.
+  Implementing it while keeping `display()` for 1.6.7 means two renderings of the same tab, and
+  `eslint-plugin-obsidianmd` correctly refuses 1.13 APIs under a 1.6.7 floor — the suppression would
+  have to be wider than the problem. The cost is that Table Cards settings do not show up in
+  Obsidian's settings search for users on 1.13 or later.
+- **`setWarning()` instead of `setDestructive()`.** `setDestructive()` also arrived in 1.13.0. At the
+  declared floor `setWarning()` is the only destructive-button API that exists.
+
+Raising the floor to 1.13.0 clears both, at the price of dropping every user below it. That is a
+product decision, not a lint decision, and it is deliberately not taken here.
+
 ## Guideline audit (2026-08-20)
 
 Checked against [Plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines): no global `app`,

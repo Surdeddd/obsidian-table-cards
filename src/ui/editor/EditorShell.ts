@@ -83,12 +83,16 @@ export class EditorShell {
 	}
 
 	render(context: EditorShellContext): void {
+		const samePanel = this.activePanel !== null && this.activePanel === context.state.activePanel;
 		const previousFocusRoot = this.activePanel ? this.root.querySelector<HTMLElement>(".tc-sheet") : this.root;
 		const previousFocusable = previousFocusRoot ? focusableElements(previousFocusRoot) : [];
 		const focusedIndex =
-			this.activePanel !== null && this.activePanel === context.state.activePanel && previousFocusRoot
+			samePanel && previousFocusRoot
 				? previousFocusable.indexOf(previousFocusRoot.ownerDocument.activeElement as HTMLElement)
 				: -1;
+		const previousScroll = samePanel
+			? (this.root.querySelector<HTMLElement>(".tc-sheet-body")?.scrollTop ?? null)
+			: null;
 		const version = ++this.renderVersion;
 		this.canvasCleanup?.();
 		this.canvasCleanup = null;
@@ -98,7 +102,7 @@ export class EditorShell {
 		this.root.addClass("tc-editor-shell");
 
 		const header = this.root.createEl("header", { cls: "tc-editor-header" });
-		button(header, context.t("editor.backAction"), "arrow-left", context.onBack, "tc-editor-icon-button");
+		button(header, context.t("editor.backAction"), "arrow-left", context.onBack, "tc-editor-icon-button is-editor-back");
 		const title = header.createDiv({ cls: "tc-editor-title" });
 		const titleInput = title.createEl("input", {
 			type: "text",
@@ -153,13 +157,19 @@ export class EditorShell {
 		const warningCount =
 			context.data.diagnostics.length +
 			context.data.profiles.reduce((total, profile) => total + profile.warnings.length, 0);
+		const fieldsLabel = `${context.t("editor.fields")} · ${formatUiNumber(context.data.profiles.length, context.locale)}`;
 		const fields = button(
 			canvasBar,
-			`${context.t("editor.fields")} · ${formatUiNumber(context.data.profiles.length, context.locale)} · ${formatUiNumber(warningCount, context.locale)}`,
+			fieldsLabel,
 			"table-properties",
 			() => context.dispatch({ type: "openPanel", panel: "fields" }),
 			"tc-editor-button with-label",
 		);
+		if (warningCount > 0) {
+			const note = context.t("launcher.warnings", { count: formatUiNumber(warningCount, context.locale) });
+			fields.createSpan({ cls: "tc-profile-warning-dot", attr: { role: "img", "aria-label": note } });
+			fields.setAttr("aria-label", `${fieldsLabel} · ${note}`);
+		}
 		const rows = canvasBar.createDiv({ cls: "tc-editor-row-nav" });
 		const rowCount = context.data.cards.length;
 		const currentRow = rowCount === 0 ? 0 : Math.min(context.state.previewRow, rowCount - 1);
@@ -168,12 +178,13 @@ export class EditorShell {
 		const rowPicker = rows.createEl("details", { cls: "tc-editor-row-picker" });
 		const currentRowLabel = formatUiNumber(rowCount === 0 ? 0 : currentRow + 1, context.locale);
 		const rowCountLabel = formatUiNumber(rowCount, context.locale);
-		rowPicker.createEl("summary", {
-			text: `${currentRowLabel} / ${rowCountLabel}`,
-			attr: {
-				"aria-label": `${context.t("editor.row.choose")}: ${currentRowLabel} / ${rowCountLabel}`,
-			},
-		});
+		rowPicker
+			.createEl("summary", {
+				attr: {
+					"aria-label": `${context.t("editor.row.choose")}: ${currentRowLabel} / ${rowCountLabel}`,
+				},
+			})
+			.createSpan({ cls: "tc-figure-pair", text: `${currentRowLabel} / ${rowCountLabel}` });
 		const rowMenu = rowPicker.createDiv({ cls: "tc-editor-row-menu" });
 		const representative = representativeRowIndexes(context.data.cards);
 		const rowChoices = [
@@ -220,10 +231,16 @@ export class EditorShell {
 		let reorderOpener: HTMLElement | null = null;
 		if (selected) {
 			const toolbar = this.root.createDiv({ cls: "tc-editor-block-toolbar" });
-			blockOpener = button(toolbar, context.t(`editor.style.${selected.kind}`), null, () => context.dispatch({ type: "openPanel", panel: "block" }), "tc-editor-button with-label is-block-type");
-			button(toolbar, selected.width === "half" ? context.t("editor.widthHalf") : context.t("editor.widthFull"), "arrow-left-right", () => context.dispatch({ type: "setBlockWidth", blockId: selected.id, width: selected.width === "half" ? "full" : "half" }), "tc-editor-button with-label is-block-width");
-			reorderOpener = button(toolbar, context.t("editor.move"), "move", () => context.dispatch({ type: "openPanel", panel: "reorder" }), "tc-editor-button with-label is-block-move");
-			button(toolbar, context.t("editor.more"), "sliders-horizontal", () => context.dispatch({ type: "openPanel", panel: "block" }), "tc-editor-button with-label is-block-more");
+			blockOpener = button(toolbar, context.t(`editor.style.${selected.kind}`), "sliders-horizontal", () => context.dispatch({ type: "openPanel", panel: "block" }), "tc-editor-button with-label is-block-type");
+			const widthToggle = button(
+				toolbar,
+				context.t("editor.widthHalf"),
+				"arrow-left-right",
+				() => context.dispatch({ type: "setBlockWidth", blockId: selected.id, width: selected.width === "half" ? "full" : "half" }),
+				"tc-editor-button with-label is-block-width",
+			);
+			widthToggle.setAttr("aria-pressed", String(selected.width === "half"));
+			reorderOpener = button(toolbar, context.t("editor.layout"), "list", () => context.dispatch({ type: "openPanel", panel: "reorder" }), "tc-editor-button with-label is-block-move");
 		}
 
 		if (context.state.activePanel) {
@@ -256,13 +273,19 @@ export class EditorShell {
 			window.setTimeout(() => target?.focus(), 0);
 		}
 		this.activePanel = context.state.activePanel;
-		if (focusedIndex >= 0) {
+		if (focusedIndex >= 0 || previousScroll !== null) {
 			window.setTimeout(() => {
-				const focusRoot = context.state.activePanel
-					? this.root.querySelector<HTMLElement>(".tc-sheet")
-					: this.root;
-				const items = focusRoot ? focusableElements(focusRoot) : [];
-				items[Math.min(focusedIndex, Math.max(0, items.length - 1))]?.focus();
+				if (focusedIndex >= 0) {
+					const focusRoot = context.state.activePanel
+						? this.root.querySelector<HTMLElement>(".tc-sheet")
+						: this.root;
+					const items = focusRoot ? focusableElements(focusRoot) : [];
+					items[Math.min(focusedIndex, Math.max(0, items.length - 1))]?.focus({ preventScroll: true });
+				}
+				if (previousScroll !== null) {
+					const body = this.root.querySelector<HTMLElement>(".tc-sheet-body");
+					if (body) body.scrollTop = previousScroll;
+				}
 			}, 0);
 		}
 	}

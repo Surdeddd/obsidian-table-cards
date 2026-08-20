@@ -133,6 +133,13 @@ export class SetupWizard extends Modal {
 		this.component?.unload();
 		this.component = null;
 		this.contentEl.empty();
+		if (this.host.settings.setupVersion === 0) {
+			void this.host
+				.updateSettings((settings) => {
+					settings.setupVersion = 1;
+				})
+				.catch(() => undefined);
+		}
 		this.host.onSetupClosed?.();
 	}
 

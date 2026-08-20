@@ -267,10 +267,12 @@ export class CardsModal extends Modal {
 		setIcon(this.searchBtn, "search");
 		this.searchBtn.addEventListener("click", () => this.toggleBrowser());
 		this.updateScopeButton();
-		this.counterEl = this.headerEl.createDiv({
-			cls: "table-cards-counter",
-			attr: { "aria-live": "polite", "aria-label": this.t("modal.progress") },
-		});
+		this.counterEl = this.headerEl
+			.createDiv({
+				cls: "table-cards-counter",
+				attr: { "aria-live": "polite", "aria-label": this.t("modal.progress") },
+			})
+			.createSpan({ cls: "tc-figure-pair" });
 		const closeBtn = this.headerEl.createEl("button", {
 			cls: "table-cards-icon-btn",
 			attr: { "aria-label": this.t("modal.close") },

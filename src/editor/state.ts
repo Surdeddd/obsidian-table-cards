@@ -247,3 +247,7 @@ export function redo(state: EditorState): EditorState {
 export function isDirty(state: EditorState): boolean {
 	return !sameDeck(state.baseline, state.draft);
 }
+
+export function markSaved(state: EditorState, saved: Deck): EditorState {
+	return { ...state, baseline: cloneJson(saved) };
+}

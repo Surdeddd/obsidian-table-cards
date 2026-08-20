@@ -3,6 +3,7 @@ import { createBlock, type DeckSource, type TableSelector } from "../src/model";
 import {
 	createEditorState,
 	isDirty,
+	markSaved,
 	reduceEditorState,
 	redo,
 	undo,
@@ -105,6 +106,21 @@ describe("editor state", () => {
 		expect(isDirty(next)).toBe(true);
 		expect(next.baseline.blocks[0]?.label).toBe("");
 		expect(createEditorState(next.baseline).draft.blocks[0]?.label).toBe("");
+	});
+
+	it("clears dirty on save without losing history, selection or preview row", () => {
+		let state = stateWithBlocks("a", "b");
+		state = reduceEditorState(state, { type: "selectBlock", blockId: "b" });
+		state = reduceEditorState(state, { type: "setPreviewRow", index: 3 });
+		state = reduceEditorState(state, { type: "patchBlock", blockId: "b", patch: { label: "changed" } });
+
+		const saved = markSaved(state, state.draft);
+
+		expect(isDirty(saved)).toBe(false);
+		expect(saved.past).toHaveLength(1);
+		expect(saved.selectedBlockId).toBe("b");
+		expect(saved.previewRow).toBe(3);
+		expect(isDirty(undo(saved))).toBe(true);
 	});
 
 	it("keeps v3 source table selections in the editable draft", () => {

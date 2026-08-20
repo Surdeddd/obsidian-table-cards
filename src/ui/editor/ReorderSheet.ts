@@ -46,9 +46,19 @@ export function renderReorderSheet(parent: HTMLElement, context: ReorderSheetCon
 		if (!block) continue;
 		const row = list.createEl("li", { cls: "tc-reorder-row" });
 		row.createDiv({ cls: "tc-reorder-handle", text: "⠿", attr: { "aria-hidden": "true" } });
-		const identity = row.createDiv({ cls: "tc-reorder-identity" });
-		identity.createDiv({ cls: "tc-reorder-label", text: block.label || block.columns.join(" · ") });
-		identity.createDiv({ cls: "tc-reorder-type", text: context.t(`editor.style.${block.kind}`) });
+		const identity = row.createEl("button", {
+			cls: "tc-reorder-identity",
+			attr: {
+				type: "button",
+				"aria-pressed": String(context.state.selectedBlockId === block.id),
+			},
+		});
+		identity.createSpan({ cls: "tc-reorder-label", text: block.label || block.columns.join(" · ") });
+		identity.createSpan({ cls: "tc-reorder-type", text: context.t(`editor.style.${block.kind}`) });
+		identity.addEventListener("click", () => {
+			context.dispatch({ type: "selectBlock", blockId: block.id });
+			context.dispatch({ type: "openPanel", panel: "block" });
+		});
 		const actions = row.createDiv({ cls: "tc-reorder-actions" });
 		for (const direction of ["up", "down"] as const) {
 			const target = direction === "up" ? index - 1 : index + 1;

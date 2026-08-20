@@ -90,7 +90,7 @@ test("escape closes an editor panel without closing the editor", async () => {
 	await page.evaluate(() => {
 		document.querySelector<HTMLElement>(".tc-editor-canvas-wrap .table-cards-box")?.click();
 	});
-	await page.locator(".is-block-more").click();
+	await page.locator(".is-block-type").click();
 	await page.waitForSelector(".tc-sheet-layer:not([hidden])");
 
 	await page.keyboard.press("Escape");

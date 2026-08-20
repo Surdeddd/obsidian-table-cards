@@ -15,7 +15,7 @@ test("keeps the panel scrim translucent so the canvas stays visible", async () =
 	await page.evaluate(() => {
 		document.querySelector<HTMLElement>(".tc-editor-canvas-wrap .table-cards-box")?.click();
 	});
-	await page.click(".is-block-more");
+	await page.click(".is-block-type");
 	await page.waitForSelector(".tc-sheet-scrim");
 
 	const background = await page.evaluate(() => {

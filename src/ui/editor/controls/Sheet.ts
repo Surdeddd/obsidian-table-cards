@@ -8,6 +8,7 @@ export interface SheetOptions {
 	variant?: SheetVariant;
 	ariaLabelledBy?: string;
 	opener: HTMLElement | null;
+	initialFocus?: () => HTMLElement | null;
 	closeLabel: string;
 	onClose: () => void;
 	renderBody: (body: HTMLElement) => void;
@@ -87,7 +88,10 @@ export class Sheet {
 			const footer = this.dialog.createDiv({ cls: "tc-sheet-footer" });
 			this.options.renderFooter(footer);
 		}
-		window.setTimeout(() => (focusableElements(this.dialog ?? this.host)[0] ?? this.dialog)?.focus(), 0);
+		window.setTimeout(() => {
+			const preferred = this.options.initialFocus?.() ?? null;
+			(preferred ?? focusableElements(this.dialog ?? this.host)[0] ?? this.dialog)?.focus();
+		}, 0);
 	}
 
 	close(): void {

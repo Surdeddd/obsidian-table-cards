@@ -29,6 +29,7 @@ export class FieldsSheet {
 	private parent: HTMLElement | null = null;
 	private context: FieldsSheetContext | null = null;
 	private readonly sources = new SourcesSection(() => this.renderCurrent());
+	private readonly openColumns = new Set<string>();
 
 	render(parent: HTMLElement, context: FieldsSheetContext): void {
 		this.parent = parent;
@@ -56,6 +57,6 @@ export class FieldsSheet {
 			),
 		});
 		if (this.sources.showingTables) return;
-		renderProfilesSection(parent, context);
+		renderProfilesSection(parent, { ...context, openColumns: this.openColumns });
 	}
 }

@@ -223,6 +223,20 @@ button.tc-card-browser-scope[aria-expanded="true"] {
 	background: color-mix(in srgb, var(--tc-text) 10%, var(--tc-window-bg));
 }
 
+.tc-figure-pair {
+	direction: ltr;
+	unicode-bidi: isolate;
+	white-space: nowrap;
+}
+
+[dir="rtl"] .table-cards-nav-btn > svg,
+[dir="rtl"] .table-cards-nav-icon > svg,
+[dir="rtl"] .tc-editor-history > button > svg,
+[dir="rtl"] .tc-editor-row-nav > button > svg,
+[dir="rtl"] button.is-editor-back > svg {
+	transform: scaleX(-1);
+}
+
 .table-cards-counter {
 	font-variant-numeric: tabular-nums;
 	color: var(--tc-text-muted);
@@ -2307,8 +2321,31 @@ button.tc-reorder-add {
 	text-align: center;
 }
 
-.tc-reorder-identity {
+button.tc-reorder-identity {
 	min-width: 0;
+	display: block;
+	padding: 6px 8px;
+	border: 0;
+	border-inline-start: 3px solid transparent;
+	border-radius: 8px;
+	background: transparent;
+	box-shadow: none;
+	color: inherit;
+	font: inherit;
+	text-align: start;
+}
+
+button.tc-reorder-identity > .tc-reorder-label,
+button.tc-reorder-identity > .tc-reorder-type {
+	display: block;
+}
+
+button.tc-reorder-identity:hover {
+	background: var(--background-modifier-hover);
+}
+
+button.tc-reorder-identity[aria-pressed="true"] {
+	border-inline-start-color: var(--interactive-accent);
 }
 
 .tc-reorder-label {
@@ -2815,8 +2852,7 @@ button.tc-sheet-scrim:focus-visible,
 		padding-inline: 8px;
 	}
 
-	.tc-editor-block-toolbar .is-block-width,
-	.tc-editor-block-toolbar .is-block-more {
+	.tc-editor-block-toolbar .is-block-width {
 		display: none;
 	}
 

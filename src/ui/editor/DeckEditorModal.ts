@@ -14,6 +14,7 @@ import { mergeEditorDeck } from "../../editor/settings-save";
 import {
 	createEditorState,
 	isDirty,
+	markSaved,
 	reduceEditorState,
 	redo,
 	undo,
@@ -307,7 +308,7 @@ export class DeckEditorModal extends Modal {
 				if (index < 0) throw new Error(missingMessage);
 				settings.decks[index] = mergeEditorDeck(settings.decks[index]!, saved);
 			});
-			this.state = createEditorState(saved);
+			this.state = markSaved(this.state, saved);
 		} catch (error) {
 			this.error = error instanceof Error ? error.message : this.host.getTranslator()("editor.saveError");
 			throw error;

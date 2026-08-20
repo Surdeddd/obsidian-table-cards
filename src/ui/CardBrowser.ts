@@ -46,6 +46,7 @@ export class CardBrowser {
 	private scopeSheet: ScopeSheet | null = null;
 	private root: HTMLElement | null = null;
 	private resultsEl: HTMLElement | null = null;
+	private searchEl: HTMLInputElement | null = null;
 	private statusEl: HTMLElement | null = null;
 	private scopeButton: HTMLButtonElement | null = null;
 
@@ -64,6 +65,7 @@ export class CardBrowser {
 			mode: "side",
 			variant: Platform.isMobile ? "full" : "default",
 			opener,
+			initialFocus: () => (Platform.isMobile ? null : this.searchEl),
 			closeLabel: options.t("modal.close"),
 			onClose: options.onClose,
 			renderBody: (body) => this.renderBrowser(body),
@@ -79,6 +81,7 @@ export class CardBrowser {
 		this.root?.remove();
 		this.root = null;
 		this.resultsEl = null;
+		this.searchEl = null;
 		this.statusEl = null;
 		this.scopeButton = null;
 	}
@@ -114,9 +117,18 @@ export class CardBrowser {
 				dir: "auto",
 			},
 		});
+		this.searchEl = search;
 		search.addEventListener("input", () => {
 			this.query = search.value;
 			this.renderResults();
+		});
+		search.addEventListener("keydown", (event) => {
+			if (event.key !== "Enter" || event.isComposing) return;
+			if (!this.query.trim()) return;
+			const first = this.resultsEl?.querySelector<HTMLButtonElement>(".tc-card-browser-result");
+			if (!first) return;
+			event.preventDefault();
+			first.click();
 		});
 		this.statusEl = this.root.createDiv({ cls: "tc-card-browser-status", attr: { "aria-live": "polite" } });
 		this.resultsEl = this.root.createDiv({ cls: "tc-card-browser-results" });

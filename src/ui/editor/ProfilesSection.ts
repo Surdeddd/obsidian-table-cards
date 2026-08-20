@@ -28,6 +28,7 @@ export interface ProfilesSectionContext {
 	locale: UiLocale;
 	t: Translator;
 	dispatch: (action: EditorAction) => void;
+	openColumns: Set<string>;
 }
 
 function columnEnabled(state: EditorState, header: string): boolean {
@@ -50,7 +51,15 @@ function renderProfile(
 	profile: ColumnProfile,
 	context: ProfilesSectionContext,
 ): void {
-	const details = parent.createEl("details", { cls: "tc-profile" });
+	const key = normalizeHeader(profile.header);
+	const details = parent.createEl("details", {
+		cls: "tc-profile",
+		attr: context.openColumns.has(key) ? { open: "" } : {},
+	});
+	details.addEventListener("toggle", () => {
+		if (details.open) context.openColumns.add(key);
+		else context.openColumns.delete(key);
+	});
 	const summary = details.createEl("summary", { cls: "tc-profile-summary" });
 	const use = summary.createEl("label", { cls: "tc-profile-use" });
 	const checkbox = use.createEl("input", { type: "checkbox" });
@@ -62,8 +71,8 @@ function renderProfile(
 	});
 	const identity = summary.createDiv({ cls: "tc-profile-identity" });
 	identity.createDiv({ cls: "tc-profile-name", text: profile.header, attr: { dir: "auto" } });
-	identity.createDiv({
-		cls: "tc-profile-fill",
+	identity.createDiv({ cls: "tc-profile-fill" }).createSpan({
+		cls: "tc-figure-pair",
 		text: `${formatUiNumber(profile.nonEmpty, context.locale)} / ${formatUiNumber(profile.total, context.locale)}`,
 	});
 	summary.createSpan({
@@ -79,7 +88,7 @@ function renderProfile(
 
 	const body = details.createDiv({ cls: "tc-profile-body" });
 	new Listbox(body, {
-		id: `column-type-${normalizeHeader(profile.header).replace(/[^a-z0-9_-]/gi, "-")}`,
+		id: `column-type-${key.replace(/[^a-z0-9_-]/gi, "-")}`,
 		label: context.t("editor.column.type"),
 		value: profile.inferredType,
 		options: DATA_TYPES.map((type) => ({ value: type, label: context.t(`editor.type.${type}`) })),

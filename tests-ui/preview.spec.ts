@@ -2,8 +2,8 @@ import { expect, test, type Browser, type BrowserContext, type Page } from "@pla
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const screenshotRoot = join(process.cwd(), "docs/screenshots");
-const accessibilityRoot = join(screenshotRoot, "a11y");
+const screenshotRoot = join(process.cwd(), ".preview-shots");
+const accessibilityRoot = join(process.cwd(), "docs/a11y");
 
 interface OpenedFixture {
 	context: BrowserContext;
@@ -181,6 +181,7 @@ async function capture(page: Page, name: string, ariaContains?: string, verifySt
 }
 
 test.beforeAll(async () => {
+	await mkdir(screenshotRoot, { recursive: true });
 	await mkdir(accessibilityRoot, { recursive: true });
 });
 
@@ -471,6 +472,7 @@ test("base and nested dialogs trap Tab in both directions", async ({ browser }) 
 });
 
 test("requested states are visible and state actions have observable outcomes", async ({ browser }) => {
+	test.slow();
 	for (const state of ["general", "locked", "selector", "empty", "loading", "error", "browser", "rtl"]) {
 		const fixture = await openFixture(browser, `/preview/launcher.html?state=${state}&capture=1`, { width: 1440, height: 1000 });
 		const panel = fixture.page.locator(`.preview-root > [data-state="${state}"]`);

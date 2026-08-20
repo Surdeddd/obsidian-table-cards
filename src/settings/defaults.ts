@@ -373,7 +373,7 @@ function columnTypesOf(value: unknown): Record<string, ColumnDataType> {
 
 function partialAppearanceOf(value: unknown): Deck["appearance"] {
 	const input = recordOf(value);
-	return input ? (cloneJson(input) as Deck["appearance"]) : undefined;
+	return input ? cloneJson(input) : undefined;
 }
 
 function normalizeDeck(value: unknown, sourceNormalizer: (source: unknown) => DeckSource | null): Deck {

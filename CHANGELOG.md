@@ -4,6 +4,18 @@
 
 All notable changes to Table Cards are documented here.
 
+## 0.2.1 — 2026-08-20
+
+### Fixed
+
+- Escape inside the picker's table selection closes the selection instead of the whole dialog.
+- The runtime no longer calls APIs newer than the declared ES2018 target (`Array.at`, `flatMap`, `matchAll`, `Object.fromEntries`), which could throw on an older mobile WebView.
+
+### Changed
+
+- Selector state that relied on `:has()` is carried by classes the plugin sets itself, and redundant `!important` declarations are gone.
+- Releases carry GitHub build-provenance attestations for `main.js`, `manifest.json`, and `styles.css`.
+
 ## 0.2.0 — 2026-08-20
 
 ### Changed

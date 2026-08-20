@@ -8,9 +8,9 @@ Obsidian no longer takes plugin submissions as a pull request against `obsidianm
 
 | Requirement | State |
 | --- | --- |
-| `manifest.json` at the repository root, semantic version | `0.2.0` |
+| `manifest.json` at the repository root, semantic version | `0.2.1` |
 | `id` unique and free of the word `obsidian` | `table-cards` |
-| GitHub release tagged exactly as the manifest version, no `v` prefix | [`0.2.0`](https://github.com/Surdeddd/obsidian-table-cards/releases/tag/0.2.0) |
+| GitHub release tagged exactly as the manifest version, no `v` prefix | [`0.2.1`](https://github.com/Surdeddd/obsidian-table-cards/releases/tag/0.2.1) |
 | Release assets `main.js`, `manifest.json`, `styles.css` | attached by `.github/workflows/release.yml` on tag push |
 | `README.md` describing purpose and usage | present, with screenshots |
 | `LICENSE` | MIT |
@@ -31,6 +31,20 @@ Obsidian no longer takes plugin submissions as a pull request against `obsidianm
 - Author: `Maxim Kravtsov`
 - Description: `Study Markdown tables as adaptive, all-visible cards with a visual layout editor.`
 - Minimum app version: `1.6.7` — the floor the harness verifies; also verified on 1.13.7 and on Android.
+
+## Directory review of 0.1.0, and what changed (2026-08-20)
+
+| Review item | Answer |
+| --- | --- |
+| Release has no description | Both `0.1.0` and `0.2.0` carry the changelog section for that version. |
+| Missing artifact attestations | `release.yml` runs `actions/attest-build-provenance` for `main.js`, `manifest.json`, and `styles.css`; every release from `0.2.1` on is attested. |
+| Vault enumeration (`getMarkdownFiles`) | Used only to fill the note picker in setup and the editor, and to expand a folder source into its notes. The plugin reads a file only when it belongs to a deck source, and never writes to a vault note. |
+| Unsafe values from typed code (`no-unsafe-*`) | The reported sites were `Array.at`, `flatMap`, `matchAll`, and `Object.fromEntries` — APIs newer than the declared `ES2018` target, which type to `any` under an older lib and would throw on an older mobile WebView. All of them are gone from `src/`, and `typescript-eslint`'s type-checked rules now run over the whole repository. |
+| Unnecessary assertion in `settings/defaults.ts` | Removed with the same pass. |
+| `getSettingDefinitions()` not implemented | Deliberate. The declarative settings API arrived in 1.13.0; this plugin supports 1.6.7, where it does not exist. `display()` stays the render path, and the rule is switched off for that one file with the reason in `eslint.config.mts`. |
+| `display` / `setWarning` deprecated | Same floor argument. Internal re-renders no longer call the deprecated entry point, and `setWarning()` remains the only destructive-button API that exists at 1.6.7. |
+| `!important` | Dropped everywhere selector specificity or source order already wins. What is left is the visually-hidden helper and the `prefers-reduced-motion` reset, where `!important` is the documented idiom. |
+| `:has()` | Replaced by state classes the plugin sets itself (`is-launcher`, `is-scope-open`, `is-sheet-open`). No `:has()` remains in `styles.css`. |
 
 ## Guideline audit (2026-08-20)
 

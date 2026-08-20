@@ -1,6 +1,6 @@
 {
 	"name": "table-cards",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Adaptive, all-visible table cards for Obsidian.",
 	"main": "main.js",
 	"type": "module",

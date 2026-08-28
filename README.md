@@ -60,6 +60,7 @@ The source line under each card stays secondary and uses the human table heading
 
 Open **Settings → Table Cards → Edit layout**.
 
+- **Layout for** — a deck that holds more than one table gets a layout switch above the canvas. **All tables** edits the shared deck layout; picking a single table gives it its own blocks, built from that table's own columns. The switch appears only when a deck actually holds several tables, and on **All tables** it says how many of them already carry a layout of their own and offers to give the rest one in a single action. The fields sheet names the tables each column comes from.
 - **Sources** — add notes or folders, see each source's compact selection summary, and enter a focused multi-table route with search, all/none actions, row previews, and **Open this table**.
 - **Fields** — inspect inferred types, fill rates, examples, and warnings; type overrides remain deck-specific.
 - **Canvas** — select rendered blocks directly. Drag on desktop or use accessible move actions on touch and keyboard.
@@ -81,6 +82,8 @@ Obsidian embeds such as `![[image.png|300x200]]` and Markdown images are support
 ## Phone, keyboard, and RTL
 
 Phone uses one card column, full-height selection/browser sheets that can be pulled down by their grab handle, search beside shuffle in the thumb row, safe-area-aware footers, and controls at least 44×44 CSS px. Long content stays inside the card or its configured scrolling block and never creates document-level horizontal overflow. Reduced-motion preferences remove interface transitions.
+
+Layout decisions follow height as well as width. A short viewport — a phone held sideways, or a squat desktop window — keeps compact chrome and a side panel instead of a bottom sheet, so the card stays visible while a panel is open. Card rows are sized by their own content and the card scrolls when it outgrows the window, instead of squeezing rows until text lands on the next block.
 
 The UI supports English, Russian, Ukrainian, Spanish, German, French, Brazilian Portuguese, Italian, Polish, Turkish, Simplified Chinese, Traditional Chinese, Japanese, Korean, Arabic, and Hindi. Automatic mode follows Obsidian's locale; manual selection uses native language names. Arabic mirrors only Table Cards chrome. User-authored table content keeps `dir="auto"` and its natural direction.
 
@@ -122,5 +125,7 @@ npm run check:links
 `npm run test:ui` drives the static fixtures in `preview/launcher.html`, `preview/setup.html`, `preview/v2.html`, and `preview/editor.html`. They are a design mock: they exercise the stylesheet and the interaction patterns, not the plugin bundle. That gate covers desktop, tablet, zoom-equivalent, phone, Arabic RTL, reduced motion, focus restoration, target geometry, overflow, and console output.
 
 `npm run test:obsidian` covers the plugin itself. It builds a throwaway vault under `.obsidian-harness/`, installs the freshly built artifacts into it, launches the installed Obsidian desktop app with a remote debugging port, and drives the real plugin over CDP: command and ribbon registration, editor shell geometry, panel chrome against Obsidian's own stylesheet, block placement and width dragging, wizard copy, and study navigation. The suite skips itself when no Obsidian binary is present, and `OBSIDIAN_APP` points it at any build.
+
+`TABLE_CARDS_AUDIT=1 npm run test:obsidian -- defects.spec.ts` is the layout audit. It walks every surface — session, card search, table picker, launcher, editor with all four panels, and the setup wizard — across the eight supported viewports, and again in Arabic on the three shapes that matter most, and fails on a control that leaves the screen, text clipped without an ellipsis, a layout that scrolls sideways, boxes that overlap, content that escapes its parent, an unnamed control, or a control too small to hit. `TABLE_CARDS_AUDIT=1 npm run test:obsidian -- audit.spec.ts` writes the same surfaces to `artifacts/audit/` in both themes for a human to look at.
 
 See the [changelog](CHANGELOG.md) and [UX/accessibility audit](docs/ux-audit-2026-08-18.md). Version `0.1.0` is the first complete release and already uses the schema-v3 product model; schema version and package version are intentionally independent.

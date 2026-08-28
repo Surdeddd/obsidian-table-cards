@@ -4,6 +4,37 @@
 
 All notable changes to Table Cards are documented here.
 
+## Unreleased
+
+### Added
+
+- On the shared deck layout the switch reports how many tables already carry a layout of their own, so a deck of five or six tables can be read at a glance without opening the list, and one action gives every remaining table its own layout — or takes them all back to the shared one.
+- The fields sheet names the tables each column comes from, so a deck spanning several tables explains its own column list.
+- A deck that holds more than one table can give each table its own card layout. The editor shows a **Layout for** switch above the canvas; a table starts on the shared deck layout and can take its own blocks, built from that table's own columns, or go back to the deck layout at any time. Stored layouts follow a table that gains, renames, or loses a column, exactly as table selection already did.
+- `tests-obsidian/defects.spec.ts` audits every surface — session, card search, table picker, launcher, editor with all four panels, and the setup wizard — across the eight supported viewports, and again in Arabic on the three shapes that matter most. It fails on any control that leaves the screen, text clipped without an ellipsis, a layout that scrolls sideways, overlapping boxes, content escaping its parent, an unnamed control, or a control too small to hit. It runs behind `TABLE_CARDS_AUDIT=1`.
+- `tests-obsidian/responsive.spec.ts` drives the real application across eight viewports — desktop, laptop, narrow window, tablet in both orientations, phone in both orientations, and a 320 px phone — and fails on chrome that leaves the viewport, horizontal scrolling, a panel that swallows the canvas, or card content that escapes its block.
+
+### Fixed
+
+- A deck built from several tables no longer drops rows from the other tables. A required field can only be violated by a row whose table actually has that column, so the Phrases rows of a Vocabulary deck stop disappearing into a `requiredEmpty` warning. Blocks whose columns a table does not have are skipped for that table instead of drawing an empty placeholder.
+- A study session reserves room for its side panel on a wide window: opening **Find a card** or the table picker no longer hides the card and the Next button behind the panel.
+- Card rows no longer squeeze below the height their content needs. On a short window the title's underline could land on the next block's label; the card now scrolls instead.
+- The card title scales with the card, not the application window, so the editor's phone preview shows phone-sized type.
+- Four of the twelve ribbon icons and two of the six preset icons drew nothing on the supported app floor: those Lucide names arrived after it. The picker now offers eight icons that all draw, every preset card has its own icon, and a deck that had picked a removed icon falls back to the stack icon. `tests-obsidian/ribbon-icons.spec.ts` fails on any icon that renders no glyph.
+- Automatic layout gives a table a headline even when no column is called "word" or "phrase": the first column names the row unless its values repeat, so an `Idiom` or `Preposition` table gets a title instead of a labelled field.
+- In the block-order panel each row's type caption stayed outside its own button: Obsidian sizes every button to one input row, and a two-line button spilled its second line onto the row below.
+- A long option no longer widens its dropdown past the panel on a narrow phone; the value ellipsises instead.
+- The editor header no longer runs past the right edge of a tablet in portrait or a phone held sideways. A panel reserves room beside the canvas only when the window is wide enough for both.
+- A short viewport keeps a side panel and compact chrome instead of a bottom sheet that covered the card.
+- Modal height is measured against the dynamic viewport, so mobile browser chrome no longer cuts off the footer.
+
+### Changed
+
+- The **Card style** panel groups spacing and frame controls behind two sections instead of listing twenty controls at once; alignment moved into the block's size group.
+- The block panel keeps its column list inside its own scroller, so every settings group stays reachable without scrolling the whole panel.
+- The editor names things plainly: the row picker reads **Row 1 / 5**, the selected block reads **Block · Title**, and the reordering button reads **Order** instead of the ambiguous **Blocks**.
+- Continuous integration runs the unit, lint, type, build, and link checks; the Playwright suites are local gates, because their configuration is deliberately not part of the repository.
+
 ## 0.2.2 — 2026-08-20
 
 ### Fixed

@@ -1,5 +1,5 @@
 import { setIcon } from "obsidian";
-import type { EditorAction, EditorState } from "../../editor/state";
+import { activeBlocks, type EditorAction, type EditorState } from "../../editor/state";
 import { formatUiNumber, type Translator } from "../../i18n";
 import type { UiLocale } from "../../model";
 
@@ -36,13 +36,13 @@ export function renderReorderSheet(parent: HTMLElement, context: ReorderSheetCon
 		context.dispatch({ type: "addBlock" });
 		context.dispatch({ type: "openPanel", panel: "block" });
 	});
-	if (context.state.draft.blocks.length === 0) {
+	if (activeBlocks(context.state).length === 0) {
 		parent.createDiv({ cls: "tc-field-empty", text: context.t("editor.reorder.empty") });
 		return;
 	}
 	const list = parent.createEl("ol", { cls: "tc-reorder-list" });
-	for (let index = 0; index < context.state.draft.blocks.length; index += 1) {
-		const block = context.state.draft.blocks[index];
+	for (let index = 0; index < activeBlocks(context.state).length; index += 1) {
+		const block = activeBlocks(context.state)[index];
 		if (!block) continue;
 		const row = list.createEl("li", { cls: "tc-reorder-row" });
 		const identity = row.createEl("button", {
@@ -70,7 +70,7 @@ export function renderReorderSheet(parent: HTMLElement, context: ReorderSheetCon
 				},
 			});
 			setIcon(button, direction === "up" ? "arrow-up" : "arrow-down");
-			button.disabled = target < 0 || target >= context.state.draft.blocks.length;
+			button.disabled = target < 0 || target >= activeBlocks(context.state).length;
 			button.addEventListener("click", () => {
 				context.dispatch({ type: "moveBlock", blockId: block.id, toIndex: target });
 				focusAction(

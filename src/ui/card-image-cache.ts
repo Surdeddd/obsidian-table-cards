@@ -18,12 +18,12 @@ export class CardImageCache {
 
 export function buildCardImageCache(
 	cards: Card[],
-	blocks: CardBlock[],
+	blocksFor: (card: Card) => CardBlock[],
 	resolveLocal: LocalImageResolver,
 ): CardImageCache {
 	const localSources = new Map<string, string | null>();
 	for (const card of cards) {
-		for (const resolved of resolveCard(card, blocks).blocks) {
+		for (const resolved of resolveCard(card, blocksFor(card)).blocks) {
 			if (!resolved.visible || resolved.block.kind !== "image") continue;
 			for (const value of resolved.values) for (const image of value.images) {
 				if (image.external) continue;

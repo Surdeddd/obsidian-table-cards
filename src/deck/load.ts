@@ -23,6 +23,7 @@ import {
 } from "./catalog";
 import { shuffleItems, wrapIndex } from "./shuffle";
 import { selectorDiagnosticDetail, selectorMatchesTable } from "./selectors";
+import { tableBlockResolver } from "./layouts";
 import { matchStaleTables, type TableIdentity } from "./table-identity";
 
 function sourceFiles(app: App, source: DeckSource, diagnostics: DeckDiagnostic[]): TFile[] {
@@ -249,11 +250,12 @@ export function buildDeckDataFromScan(
 		isImageResolvable: (source) =>
 			sourcePaths.some((sourcePath) => resolveImageFile(app, sourcePath, source) !== null),
 	});
+	const blocksForTableKey = tableBlockResolver(deck, selectedCatalog);
 	const cards: Card[] = [];
 	const allCards: Card[] = [];
 	for (const canonical of selectedCatalog) allCards.push(...tableCards(canonical));
 	for (const card of allCards) {
-		const resolved = resolveCard(card, deck.blocks);
+		const resolved = resolveCard(card, blocksForTableKey(card.origin.tableKey));
 		if (!resolved.skipReason) {
 			cards.push(card);
 			continue;

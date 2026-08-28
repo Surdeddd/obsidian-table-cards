@@ -6,6 +6,7 @@ export function mergeEditorDeck(latest: Deck, draft: Deck): Deck {
 		name: draft.name,
 		sources: cloneJson(draft.sources),
 		blocks: cloneJson(draft.blocks),
+		tableLayouts: cloneJson(draft.tableLayouts),
 		columnTypes: cloneJson(draft.columnTypes),
 	};
 	if (draft.appearance === undefined) {

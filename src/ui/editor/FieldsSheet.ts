@@ -8,6 +8,7 @@ import type {
 	ParsedTable,
 	UiLocale,
 } from "../../model";
+import { normalizeHeader } from "../../parse/tables";
 import { renderProfilesSection } from "./ProfilesSection";
 import { SourcesSection } from "./SourcesSection";
 
@@ -57,6 +58,20 @@ export class FieldsSheet {
 			),
 		});
 		if (this.sources.showingTables) return;
-		renderProfilesSection(parent, { ...context, openColumns: this.openColumns });
+		renderProfilesSection(parent, {
+			...context,
+			openColumns: this.openColumns,
+			tablesWithColumn: (header) => this.tablesWithColumn(header),
+		});
+	}
+
+	/** Names the tables a column comes from, and only when the deck spans several of them. */
+	private tablesWithColumn(header: string): string[] {
+		const tables = this.context?.scan?.tables ?? [];
+		if (tables.length < 2 || this.context?.state.activeTableKey !== null) return [];
+		const key = normalizeHeader(header);
+		return tables
+			.filter((table) => table.headers.some((candidate) => normalizeHeader(candidate) === key))
+			.map((table) => table.label);
 	}
 }

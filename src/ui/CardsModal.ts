@@ -7,8 +7,10 @@ import {
 import { clampCardIndex, loadDeckData, resolveImageFile } from "../deck/load";
 import { applyUiChromeDirection, formatUiNumber, type Translator } from "../i18n";
 import { resolveCard } from "../layout/resolve";
+import { tableBlockResolver } from "../deck/layouts";
 import type {
 	Card,
+	CardBlock,
 	Deck,
 	DeckLoadResult,
 	DeckProgress,
@@ -66,6 +68,7 @@ export class CardsModal extends Modal {
 	private searchIndex: SearchEntry[] = [];
 	private tableLabels = new Map<string, string>();
 	private deck: Deck | null = null;
+	private blocksForTable: ((tableKey: string) => CardBlock[]) | null = null;
 	private progress: DeckProgress | null = null;
 	private t!: Translator;
 	private locale!: UiLocale;
@@ -197,6 +200,10 @@ export class CardsModal extends Modal {
 		return { cards: selected.cards, progress };
 	}
 
+	private cardBlocks(card: Card): CardBlock[] {
+		return this.blocksForTable?.(card.origin.tableKey) ?? this.deck?.blocks ?? [];
+	}
+
 	private async startStudy(selection: SessionSelection): Promise<void> {
 		let prepared: { cards: Card[]; progress: DeckProgress } | null = null;
 		if (this.request.persistProgress !== false) {
@@ -215,7 +222,8 @@ export class CardsModal extends Modal {
 		this.cards = prepared.cards;
 		this.catalog = selection.result.catalog.slice();
 		this.searchIndex = buildSearchIndex(this.allCards);
-		this.imageCache = buildCardImageCache(this.allCards, selection.deck.blocks, (sourcePath, image) => {
+		this.blocksForTable = tableBlockResolver(selection.deck, selection.result.catalog);
+		this.imageCache = buildCardImageCache(this.allCards, (card) => this.cardBlocks(card), (sourcePath, image) => {
 			const file = resolveImageFile(this.app, sourcePath, image);
 			return file ? this.app.vault.getResourcePath(file) : null;
 		});
@@ -503,7 +511,7 @@ export class CardsModal extends Modal {
 		this.shuffleBtn.setAttr("aria-label", this.t(shuffled ? "modal.shuffleOn" : "modal.shuffle"));
 		this.updateStageColumns();
 		const current = this.currentCard();
-		const resolved = current && this.deck ? resolveCard(current, this.deck.blocks) : null;
+		const resolved = current && this.deck ? resolveCard(current, this.cardBlocks(current)) : null;
 		if (!this.component) return;
 		const emptyScope = this.progress?.scope.mode === "tables" && this.progress.scope.tableKeys.length === 0;
 		void renderCard(this.stageEl, resolved, {

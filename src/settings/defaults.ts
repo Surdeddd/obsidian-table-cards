@@ -16,6 +16,7 @@ import {
 	type DeckRibbonSettings,
 	type EmptyValuePolicy,
 	type PluginSettings,
+	type TableLayout,
 	type TableSelector,
 } from "../model";
 import { defaultAppearance, mergeAppearance } from "./appearance";
@@ -234,6 +235,34 @@ function normalizeV2Block(value: unknown): CardBlock | null {
 	});
 }
 
+function normalizeTableLayouts(value: unknown): TableLayout[] {
+	if (!Array.isArray(value)) {
+		return [];
+	}
+	const seen = new Set<string>();
+	const layouts: TableLayout[] = [];
+	for (const item of value) {
+		const input = recordOf(item);
+		const tableKey = typeof input?.tableKey === "string" ? input.tableKey : "";
+		if (!tableKey || seen.has(tableKey) || !Array.isArray(input?.blocks)) {
+			continue;
+		}
+		const blocks = input.blocks
+			.map(normalizeV2Block)
+			.filter((block): block is CardBlock => block !== null);
+		if (blocks.length === 0) {
+			continue;
+		}
+		seen.add(tableKey);
+		layouts.push({
+			tableKey,
+			label: typeof input.label === "string" ? input.label : "",
+			blocks,
+		});
+	}
+	return layouts;
+}
+
 function migrateV1Block(value: unknown): CardBlock | null {
 	const input = recordOf(value);
 	if (!input) {
@@ -336,6 +365,11 @@ export function createDeck(partial: Partial<Deck> = {}): Deck {
 		enabled: partial.enabled ?? true,
 		sources: partial.sources?.map(cloneJson) ?? [],
 		blocks: partial.blocks?.map((block) => createBlock(block)) ?? [],
+		tableLayouts: partial.tableLayouts?.map((layout) => ({
+			tableKey: layout.tableKey,
+			label: layout.label,
+			blocks: layout.blocks.map((block) => createBlock(block)),
+		})) ?? [],
 		columnTypes: { ...partial.columnTypes },
 		appearance: partial.appearance ? { ...partial.appearance } : undefined,
 		shuffleDefault: partial.shuffleDefault ?? false,
@@ -394,6 +428,7 @@ function normalizeDeck(value: unknown, sourceNormalizer: (source: unknown) => De
 		enabled: typeof input.enabled === "boolean" ? input.enabled : true,
 		sources,
 		blocks,
+		tableLayouts: normalizeTableLayouts(input.tableLayouts),
 		columnTypes: columnTypesOf(input.columnTypes),
 		appearance: partialAppearanceOf(input.appearance),
 		shuffleDefault: input.shuffleDefault === true,

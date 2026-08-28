@@ -1,7 +1,7 @@
 export const SCHEMA_VERSION = 3 as const;
 
 export const UI_LOCALES = ["en", "ru", "uk", "es", "de", "fr", "pt-BR", "it", "pl", "tr", "zh-CN", "zh-TW", "ja", "ko", "ar", "hi"] as const;
-export const RIBBON_ICONS = ["gallery-horizontal", "languages", "message-square-quote", "circle-help", "image", "book-open", "layers-3", "graduation-cap", "brain", "library", "notebook-tabs", "rows-3"] as const;
+export const RIBBON_ICONS = ["gallery-horizontal", "languages", "image", "book-open", "layers-3", "graduation-cap", "brain", "library"] as const;
 
 export const BLOCK_KINDS = ["title", "text", "chips", "quote", "note", "image"] as const;
 export type BlockKind = (typeof BLOCK_KINDS)[number];
@@ -124,12 +124,19 @@ export interface AppearanceSettings {
 	maxWidth: number;
 }
 
+export interface TableLayout {
+	tableKey: string;
+	label: string;
+	blocks: CardBlock[];
+}
+
 export interface Deck {
 	id: string;
 	name: string;
 	enabled: boolean;
 	sources: DeckSource[];
 	blocks: CardBlock[];
+	tableLayouts: TableLayout[];
 	columnTypes: Record<string, ColumnDataType>;
 	appearance?: Partial<AppearanceSettings>;
 	shuffleDefault: boolean;

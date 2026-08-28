@@ -24,7 +24,7 @@ describe("card image cache", () => {
 		const cards = [card("one", "![[photo.png]]"), card("two", "![[photo.png]]")];
 		const imageBlock = createBlock({ kind: "image", columns: ["Image"] });
 		const calls: string[] = [];
-		const cache = buildCardImageCache(cards, [imageBlock], (sourcePath, image) => {
+		const cache = buildCardImageCache(cards, () => [imageBlock], (sourcePath, image) => {
 			calls.push(`${sourcePath}:${image.source}`);
 			return "app://vault/photo.png";
 		});
@@ -40,7 +40,7 @@ describe("card image cache", () => {
 		const cards = [card("one", "![[photo.png]]")];
 		const image = cards[0]!.cells.Image!.images[0]!;
 		let initialLookups = 0;
-		const cache = buildCardImageCache(cards, [createBlock({ kind: "image", columns: ["Image"] })], () => {
+		const cache = buildCardImageCache(cards, () => [createBlock({ kind: "image", columns: ["Image"] })], () => {
 			initialLookups += 1;
 			return "app://vault/photo.png";
 		});

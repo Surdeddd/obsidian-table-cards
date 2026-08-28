@@ -1,5 +1,5 @@
 import type { App, Component } from "obsidian";
-import type { EditorAction, EditorState } from "../../editor/state";
+import { activeBlocks, type EditorAction, type EditorState } from "../../editor/state";
 import { resolveCard } from "../../layout/resolve";
 import type { AppearanceSettings, DeckLoadResult } from "../../model";
 import { applyAppearance, resolveDeckAppearance, shouldSplitEditor, widthFromPointer } from "../../settings/appearance";
@@ -102,8 +102,8 @@ function attachReorderHandles(stage: HTMLElement, context: CardCanvasContext): v
 				cleanup();
 				if (cancelled || !target || target.blockId === blockId) return;
 				const drop = target;
-				const fromIndex = context.state.draft.blocks.findIndex((block) => block.id === blockId);
-				const targetIndex = context.state.draft.blocks.findIndex((block) => block.id === drop.blockId);
+				const fromIndex = activeBlocks(context.state).findIndex((block) => block.id === blockId);
+				const targetIndex = activeBlocks(context.state).findIndex((block) => block.id === drop.blockId);
 				if (fromIndex < 0 || targetIndex < 0) return;
 				let toIndex = targetIndex + (drop.after ? 1 : 0);
 				if (fromIndex < toIndex) toIndex -= 1;
@@ -126,7 +126,7 @@ function attachResizeHandles(stage: HTMLElement, context: CardCanvasContext): vo
 	const blockId = context.state.selectedBlockId;
 	if (!blockId) return;
 	const box = blockBox(stage, blockId);
-	const block = context.state.draft.blocks.find((item) => item.id === blockId);
+	const block = activeBlocks(context.state).find((item) => item.id === blockId);
 	if (!box || !block) return;
 
 	const width = box.createDiv({ cls: "tc-resize-handle is-width", attr: { "aria-hidden": "true" } });
@@ -236,7 +236,7 @@ export function renderCardCanvas(parent: HTMLElement, context: CardCanvasContext
 	const observer = new ResizeObserver(updateColumns);
 	observer.observe(stage);
 	const row = context.data.cards[context.state.previewRow] ?? null;
-	const resolved = row ? resolveCard(row, context.state.draft.blocks) : null;
+	const resolved = row ? resolveCard(row, activeBlocks(context.state)) : null;
 	void renderCard(stage, resolved, {
 		app: context.app,
 		component: context.component,

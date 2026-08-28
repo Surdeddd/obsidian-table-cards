@@ -6,7 +6,7 @@ import {
 	type UiLocale,
 } from "../../model";
 import { normalizeHeader } from "../../parse/tables";
-import type { EditorAction, EditorState } from "../../editor/state";
+import { activeBlocks, type EditorAction, type EditorState } from "../../editor/state";
 import { Listbox } from "./controls/Listbox";
 
 const DATA_TYPES: ColumnDataType[] = [
@@ -29,11 +29,12 @@ export interface ProfilesSectionContext {
 	t: Translator;
 	dispatch: (action: EditorAction) => void;
 	openColumns: Set<string>;
+	tablesWithColumn?: (header: string) => string[];
 }
 
 function columnEnabled(state: EditorState, header: string): boolean {
 	const key = normalizeHeader(header);
-	return state.draft.blocks.some((block) =>
+	return activeBlocks(state).some((block) =>
 		block.columns.some((column) => normalizeHeader(column) === key),
 	);
 }
@@ -71,6 +72,10 @@ function renderProfile(
 	});
 	const identity = summary.createDiv({ cls: "tc-profile-identity" });
 	identity.createDiv({ cls: "tc-profile-name", text: profile.header, attr: { dir: "auto" } });
+	const owners = context.tablesWithColumn?.(profile.header) ?? [];
+	if (owners.length > 0) {
+		identity.createDiv({ cls: "tc-profile-owners", text: owners.join(" · "), attr: { dir: "auto" } });
+	}
 	identity.createDiv({ cls: "tc-profile-fill" }).createSpan({
 		cls: "tc-figure-pair",
 		text: `${formatUiNumber(profile.nonEmpty, context.locale)} / ${formatUiNumber(profile.total, context.locale)}`,
@@ -149,7 +154,7 @@ export function renderProfilesSection(parent: HTMLElement, context: ProfilesSect
 		context.dispatch({ type: "replaceBlocks", blocks: autoLayout(profiles) });
 	};
 	confirmation.createDiv({
-		text: `${context.t("editor.autoLayoutReplace")} ${formatUiNumber(context.state.draft.blocks.length, context.locale)}`,
+		text: `${context.t("editor.autoLayoutReplace")} ${formatUiNumber(activeBlocks(context.state).length, context.locale)}`,
 	});
 	const confirmActions = confirmation.createDiv({ cls: "tc-field-actions" });
 	const cancel = confirmActions.createEl("button", {
@@ -166,7 +171,7 @@ export function renderProfilesSection(parent: HTMLElement, context: ProfilesSect
 	});
 	confirm.addEventListener("click", useLayout);
 	apply.addEventListener("click", () => {
-		if (context.state.draft.blocks.length === 0) {
+		if (activeBlocks(context.state).length === 0) {
 			useLayout();
 			return;
 		}

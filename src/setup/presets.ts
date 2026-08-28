@@ -48,8 +48,8 @@ const PRESET_ROLE_WEIGHTS: Record<SpecializedPresetId, Partial<Record<Role, numb
 
 export const PRESETS: readonly PresetDefinition[] = [
 	{ id: "vocabulary", nameKey: "preset.vocabulary", descriptionKey: "preset.vocabulary.desc", icon: "languages", tieOrder: 2 },
-	{ id: "phrases", nameKey: "preset.phrases", descriptionKey: "preset.phrases.desc", icon: "message-square-quote", tieOrder: 3 },
-	{ id: "qa", nameKey: "preset.qa", descriptionKey: "preset.qa.desc", icon: "circle-help", tieOrder: 4 },
+	{ id: "phrases", nameKey: "preset.phrases", descriptionKey: "preset.phrases.desc", icon: "graduation-cap", tieOrder: 3 },
+	{ id: "qa", nameKey: "preset.qa", descriptionKey: "preset.qa.desc", icon: "brain", tieOrder: 4 },
 	{ id: "gallery", nameKey: "preset.gallery", descriptionKey: "preset.gallery.desc", icon: "image", tieOrder: 5 },
 	{ id: "reference", nameKey: "preset.reference", descriptionKey: "preset.reference.desc", icon: "book-open", tieOrder: 1 },
 	{ id: "universal", nameKey: "preset.universal", descriptionKey: "preset.universal.desc", icon: "layers-3", tieOrder: 0 },

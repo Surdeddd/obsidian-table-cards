@@ -1,15 +1,19 @@
 import { setIcon, type App, type Component } from "obsidian";
-import type { AppearanceSettings, DeckLoadResult, UiLocale } from "../../model";
+import type { AppearanceSettings, CardBlock, DeckLoadResult, UiLocale } from "../../model";
 import { formatUiNumber, type Translator } from "../../i18n";
 import { representativeRowIndexes } from "../../editor/rows";
 import {
+	activeBlocks,
+	hasOwnLayout,
 	isDirty,
 	type EditorAction,
 	type EditorPanel,
 	type EditorState,
 } from "../../editor/state";
 import { Sheet } from "./controls/Sheet";
+import { Listbox, type ListboxOption } from "./controls/Listbox";
 import { renderCardCanvas } from "./CardCanvas";
+import { buildTableDisplayLabels } from "../card-browser-state";
 
 export type PreviewDevice = "desktop" | "phone";
 
@@ -33,6 +37,7 @@ export interface EditorShellContext {
 	locale: UiLocale;
 	t: Translator;
 	globalAppearance: AppearanceSettings;
+	seedLayout: (tableKey: string) => CardBlock[];
 	dispatch: (action: EditorAction) => void;
 	onUndo: () => void;
 	onRedo: () => void;
@@ -62,6 +67,7 @@ function button(
 export class EditorShell {
 	private readonly root: HTMLElement;
 	private sheet: Sheet | null = null;
+	private scopeListbox: Listbox<string> | null = null;
 	private renderVersion = 0;
 	private restorePanelFocus: Exclude<EditorPanel, null> | null = null;
 	private canvasCleanup: (() => void) | null = null;
@@ -77,9 +83,96 @@ export class EditorShell {
 		this.activePanel = null;
 		this.canvasCleanup?.();
 		this.canvasCleanup = null;
+		this.scopeListbox?.destroy();
+		this.scopeListbox = null;
 		this.sheet?.destroy();
 		this.sheet = null;
 		this.root.empty();
+	}
+
+	private renderScopeBar(context: EditorShellContext): void {
+		const tables = context.data.catalog;
+		this.root.toggleClass("has-scope-bar", tables.length > 1);
+		if (tables.length <= 1) return;
+		const active = context.state.activeTableKey;
+		const bar = this.root.createDiv({ cls: "tc-editor-scope-bar" });
+		const labels = buildTableDisplayLabels(tables, (number) =>
+			context.t("table.untitled", { number: formatUiNumber(number, context.locale) }),
+		);
+		const options: Array<ListboxOption<string>> = [
+			{ value: "", label: context.t("editor.layoutScope.deck"), description: context.t("editor.layoutScope.deckHint") },
+			...tables.map((table) => ({
+				value: table.key,
+				label: labels.get(table.key) ?? table.label,
+				description: hasOwnLayout(context.state.draft, table.key)
+					? `${table.sourcePath} · ${context.t("editor.layoutScope.own")}`
+					: table.sourcePath,
+			})),
+		];
+		this.scopeListbox = new Listbox<string>(bar, {
+			id: "tc-layout-scope",
+			label: context.t("editor.layoutScope"),
+			value: active ?? "",
+			options,
+			searchable: tables.length > 8,
+			optionDirection: "auto",
+			onChange: (value) => context.dispatch({ type: "selectLayout", tableKey: value === "" ? null : value }),
+		});
+		if (active === null) {
+			const own = tables.filter((table) => hasOwnLayout(context.state.draft, table.key)).length;
+			bar.createDiv({
+				cls: "tc-editor-scope-hint",
+				text: own === 0
+					? context.t("editor.layoutScope.deckHint")
+					: context.t("editor.layoutScope.ownCount", {
+							count: formatUiNumber(own, context.locale),
+							total: formatUiNumber(tables.length, context.locale),
+						}),
+			});
+			if (own === tables.length) {
+				button(
+					bar,
+					context.t("editor.layoutScope.followAll"),
+					"unlink",
+					() => context.dispatch({ type: "removeAllTableLayouts" }),
+					"tc-editor-button with-label is-scope-toggle",
+				);
+				return;
+			}
+			button(
+				bar,
+				context.t("editor.layoutScope.customizeAll"),
+				"table-2",
+				() => {
+					const layouts = tables
+						.filter((table) => !hasOwnLayout(context.state.draft, table.key))
+						.map((table) => ({
+							tableKey: table.key,
+							label: labels.get(table.key) ?? table.label,
+							blocks: context.seedLayout(table.key),
+						}));
+					context.dispatch({ type: "addTableLayouts", layouts });
+				},
+				"tc-editor-button with-label is-scope-toggle",
+			);
+			return;
+		}
+		const owns = hasOwnLayout(context.state.draft, active);
+		const toggle = button(
+			bar,
+			context.t(owns ? "editor.layoutScope.follow" : "editor.layoutScope.customize"),
+			owns ? "unlink" : "table-2",
+			() => {
+				if (owns) {
+					context.dispatch({ type: "removeTableLayout", tableKey: active });
+					return;
+				}
+				const label = labels.get(active) ?? "";
+				context.dispatch({ type: "addTableLayout", tableKey: active, label, blocks: context.seedLayout(active) });
+			},
+			"tc-editor-button with-label is-scope-toggle",
+		);
+		toggle.setAttr("aria-pressed", String(owns));
 	}
 
 	render(context: EditorShellContext): void {
@@ -96,6 +189,8 @@ export class EditorShell {
 		const version = ++this.renderVersion;
 		this.canvasCleanup?.();
 		this.canvasCleanup = null;
+		this.scopeListbox?.destroy();
+		this.scopeListbox = null;
 		this.sheet?.destroy();
 		this.sheet = null;
 		this.root.empty();
@@ -179,13 +274,13 @@ export class EditorShell {
 		const rowPicker = rows.createEl("details", { cls: "tc-editor-row-picker" });
 		const currentRowLabel = formatUiNumber(rowCount === 0 ? 0 : currentRow + 1, context.locale);
 		const rowCountLabel = formatUiNumber(rowCount, context.locale);
-		rowPicker
-			.createEl("summary", {
-				attr: {
-					"aria-label": `${context.t("editor.row.choose")}: ${currentRowLabel} / ${rowCountLabel}`,
-				},
-			})
-			.createSpan({ cls: "tc-figure-pair", text: `${currentRowLabel} / ${rowCountLabel}` });
+		const rowSummary = rowPicker.createEl("summary", {
+			attr: {
+				"aria-label": `${context.t("editor.row.choose")}: ${currentRowLabel} / ${rowCountLabel}`,
+			},
+		});
+		rowSummary.createSpan({ cls: "tc-editor-row-label", text: context.t("editor.row.label") });
+		rowSummary.createSpan({ cls: "tc-figure-pair", text: `${currentRowLabel} / ${rowCountLabel}` });
 		const rowMenu = rowPicker.createDiv({ cls: "tc-editor-row-menu" });
 		const representative = representativeRowIndexes(context.data.cards);
 		const rowChoices = [
@@ -212,6 +307,8 @@ export class EditorShell {
 			"tc-editor-button with-label",
 		);
 
+		this.renderScopeBar(context);
+
 		const canvasWrap = this.root.createDiv({ cls: "tc-editor-canvas-wrap" });
 		this.canvasCleanup = renderCardCanvas(canvasWrap, {
 			app: context.app,
@@ -227,12 +324,13 @@ export class EditorShell {
 			dispatch: context.dispatch,
 		});
 
-		const selected = context.state.draft.blocks.find((block) => block.id === context.state.selectedBlockId);
+		const selected = activeBlocks(context.state).find((block) => block.id === context.state.selectedBlockId);
 		let blockOpener: HTMLElement | null = null;
 		let reorderOpener: HTMLElement | null = null;
 		if (selected) {
 			const toolbar = this.root.createDiv({ cls: "tc-editor-block-toolbar" });
-			blockOpener = button(toolbar, context.t(`editor.style.${selected.kind}`), "sliders-horizontal", () => context.dispatch({ type: "openPanel", panel: "block" }), "tc-editor-button with-label is-block-type");
+			const blockLabel = `${context.t("editor.panel.block")} · ${context.t(`editor.style.${selected.kind}`)}`;
+			blockOpener = button(toolbar, blockLabel, "sliders-horizontal", () => context.dispatch({ type: "openPanel", panel: "block" }), "tc-editor-button with-label is-block-type");
 			const widthToggle = button(
 				toolbar,
 				context.t("editor.widthHalf"),

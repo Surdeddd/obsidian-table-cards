@@ -1,5 +1,15 @@
 import { Component, Modal, type App } from "obsidian";
-import type { Deck, DeckLoadResult, ParsedTable, PluginSettings, UiLocale } from "../../model";
+import type {
+	CardBlock,
+	ColumnProfile,
+	Deck,
+	DeckLoadResult,
+	ParsedTable,
+	PluginSettings,
+	UiLocale,
+} from "../../model";
+import { profileColumns } from "../../parse/profile";
+import { resolveImageFile } from "../../deck/load";
 import {
 	applyUiChromeDirection,
 	formatUiNumber,
@@ -12,11 +22,13 @@ import { autoLayout } from "../../layout";
 import { EditorScanCache, editorSourceTopologyKey } from "../../editor/scan-cache";
 import { mergeEditorDeck } from "../../editor/settings-save";
 import {
+	activeBlocks,
 	createEditorState,
 	isDirty,
 	markSaved,
 	reduceEditorState,
 	redo,
+	repairLayoutKeys,
 	undo,
 	type EditorAction,
 	type EditorState,
@@ -125,6 +137,8 @@ export class DeckEditorModal extends Modal {
 	private saving = false;
 	private error: string | null = null;
 	private previewDevice: PreviewDevice = "desktop";
+	private readonly profileCache = new Map<string, ColumnProfile[]>();
+	private profileCacheKey = "";
 	private forceClose = false;
 	private confirmOpen = false;
 	private skipLayerClose = false;
@@ -243,6 +257,39 @@ export class DeckEditorModal extends Modal {
 		this.replaceState(reduceEditorState(this.state, action));
 	}
 
+	private tableProfiles(tableKey: string): ColumnProfile[] {
+		const signature = `${this.dataTopology}::${JSON.stringify(this.state.draft.columnTypes)}`;
+		if (signature !== this.profileCacheKey) {
+			this.profileCache.clear();
+			this.profileCacheKey = signature;
+		}
+		const cached = this.profileCache.get(tableKey);
+		if (cached) return cached;
+		const table = this.scan?.tables.find((item) => item.key === tableKey)?.table;
+		const profiles = table
+			? profileColumns([table], this.state.draft.columnTypes, {
+					isImageResolvable: (source) => resolveImageFile(this.app, table.sourcePath, source) !== null,
+				})
+			: this.data.profiles;
+		this.profileCache.set(tableKey, profiles);
+		return profiles;
+	}
+
+	private seedLayout(tableKey: string): CardBlock[] {
+		const profiles = this.tableProfiles(tableKey);
+		return profiles.length > 0 ? autoLayout(profiles) : cloneJson(this.state.draft.blocks);
+	}
+
+	private scopedData(): DeckLoadResult {
+		const tableKey = this.state.activeTableKey;
+		if (tableKey === null || !this.data.catalog.some((item) => item.key === tableKey)) return this.data;
+		return {
+			...this.data,
+			cards: this.data.cards.filter((card) => card.origin.tableKey === tableKey),
+			profiles: this.tableProfiles(tableKey),
+		};
+	}
+
 	private replaceState(next: EditorState): void {
 		const draftChanged = next.draft !== this.state.draft;
 		this.state = next;
@@ -268,16 +315,25 @@ export class DeckEditorModal extends Modal {
 			const result = loaded.result;
 			this.data = result;
 			this.scan = loaded.scan;
-			if (this.state.draft.blocks.length === 0 && result.profiles.length > 0) {
+			this.state = repairLayoutKeys(this.state, result.catalog);
+			if (
+				this.state.activeTableKey !== null &&
+				!result.catalog.some((item) => item.key === this.state.activeTableKey)
+			) {
+				this.state = reduceEditorState(this.state, { type: "selectLayout", tableKey: null });
+			}
+			const scoped = this.scopedData();
+			if (activeBlocks(this.state).length === 0 && scoped.profiles.length > 0) {
 				this.state = reduceEditorState(this.state, {
 					type: "replaceBlocks",
-					blocks: autoLayout(result.profiles),
+					blocks: autoLayout(scoped.profiles),
 				});
 			}
-			if (this.state.previewRow >= result.cards.length) {
+			const scopedRows = scoped.cards.length;
+			if (this.state.previewRow >= scopedRows) {
 				this.state = reduceEditorState(this.state, {
 					type: "setPreviewRow",
-					index: Math.max(0, result.cards.length - 1),
+					index: Math.max(0, scopedRows - 1),
 				});
 			}
 		} catch (error) {
@@ -322,11 +378,12 @@ export class DeckEditorModal extends Modal {
 
 	private render(): void {
 		if (!this.component) return;
+		const data = this.scopedData();
 		this.shell?.render({
 			app: this.app,
 			component: this.component,
 			state: this.state,
-			data: this.data,
+			data,
 			loading: this.loading,
 			error: this.error,
 			saving: this.saving,
@@ -334,6 +391,7 @@ export class DeckEditorModal extends Modal {
 			locale: this.host.getLocale(),
 			t: this.host.getTranslator(),
 			globalAppearance: this.host.settings.appearance,
+			seedLayout: (tableKey) => this.seedLayout(tableKey),
 			dispatch: (action) => this.dispatch(action),
 			onUndo: () => {
 				this.replaceState(undo(this.state));
@@ -353,9 +411,9 @@ export class DeckEditorModal extends Modal {
 						app: this.app,
 						state: this.state,
 						scan: this.scan,
-						profiles: this.data.profiles,
-						rowCount: this.data.cards.length,
-						diagnostics: this.data.diagnostics,
+						profiles: data.profiles,
+						rowCount: data.cards.length,
+						diagnostics: data.diagnostics,
 						loading: this.loading,
 						locale: this.host.getLocale(),
 						t: this.host.getTranslator(),
@@ -373,7 +431,7 @@ export class DeckEditorModal extends Modal {
 					renderInspectorSheet(body, footer, {
 						state: this.state,
 						panel,
-						profiles: this.data.profiles,
+						profiles: data.profiles,
 						globalAppearance: this.host.settings.appearance,
 						t: this.host.getTranslator(),
 						dispatch: (action) => this.dispatch(action),

@@ -1,5 +1,11 @@
 import { createBlock, type AppearanceSettings, type BlockKind, type CardBlock, type ColumnProfile } from "../../model";
-import type { BlockPatch, EditorAction, EditorPanel, EditorState } from "../../editor/state";
+import {
+	activeBlocks,
+	type BlockPatch,
+	type EditorAction,
+	type EditorPanel,
+	type EditorState,
+} from "../../editor/state";
 import type { Translator } from "../../i18n";
 import { normalizeHeader } from "../../parse/tables";
 import { applySizePreset, resolveDeckAppearance } from "../../settings/appearance";
@@ -152,6 +158,7 @@ function patchBlock(context: InspectorSheetContext, block: CardBlock, patch: Blo
 
 function renderColumns(parent: HTMLElement, block: CardBlock, context: InspectorSheetContext): void {
 	const root = field(parent, context.t("editor.inspector.columns"));
+	root.addClass("tc-column-list");
 	const profiles = new Map(context.profiles.map((profile) => [normalizeHeader(profile.header), profile.header]));
 	for (const column of block.columns) profiles.set(normalizeHeader(column), column);
 	for (const [key, header] of profiles) {
@@ -192,7 +199,7 @@ function renderEmptyControls(parent: HTMLElement, block: CardBlock, context: Ins
 }
 
 function renderBlockInspector(parent: HTMLElement, footer: HTMLElement, context: InspectorSheetContext): void {
-	const block = context.state.draft.blocks.find((item) => item.id === context.state.selectedBlockId);
+	const block = activeBlocks(context.state).find((item) => item.id === context.state.selectedBlockId);
 	if (!block) {
 		parent.createDiv({ cls: "tc-field-empty", text: context.t("editor.pickBlock") });
 		return;
@@ -204,7 +211,7 @@ function renderBlockInspector(parent: HTMLElement, footer: HTMLElement, context:
 	renderColumns(common, block, context);
 	const move = common.createEl("button", {
 		cls: "tc-inspector-move",
-		text: context.t("editor.move"),
+		text: context.t("editor.layout"),
 		attr: { type: "button" },
 	});
 	move.addEventListener("click", () => context.dispatch({ type: "openPanel", panel: "reorder" }));
@@ -254,9 +261,6 @@ function renderBlockInspector(parent: HTMLElement, footer: HTMLElement, context:
 				patchBlock(context, block, { overflow: { maxLines } }),
 			);
 		}
-	});
-
-	accordion(parent, context.t("editor.group.typography"), (body) => {
 		select(body, `${block.id}-align`, context.t("editor.align"), block.appearance.align ?? "left", [
 			{ value: "left", label: context.t("editor.align.left") },
 			{ value: "center", label: context.t("editor.align.center") },
@@ -325,7 +329,7 @@ function renderBlockInspector(parent: HTMLElement, footer: HTMLElement, context:
 		const replacement = createBlock({ id: block.id, kind: block.kind, columns: block.columns });
 		context.dispatch({
 			type: "replaceBlocks",
-			blocks: context.state.draft.blocks.map((item) => (item.id === block.id ? replacement : item)),
+			blocks: activeBlocks(context.state).map((item) => (item.id === block.id ? replacement : item)),
 		});
 	});
 	const remove = footer.createEl("button", {
@@ -370,44 +374,48 @@ function renderCardInspector(parent: HTMLElement, footer: HTMLElement, context: 
 		{ value: "center", label: context.t("settings.appearance.overlay.center") },
 		{ value: "full", label: context.t("settings.appearance.overlay.full") },
 	], (overlay) => context.dispatch({ type: "patchAppearance", patch: { overlay } }));
-	rangeInput(parent, context.t("settings.appearance.padding"), appearance.padding, 8, 56, 1, (padding) =>
-		context.dispatch({ type: "patchAppearance", patch: { padding } }),
-	);
-	rangeInput(parent, context.t("settings.appearance.gap"), appearance.gap, 4, 40, 1, (gap) =>
-		context.dispatch({ type: "patchAppearance", patch: { gap } }),
-	);
-	rangeInput(parent, context.t("settings.appearance.wordScale"), appearance.wordScale, 0.7, 1.8, 0.05, (wordScale) =>
-		context.dispatch({ type: "patchAppearance", patch: { wordScale } }),
-	);
-	rangeInput(parent, context.t("settings.appearance.radius"), appearance.radius, 0, 48, 1, (radius) =>
-		context.dispatch({ type: "patchAppearance", patch: { radius } }),
-	);
-	select(parent, "card-border", context.t("settings.appearance.border"), appearance.border, [
-		{ value: "none", label: context.t("settings.appearance.border.none") },
-		{ value: "thin", label: context.t("settings.appearance.border.thin") },
-		{ value: "solid", label: context.t("settings.appearance.border.solid") },
-	], (border) => context.dispatch({ type: "patchAppearance", patch: { border } }));
-	if (appearance.border === "solid") {
-		rangeInput(parent, context.t("settings.appearance.borderWidth"), appearance.borderWidth, 1, 8, 1, (borderWidth) =>
-			context.dispatch({ type: "patchAppearance", patch: { borderWidth } }),
+	accordion(parent, context.t("editor.group.spacing"), (body) => {
+		rangeInput(body, context.t("settings.appearance.padding"), appearance.padding, 8, 56, 1, (padding) =>
+			context.dispatch({ type: "patchAppearance", patch: { padding } }),
 		);
-	}
-	toggle(parent, context.t("settings.appearance.shadow"), appearance.cardShadow, (cardShadow) =>
-		context.dispatch({ type: "patchAppearance", patch: { cardShadow } }),
-	);
-	rangeInput(parent, context.t("editor.card.maxWidth"), appearance.maxWidth, 320, 1400, 20, (maxWidth) =>
-		context.dispatch({ type: "patchAppearance", patch: { maxWidth } }),
-	);
-	toggle(parent, context.t("settings.appearance.twoColumn"), appearance.twoColumn, (twoColumn) =>
-		context.dispatch({ type: "patchAppearance", patch: { twoColumn } }),
-	);
-	if (appearance.twoColumn) {
-		rangeInput(parent, context.t("settings.appearance.twoColumnFrom"), appearance.twoColumnFrom, 520, 1400, 20, (twoColumnFrom) =>
-			context.dispatch({ type: "patchAppearance", patch: { twoColumnFrom } }),
+		rangeInput(body, context.t("settings.appearance.gap"), appearance.gap, 4, 40, 1, (gap) =>
+			context.dispatch({ type: "patchAppearance", patch: { gap } }),
 		);
-	}
-	if (appearance.preset === "custom") {
-		const colors = parent.createDiv({ cls: "tc-card-colors" });
+		rangeInput(body, context.t("settings.appearance.wordScale"), appearance.wordScale, 0.7, 1.8, 0.05, (wordScale) =>
+			context.dispatch({ type: "patchAppearance", patch: { wordScale } }),
+		);
+		rangeInput(body, context.t("editor.card.maxWidth"), appearance.maxWidth, 320, 1400, 20, (maxWidth) =>
+			context.dispatch({ type: "patchAppearance", patch: { maxWidth } }),
+		);
+		toggle(body, context.t("settings.appearance.twoColumn"), appearance.twoColumn, (twoColumn) =>
+			context.dispatch({ type: "patchAppearance", patch: { twoColumn } }),
+		);
+		if (appearance.twoColumn) {
+			rangeInput(body, context.t("settings.appearance.twoColumnFrom"), appearance.twoColumnFrom, 520, 1400, 20, (twoColumnFrom) =>
+				context.dispatch({ type: "patchAppearance", patch: { twoColumnFrom } }),
+			);
+		}
+	});
+
+	accordion(parent, context.t("editor.group.appearance"), (body) => {
+		rangeInput(body, context.t("settings.appearance.radius"), appearance.radius, 0, 48, 1, (radius) =>
+			context.dispatch({ type: "patchAppearance", patch: { radius } }),
+		);
+		select(body, "card-border", context.t("settings.appearance.border"), appearance.border, [
+			{ value: "none", label: context.t("settings.appearance.border.none") },
+			{ value: "thin", label: context.t("settings.appearance.border.thin") },
+			{ value: "solid", label: context.t("settings.appearance.border.solid") },
+		], (border) => context.dispatch({ type: "patchAppearance", patch: { border } }));
+		if (appearance.border === "solid") {
+			rangeInput(body, context.t("settings.appearance.borderWidth"), appearance.borderWidth, 1, 8, 1, (borderWidth) =>
+				context.dispatch({ type: "patchAppearance", patch: { borderWidth } }),
+			);
+		}
+		toggle(body, context.t("settings.appearance.shadow"), appearance.cardShadow, (cardShadow) =>
+			context.dispatch({ type: "patchAppearance", patch: { cardShadow } }),
+		);
+		if (appearance.preset !== "custom") return;
+		const colors = body.createDiv({ cls: "tc-card-colors" });
 		const colorFields: Array<[keyof AppearanceSettings, string, string | undefined]> = [
 			["windowBackground", context.t("editor.card.window"), undefined],
 			["cardBackground", context.t("editor.card.background"), undefined],
@@ -427,7 +435,7 @@ function renderCardInspector(parent: HTMLElement, footer: HTMLElement, context: 
 				onChange: (value) => context.dispatch({ type: "patchAppearance", patch: { [key]: value } }),
 			});
 		}
-	}
+	});
 	const reset = footer.createEl("button", { text: context.t("editor.resetCard"), attr: { type: "button" } });
 	reset.addEventListener("click", () =>
 		context.dispatch({ type: "replaceDraft", deck: { ...context.state.draft, appearance: undefined } }),

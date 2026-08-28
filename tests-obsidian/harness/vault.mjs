@@ -50,6 +50,53 @@ const EDGE = [
 	"",
 ].join("\n");
 
+const MANY = [
+	"# Course notebook",
+	"",
+	"## Vocabulary",
+	"",
+	"| Word | Translation | Example | Level |",
+	"| --- | --- | --- | --- |",
+	"| ledger | реестр | The ledger balances every night. | B2 |",
+	"| tally | подсчёт | Keep a tally of the entries. | B1 |",
+	"",
+	"## Phrases",
+	"",
+	"| Phrase | Meaning | Register |",
+	"| --- | --- | --- |",
+	"| call it a day | закончить | informal |",
+	"| bear with me | подождите | neutral |",
+	"",
+	"## Irregular verbs",
+	"",
+	"| Infinitive | Past | Participle |",
+	"| --- | --- | --- |",
+	"| begin | began | begun |",
+	"| choose | chose | chosen |",
+	"",
+	"## Prepositions",
+	"",
+	"| Preposition | Case | Sample |",
+	"| --- | --- | --- |",
+	"| despite | — | despite the rain |",
+	"| towards | — | towards the harbour |",
+	"",
+	"## Numbers",
+	"",
+	"| Numeral | Written | Ordinal |",
+	"| --- | --- | --- |",
+	"| 11 | eleven | eleventh |",
+	"| 40 | forty | fortieth |",
+	"",
+	"## Idioms",
+	"",
+	"| Idiom | Literal | Sense |",
+	"| --- | --- | --- |",
+	"| spill the beans | рассыпать бобы | reveal a secret |",
+	"| under the weather | под погодой | feeling unwell |",
+	"",
+].join("\n");
+
 /** @param {number} rows */
 function largeTable(rows) {
 	const lines = ["# Large", "", "| Index | Word | Meaning | Tag |", "| --- | --- | --- | --- |"];
@@ -71,6 +118,7 @@ export async function createFixtureVault(harnessRoot) {
 	await writeFile(join(vaultPath, "Facts.md"), FACTS, "utf8");
 	await writeFile(join(vaultPath, "Edge.md"), EDGE, "utf8");
 	await writeFile(join(vaultPath, "Large.md"), largeTable(500), "utf8");
+	await writeFile(join(vaultPath, "Many.md"), MANY, "utf8");
 	await writeFile(join(vaultPath, ".obsidian", "community-plugins.json"), '["table-cards"]\n', "utf8");
 	for (const artifact of ["main.js", "manifest.json", "styles.css"]) {
 		await cp(join(root, artifact), join(vaultPath, ".obsidian", "plugins", "table-cards", artifact));

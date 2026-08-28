@@ -2,13 +2,21 @@ import { chromium, type Page } from "@playwright/test";
 
 export const CDP_URL = `http://127.0.0.1:${process.env["OBSIDIAN_CDP_PORT"] ?? 9333}`;
 
+/** Picks the window that actually runs Obsidian: the port may serve other pages too. */
 export async function obsidianPage(): Promise<Page> {
 	const browser = await chromium.connectOverCDP(CDP_URL);
 	const context = browser.contexts()[0];
 	if (!context) throw new Error("Obsidian exposed no browser context");
-	const page = context.pages()[0];
-	if (!page) throw new Error("Obsidian exposed no page");
-	return page;
+	const pages = context.pages();
+	if (pages.length === 0) throw new Error("Obsidian exposed no page");
+	for (const candidate of pages) {
+		const isObsidian = await candidate
+			.evaluate(() => typeof window.app?.plugins?.plugins === "object")
+			.catch(() => false);
+		if (isObsidian) return candidate;
+	}
+	const titles = await Promise.all(pages.map((page) => page.title().catch(() => "?")));
+	throw new Error(`No Obsidian window on ${CDP_URL}; saw: ${titles.join(", ")}`);
 }
 
 export async function closeOverlays(page: Page): Promise<void> {

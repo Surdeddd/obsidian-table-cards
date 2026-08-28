@@ -20,6 +20,12 @@ describe("editor shell layout", () => {
 		expect(shell).toContain("grid-template-rows: auto auto minmax(0, 1fr) auto");
 	});
 
+	it("adds a row when the layout scope bar is on", () => {
+		const shell = ruleBody(".tc-editor-shell.has-scope-bar {");
+
+		expect(shell).toContain("grid-template-rows: auto auto auto minmax(0, 1fr) auto");
+	});
+
 	it("does not let the modal content rule override the shell display", () => {
 		const body = ruleBody(".modal.table-cards-editor .modal-content,\n.table-cards-editor-body {");
 

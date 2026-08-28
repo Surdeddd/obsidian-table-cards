@@ -128,4 +128,61 @@ describe("automatic layout", () => {
 		expect(block?.kind).toBe("text");
 		expect(block?.empty.required).toBe(false);
 	});
+
+	it("titles a table by its first column when no header says so", () => {
+		const blocks = autoLayout([
+			profile("Idiom", "text"),
+			profile("Literal", "text"),
+			profile("Sense", "text"),
+		]);
+
+		expect(blocks.map((block) => [block.columns[0], block.kind])).toEqual([
+			["Idiom", "title"],
+			["Literal", "text"],
+			["Sense", "text"],
+		]);
+	});
+
+	it("leaves a repeating first column as an ordinary field", () => {
+		const repeating = { ...profile("Register", "text"), unique: 2 };
+		const blocks = autoLayout([repeating, profile("Sense", "text")]);
+
+		expect(blocks.map((block) => block.kind)).toEqual(["text", "text"]);
+	});
+
+	it("still prefers a column the header names over the first one", () => {
+		const blocks = autoLayout([profile("Sense", "text"), profile("Word", "text")]);
+
+		expect(blocks.map((block) => [block.columns[0], block.kind])).toEqual([
+			["Sense", "text"],
+			["Word", "title"],
+		]);
+	});
+
+	it("skips a block whose columns the table does not have", () => {
+		const block = createBlock({
+			columns: ["Word"],
+			empty: { mode: "dash", customText: "", emptyTokens: [""], required: false },
+		});
+
+		const resolved = resolveBlock(card({ Phrase: "break the ice" }), block);
+
+		expect(resolved.applicable).toBe(false);
+		expect(resolved.visible).toBe(false);
+	});
+
+	it("keeps a row a table cannot fill a required foreign column for", () => {
+		const title = createBlock({
+			kind: "title",
+			columns: ["Word"],
+			empty: { mode: "hide", customText: "", emptyTokens: [""], required: true },
+		});
+		const meaning = createBlock({ columns: ["Meaning"] });
+
+		const foreign = resolveCard(card({ Phrase: "break the ice", Meaning: "начать разговор" }), [title, meaning]);
+		const own = resolveCard(card({ Word: "", Meaning: "" }), [title, meaning]);
+
+		expect(foreign.skipReason).toBeNull();
+		expect(own.skipReason?.blockId).toBe(title.id);
+	});
 });

@@ -92,10 +92,15 @@ export class Sheet {
 			const footer = this.dialog.createDiv({ cls: "tc-sheet-footer" });
 			this.options.renderFooter(footer);
 		}
+		this.syncHostState();
 		window.setTimeout(() => {
 			const preferred = this.options.initialFocus?.() ?? null;
 			(preferred ?? focusableElements(this.dialog ?? this.host)[0] ?? this.dialog)?.focus();
 		}, 0);
+	}
+
+	private syncHostState(): void {
+		this.host.toggleClass("is-sheet-open", this.host.querySelector(".tc-sheet-layer") !== null);
 	}
 
 	close(): void {
@@ -110,6 +115,7 @@ export class Sheet {
 		this.root?.remove();
 		this.root = null;
 		this.dialog = null;
+		this.syncHostState();
 		if (restoreFocus) this.options.opener?.focus();
 	}
 

@@ -186,6 +186,14 @@ button:disabled {
 	padding-block-start: 18px;
 }
 
+@media (max-height: 540px) {
+	.preview-root,
+	.is-capture .preview-root {
+		padding: 0;
+		place-items: stretch;
+	}
+}
+
 @media (max-width: 560px) {
 	.preview-toolbar {
 		position: absolute;

@@ -45,7 +45,18 @@ async function expectFixtureClean(fixture: OpenedFixture): Promise<void> {
 	expect(issues, "console errors or warnings").toEqual([]);
 	expect(externalRequests, "fixture network must stay local").toEqual([]);
 	expect(await page.locator("select:visible").count(), "unexpected native select").toBe(0);
-	expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), "horizontal document overflow").toBe(true);
+	const overflow = await page.evaluate(() => {
+		const root = document.documentElement;
+		const offenders = Array.from(document.querySelectorAll<HTMLElement>("*")).flatMap((element) => {
+			const rect = element.getBoundingClientRect();
+			if (rect.width === 0 || rect.height === 0) return [];
+			if (rect.right <= root.clientWidth + 0.5 && rect.left >= -0.5) return [];
+			return [`${element.tagName.toLowerCase()}.${String(element.className).split(" ")[0]} ${Math.round(rect.left)}→${Math.round(rect.right)}`];
+		});
+		return { scrollWidth: root.scrollWidth, clientWidth: root.clientWidth, offenders: offenders.slice(0, 6) };
+	});
+	expect(overflow.scrollWidth, `horizontal document overflow at ${page.url()}: ${overflow.offenders.join(", ")}`)
+		.toBeLessThanOrEqual(overflow.clientWidth);
 	const unnamed = await page.locator("button:visible").evaluateAll((buttons) => buttons.flatMap((button) => {
 		const name = button.getAttribute("aria-label") ?? button.textContent?.trim() ?? "";
 		return name ? [] : [button.outerHTML.slice(0, 180)];

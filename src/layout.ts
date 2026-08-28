@@ -51,14 +51,23 @@ const TITLE_HEADER = /(^|\s)(word|words|phrase|term|title|слово|слова|
 const EXAMPLE_HEADER = /(example|sentence|пример|предложение)/i;
 const NOTE_HEADER = /(tip|memory|hint|note|мнемон|буквальн|подсказ|заметк)/i;
 
-export function autoLayout(profiles: ColumnProfile[]): CardBlock[] {
-	const titleIndex = profiles.findIndex(
-		(profile) =>
-			profile.inferredType === "text" &&
-			profile.total > 0 &&
-			profile.nonEmpty / profile.total >= 0.8 &&
-			TITLE_HEADER.test(profile.header),
+function filledText(profile: ColumnProfile | undefined): boolean {
+	return (
+		profile !== undefined &&
+		profile.inferredType === "text" &&
+		profile.total > 0 &&
+		profile.nonEmpty / profile.total >= 0.8
 	);
+}
+
+/** The first column of a table names its rows unless the values repeat. */
+function namesTheRow(profile: ColumnProfile | undefined): boolean {
+	return filledText(profile) && profile!.unique / Math.max(1, profile!.nonEmpty) >= 0.9;
+}
+
+export function autoLayout(profiles: ColumnProfile[]): CardBlock[] {
+	const named = profiles.findIndex((profile) => filledText(profile) && TITLE_HEADER.test(profile.header));
+	const titleIndex = named >= 0 ? named : namesTheRow(profiles[0]) ? 0 : -1;
 
 	return profiles.map((profile, index) => {
 		let kind: BlockKind = "text";

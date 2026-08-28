@@ -102,6 +102,8 @@ export default tseslint.config(
 	globalIgnores([
 		"node_modules",
 		".obsidian-harness",
+		".remember",
+		"artifacts",
 		"dist",
 		"esbuild.config.mjs",
 		"eslint.config.js",

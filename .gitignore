@@ -20,3 +20,18 @@ MEMORY_BANK/
 .worktrees/
 .obsidian-harness/
 .preview-shots/
+artifacts/
+
+# agent and local tooling files
+AGENTS.md
+AGENTS.*.md
+CLAUDE.md
+CODEX.md
+GEMINI.md
+.claude/
+.codex/
+.cursor/
+
+# local test runner configuration
+playwright.config.mts
+playwright.obsidian.config.mts

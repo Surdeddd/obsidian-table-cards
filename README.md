@@ -2,6 +2,8 @@
 
 <!-- markdownlint-disable MD013 -->
 
+Русская версия: [README.ru.md](./README.ru.md)
+
 Turn Markdown tables into focused, all-visible study cards inside Obsidian. Table Cards is local-first, leaves source notes untouched, and uses the same monochrome workflow on desktop and phone.
 
 ![The setup wizard recommends a vocabulary layout from real table data](docs/screenshots/setup-presets-desktop.png)

@@ -35,3 +35,4 @@ GEMINI.md
 # local test runner configuration
 playwright.config.mts
 playwright.obsidian.config.mts
+docs/superpowers/
